@@ -3,108 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JS Satranç Tahtası</title>
+    <title>LOYALTYCHESS RULES</title>
     <style>
-        /* CSS: Görünüm Ayarları */
+        /* GENEL SAYFA DÜZENİ */
         body {
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            background-color: #2c3e50;
+            min-height: 100vh;
+            background-color: #1a1a1a;
             margin: 0;
-            font-family: sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #ecf0f1;
         }
 
-        #board-container {
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border: 10px solid #34495e;
-            border-radius: 4px;
+        /* ANA KAPSAYICI: Tahta ve Kuralları yan yana getirir */
+        .main-container {
+            display: flex;
+            gap: 40px;
+            padding: 20px;
+            background-color: #2c3e50;
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            flex-wrap: wrap; /* Mobilde alt alta geçmesi için */
+            justify-content: center;
         }
 
+        /* TAHTA TASARIMI */
         #chess-board {
             display: grid;
-            grid-template-columns: repeat(8, 70px);
-            grid-template-rows: repeat(8, 70px);
+            grid-template-columns: repeat(8, 65px);
+            grid-template-rows: repeat(8, 65px);
+            border: 5px solid #34495e;
         }
 
         .square {
-            width: 70px;
-            height: 70px;
+            width: 65px;
+            height: 65px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 45px;
-            cursor: pointer;
+            font-size: 40px;
             user-select: none;
-            transition: background 0.2s;
         }
 
-        /* Klasik Satranç Renkleri */
-        .white { background-color: #eeeed2; color: #000; }
-        .black { background-color: #769656; color: #000; }
+        .white { background-color: #eeeed2; }
+        .black { background-color: #769656; }
 
-        /* Üzerine gelince belli olsun */
-        .square:hover {
-            filter: brightness(1.1);
+        /* KURALLAR PANELİ */
+        .rules-panel {
+            max-width: 350px;
+            background-color: #34495e;
+            padding: 25px;
+            border-radius: 8px;
+            border-left: 4px solid #f1c40f;
+        }
+
+        .rules-panel h2 {
+            margin-top: 0;
+            color: #f1c40f;
+            border-bottom: 1px solid #5d6d7e;
+            padding-bottom: 10px;
+        }
+
+        .rules-list {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .rules-list li {
+            margin-bottom: 15px;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .rules-list b {
+            color: #f39c12;
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        /* Responsive: Küçük ekranlarda hizalama */
+        @media (max-width: 800px) {
+            .main-container { flex-direction: column; align-items: center; }
+            #chess-board { grid-template-columns: repeat(8, 45px); grid-template-rows: repeat(8, 45px); }
+            .square { width: 45px; height: 45px; font-size: 28px; }
         }
     </style>
 </head>
 <body>
 
-    <div id="board-container">
+    <div class="main-container">
         <div id="chess-board"></div>
+
+        <div class="rules-panel">
+            <h2>Satranç Kuralları</h2>
+            <ul class="rules-list">
+                <li><b>♔ Şah:</b> Her yöne sadece 1 kare gidebilir. Oyunun en önemli taşıdır.</li>
+                <li><b>♕ Vezir:</b> Yatay, dikey ve çapraz olarak istediği kadar gidebilir. En güçlü taştır.</li>
+                <li><b>♖ Kale:</b> Sadece yatay ve dikey yönde istediği kadar ilerleyebilir.</li>
+                <li><b>♗ Fil:</b> Sadece çapraz yönde, kendi rengindeki karelerde ilerleyebilir.</li>
+                <li><b>♘ At:</b> "L" şeklinde hareket eder. Diğer taşların üzerinden atlayabilen tek taştır.</li>
+                <li><b>♙ Piyon:</b> İlk hamlede 2, sonraki hamlelerde 1 kare ileri gider. Rakibi çapraz yer.</li>
+                <li><b>Mat:</b> Rakip şahın kaçacak hiçbir yeri kalmadığında oyun biter.</li>
+            </ul>
+        </div>
     </div>
 
     <script>
-        // JS: Tahta Oluşturma ve Taş Dizilimi
         const board = document.getElementById('chess-board');
-
-        // Unicode Satranç Taşları
         const pieces = {
             'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
             'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
         };
 
-        // Standart Başlangıç Dizilimi (8x8)
         const layout = [
-            'r','n','b','q','k','b','n','r', // Siyah ana taşlar
-            'p','p','p','p','p','p','p','p', // Siyah piyonlar
-            '','','','','','','','',         // Boş
-            '','','','','','','','',         // Boş
-            '','','','','','','','',         // Boş
-            '','','','','','','','',         // Boş
-            'P','P','P','P','P','P','P','P', // Beyaz piyonlar
-            'R','N','B','Q','K','B','N','R'  // Beyaz ana taşlar
+            'r','n','b','q','k','b','n','r',
+            'p','p','p','p','p','p','p','p',
+            '','','','','','','','',
+            '','','','','','','','',
+            '','','','','','','','',
+            '','','','','','','','',
+            'P','P','P','P','P','P','P','P',
+            'R','N','B','Q','K','B','N','R'
         ];
 
-        function createBoard() {
-            for (let i = 0; i < 64; i++) {
-                const square = document.createElement('div');
-                square.classList.add('square');
+        for (let i = 0; i < 64; i++) {
+            const square = document.createElement('div');
+            square.className = 'square';
+            
+            const row = Math.floor(i / 8);
+            const col = i % 8;
+            
+            // Renk belirleme
+            square.classList.add((row + col) % 2 === 0 ? 'white' : 'black');
 
-                // Satır ve Sütun bulma
-                const row = Math.floor(i / 8);
-                const col = i % 8;
-
-                // Kareleri renklendirme (Dama düzeni)
-                if ((row + col) % 2 === 0) {
-                    square.classList.add('white');
-                } else {
-                    square.classList.add('black');
-                }
-
-                // Taşları yerleştirme
-                const pieceSymbol = layout[i];
-                if (pieceSymbol) {
-                    square.textContent = pieces[pieceSymbol];
-                }
-
-                board.appendChild(square);
+            // Taş yerleştirme
+            if (layout[i]) {
+                square.textContent = pieces[layout[i]];
             }
-        }
 
-        createBoard();
+            board.appendChild(square);
+        }
     </script>
 </body>
 </html>
