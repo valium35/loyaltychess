@@ -13,14 +13,18 @@
       background-color: #0f172a;
       color: white;
     }
+
+    /* Satranç Tahtası */
     .board {
       width: 400px;
       height: 400px;
       display: grid;
       grid-template-columns: repeat(8, 50px);
       grid-template-rows: repeat(8, 50px);
-      border: 2px solid #000;
+      border: 4px solid #222; /* Tahta çevresi */
     }
+
+    /* Hücreler */
     .cell {
       width: 50px;
       height: 50px;
@@ -31,10 +35,16 @@
       cursor: pointer;
       user-select: none;
     }
-    .cell.black { background-color: #769656; }
-    .cell.white { background-color: #eeeed2; }
+
+    /* Klasik satranç renkleri */
+    .white { background-color: #eeeed2; }
+    .black { background-color: #769656; }
+
+    /* Tehdit / ihanet */
     .threat { background-color: #f87171 !important; }
     .betrayed { opacity: 0.5; }
+
+    /* Sağ kurallar paneli */
     .rules {
       margin-left: 50px;
       max-width: 300px;
@@ -45,8 +55,10 @@
 </head>
 <body>
 
+  <!-- Tahta -->
   <div class="board" id="board"></div>
 
+  <!-- Kurallar -->
   <div class="rules">
     <h2>Loyalty Rules</h2>
     <ul>
@@ -56,6 +68,7 @@
     </ul>
   </div>
 
+  <!-- JS Animasyon -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const board = document.getElementById('board');
@@ -71,18 +84,20 @@
         ['♖','♘','♗','♕','♔','♗','♘','♖']
       ];
 
+      // Tahtayı oluştur
       for(let r=0; r<8; r++){
         for(let c=0; c<8; c++){
           const cell = document.createElement('div');
           cell.classList.add('cell');
-          cell.classList.add((r+c)%2===0 ? 'white' : 'black');
+          // Alternating black/white squares
+          cell.classList.add((r + c) % 2 === 0 ? 'white' : 'black');
           cell.id = cell-${r}-${c};
           cell.textContent = initialBoard[r][c];
           board.appendChild(cell);
         }
       }
 
-      // Demo hamleleri
+      // Demo animasyonu: 4–5 hamlede ihanet
       setTimeout(()=>{ document.getElementById('cell-6-4').classList.add('threat'); }, 1000);
       setTimeout(()=>{ document.getElementById('cell-6-4').classList.add('betrayed'); }, 2500);
       setTimeout(()=>{ document.getElementById('cell-1-3').classList.add('threat'); }, 3000);
