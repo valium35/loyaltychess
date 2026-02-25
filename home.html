@@ -96,18 +96,17 @@
     <div class="main-container">
         <div id="chess-board"></div>
 
-        <div class="rules-panel">
-            <h2>Satranç Kuralları</h2>
-            <ul class="rules-list">
-                <li><b>♔ Şah:</b> Her yöne sadece 1 kare gidebilir. Oyunun en önemli taşıdır.</li>
-                <li><b>♕ Vezir:</b> Yatay, dikey ve çapraz olarak istediği kadar gidebilir. En güçlü taştır.</li>
-                <li><b>♖ Kale:</b> Sadece yatay ve dikey yönde istediği kadar ilerleyebilir.</li>
-                <li><b>♗ Fil:</b> Sadece çapraz yönde, kendi rengindeki karelerde ilerleyebilir.</li>
-                <li><b>♘ At:</b> "L" şeklinde hareket eder. Diğer taşların üzerinden atlayabilen tek taştır.</li>
-                <li><b>♙ Piyon:</b> İlk hamlede 2, sonraki hamlelerde 1 kare ileri gider. Rakibi çapraz yer.</li>
-                <li><b>Mat:</b> Rakip şahın kaçacak hiçbir yeri kalmadığında oyun biter.</li>
-            </ul>
-        </div>
+       <div class="rules-panel">
+    <h2>LoyaltyChess Rules</h2>
+    <ul class="rules-list">
+        <li><b>The Betrayal Rule:</b> If a piece is under attack, it MUST be protected or moved. If left undefended, it becomes a "Traitor".</li>
+        <li><b>Traitors:</b> The opponent can use the traitor piece for ONE move instead of capturing it.</li>
+        <li><b>Limitations:</b> A traitor piece cannot deliver a check (Check) or a checkmate (Mate).</li>
+        <li><b>Sacrifice:</b> A traitor can capture any of its original owner's pieces. After the betrayal move, the traitor piece is removed from the game.</li>
+        <hr style="border: 0; border-top: 1px solid #5d6d7e; margin: 15px 0;">
+     
+    </ul>
+</div>
     </div>
 
     <script>
