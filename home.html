@@ -2,33 +2,37 @@
 <html>
 <head>
   <title>LoyaltyChess Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
-      font-family:'Segoe UI Symbol',Arial, sans-serif;
+      font-family: Arial, sans-serif;
       display: flex;
       justify-content: center;
       align-items: flex-start;
       margin: 50px;
+      background-color: #0f172a;
+      color: white;
     }
     .board {
       display: grid;
-      grid-template-columns: repeat(8,50px);
-      grid-template-rows: repeat(8,50px);
+      grid-template-columns: repeat(8, 50px);
+      grid-template-rows: repeat(8, 50px);
       gap: 0;
       border: 2px solid #000;
     }
     .cell {
-      width: 60px;
-      height: 60px;
+      width: 50px;
+      height: 50px;
       display: flex;
       justify-content: center;
       align-items: center;
       font-size: 32px;
       cursor: pointer;
+      user-select: none;
     }
     .cell.black { background-color: #769656; }
     .cell.white { background-color: #eeeed2; }
-    .threat { background-color: #f87171 !important; } /* kırmızı tehdit */
+    .threat { background-color: #f87171 !important; } /* tehdit kırmızı */
     .betrayed { opacity: 0.5; } /* ihanet edilmiş taş */
     .rules {
       margin-left: 50px;
@@ -39,19 +43,22 @@
   </style>
 </head>
 <body>
+
   <div class="board" id="board"></div>
 
   <div class="rules">
     <h2>Loyalty Rules</h2>
     <ul>
       <li>Unprotected pieces may betray their owner.</li>
-      <li>Only pawns, rooks, bishops can betray in this demo.</li>
+      <li>Only pawns, rooks, and bishops can betray in this demo.</li>
       <li>Check is possible but betrayal is prioritized.</li>
     </ul>
   </div>
 
   <script>
     const board = document.getElementById('board');
+
+    // Emoji taşlar (her tarayıcı destekler)
     const initialBoard = [
       ['♜','♞','♝','♛','♚','♝','♞','♜'],
       ['♟','♟','♟','♟','♟','♟','♟','♟'],
@@ -76,10 +83,22 @@
     }
 
     // Demo hamleleri: 4-5 hamle ile ihanet göstermek
-    setTimeout(()=>{ document.getElementById('cell-6-4').classList.add('threat'); }, 1000); // beyaz piyon tehdit
-    setTimeout(()=>{ document.getElementById('cell-6-4').classList.add('betrayed'); }, 2500); // ihanet olmuş
-    setTimeout(()=>{ document.getElementById('cell-1-3').classList.add('threat'); }, 3000); // siyah piyon tehdit
-    setTimeout(()=>{ document.getElementById('cell-1-3').classList.add('betrayed'); }, 4500); // ihanet olmuş
+    setTimeout(()=>{
+      document.getElementById('cell-6-4').classList.add('threat'); // beyaz piyon tehdit
+    }, 1000);
+
+    setTimeout(()=>{
+      document.getElementById('cell-6-4').classList.add('betrayed'); // ihanet olmuş
+    }, 2500);
+
+    setTimeout(()=>{
+      document.getElementById('cell-1-3').classList.add('threat'); // siyah piyon tehdit
+    }, 3000);
+
+    setTimeout(()=>{
+      document.getElementById('cell-1-3').classList.add('betrayed'); // ihanet olmuş
+    }, 4500);
   </script>
+
 </body>
 </html>
