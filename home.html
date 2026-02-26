@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LoyaltyChess - Complete Edition</title>
+    <title>LoyaltyChess - Stable Edition</title>
     <style>
-        /* GENEL SAYFA DÜZENİ */
         body {
             display: flex;
             flex-direction: column;
@@ -13,17 +12,17 @@
             min-height: 100vh;
             background-color: #1a1a1a;
             margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             color: #ecf0f1;
         }
 
-        .header { margin: 20px 0; text-align: center; }
-        .header h1 { color: #f1c40f; margin: 0; font-size: 32px; letter-spacing: 2px; }
+        .header { margin: 20px 0; }
+        .header h1 { color: #f1c40f; margin: 0; letter-spacing: 2px; }
 
         .main-container {
             display: flex;
-            gap: 40px;
-            padding: 30px;
+            gap: 30px;
+            padding: 20px;
             background-color: #2c3e50;
             border-radius: 15px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.7);
@@ -31,146 +30,89 @@
             justify-content: center;
         }
 
-        /* TAHTA TASARIMI */
+        /* TAHTA VE KARELER */
         #chess-board {
             display: grid;
             grid-template-columns: repeat(8, 65px);
             grid-template-rows: repeat(8, 65px);
-            border: 8px solid #34495e;
-            border-radius: 4px;
+            border: 6px solid #34495e;
+            background-color: #34495e;
         }
 
         .square {
-            width: 65px; height: 65px;
-            display: flex; justify-content: center; align-items: center;
-            transition: all 0.2s;
+            width: 65px;
+            height: 65px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 50px; /* Taşların büyüklüğü */
+            cursor: pointer;
+            user-select: none;
         }
 
-        .white { background-color: #ebecd0; }
-        .black { background-color: #779556; }
+        .white { background-color: #eeeed2; color: #000; }
+        .black { background-color: #769656; color: #000; }
 
-        /* TAŞLAR (SVG) */
-        .piece {
-            width: 90%; height: 90%;
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            transition: all 0.4s ease;
-        }
-
-        /* Beyaz Taşlar */
-        .w-k { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg'); }
-        .w-q { background-image: url('https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg'); }
-        .w-r { background-image: url('https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg'); }
-        .w-b { background-image: url('https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg'); }
-        .w-n { background-image: url('https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg'); }
-        .w-p { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'); }
-
-        /* Siyah Taşlar */
-        .b-k { background-image: url('https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg'); }
-        .b-q { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg'); }
-        .b-r { background-image: url('https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg'); }
-        .b-b { background-image: url('https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg'); }
-        .b-n { background-image: url('https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg'); }
-        .b-p { background-image: url('https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg'); }
-
-        /* İHANET EFEKTİ */
-        .betrayal-glow {
-            filter: drop-shadow(0 0 12px #ff0000) sepia(0.5) saturate(3);
-            animation: pulse 1.2s infinite;
+        /* İHANET EFEKTİ (Kırmızı Parlama) */
+        .betrayal {
+            color: #ff0000 !important;
+            text-shadow: 0 0 15px red;
+            animation: pulse 1s infinite;
         }
 
         @keyframes pulse {
             0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+            50% { transform: scale(1.15); }
             100% { transform: scale(1); }
         }
 
-        /* SAĞ PANEL */
-        .side-panel {
-            max-width: 380px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .rules-panel {
-            background-color: #34495e;
-            padding: 20px;
-            border-radius: 10px;
-            border-left: 5px solid #f1c40f;
-        }
-
-        .rules-panel h2 { color: #f1c40f; margin-top: 0; font-size: 22px; }
+        /* PANEL */
+        .side-panel { max-width: 360px; display: flex; flex-direction: column; gap: 15px; }
+        .msg-box { background: #16a085; padding: 15px; border-radius: 8px; font-weight: bold; text-align: center; }
+        .rules-box { background: #34495e; padding: 20px; border-radius: 10px; border-left: 5px solid #f1c40f; font-size: 14px; }
         
-        .tutorial-box {
-            background-color: #16a085;
-            padding: 15px;
-            border-radius: 8px;
-            font-weight: bold;
-            text-align: center;
-        }
-
         button {
-            padding: 15px;
-            background-color: #f1c40f;
-            border: none;
-            border-radius: 5px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background 0.3s;
+            padding: 15px; background: #f1c40f; border: none; border-radius: 5px;
+            font-weight: bold; cursor: pointer; font-size: 16px;
         }
-        button:hover { background-color: #d4ac0d; }
+        button:hover { background: #d4ac0d; }
 
-        .rules-list { list-style: none; padding: 0; font-size: 14px; line-height: 1.6; }
-        .rules-list b { color: #f39c12; display: block; margin-top: 10px; }
-
-        @media (max-width: 850px) {
-            .main-container { flex-direction: column; align-items: center; }
+        @media (max-width: 800px) {
             #chess-board { grid-template-columns: repeat(8, 45px); grid-template-rows: repeat(8, 45px); }
-            .square { width: 45px; height: 45px; }
+            .square { width: 45px; height: 45px; font-size: 35px; }
         }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <h1>LOYALTY CHESS</h1>
-</div>
+<div class="header"><h1>LOYALTY CHESS</h1></div>
 
 <div class="main-container">
     <div id="chess-board"></div>
 
     <div class="side-panel">
-        <div class="tutorial-box" id="step-msg">
-            Click "Next Step" to see a betrayal scenario!
-        </div>
-        
+        <div id="status" class="msg-box">Click "Next Step" for Tutorial</div>
         <button onclick="nextStep()">Next Step</button>
-
-        <div class="rules-panel">
-            <h2>LoyaltyChess Rules</h2>
-            <ul class="rules-list">
-                <li><b>The Betrayal Rule:</b> If a piece is threatened and left undefended, it becomes a traitor. The opponent can use it for ONE move.</li>
-                <li><b>Exceptions:</b> <u>Pawns and Queens</u> are exempt from betrayal. Only Rooks, Knights, and Bishops can betray.</li>
-                <li><b>Traitors:</b> Cannot deliver a check/mate. After their move, they are removed from the game.</li>
-                <li><b>Standard Moves:</b> Standard chess rules apply for King, Queen, and Pawns.</li>
-            </ul>
+        
+        <div class="rules-box">
+            <h3 style="margin-top:0; color:#f1c40f">LoyaltyChess Rules</h3>
+            <p><b>Betrayal:</b> Undefended Rooks, Knights, or Bishops become traitors.</p>
+            <p><b>Exempt:</b> Pawns and Queens are <u>always</u> loyal.</p>
+            <p><b>Traitors:</b> Used by the opponent for one move, then removed.</p>
         </div>
     </div>
 </div>
 
 <script>
     const board = document.getElementById('chess-board');
-    let currentStep = 0;
+    let step = 0;
 
-    const piecesToClass = {
-        'r': 'b-r', 'n': 'b-n', 'b': 'b-b', 'q': 'b-q', 'k': 'b-k', 'p': 'b-p',
-        'R': 'w-r', 'N': 'w-n', 'B': 'w-b', 'Q': 'w-q', 'K': 'w-k', 'P': 'w-p'
+    // Unicode Taşlar (Her cihazda çalışır)
+    const pieces = {
+        'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
+        'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
     };
 
-    // Tam Başlangıç Dizilimi
     let layout = [
         'r','n','b','q','k','b','n','r',
         'p','p','p','p','p','p','p','p',
@@ -182,60 +124,46 @@
         'R','N','B','Q','K','B','N','R'
     ];
 
-    // Öğretici Senaryosu
-    const tutorialSteps = [
-        { msg: "1. White opens with Pawn to e4.", moves: { 52: '', 36: 'P' } },
-        { msg: "2. Black moves Knight to a6.", moves: { 1: '', 16: 'n' } },
-        { msg: "3. White moves Bishop to b5, threatening the Black Knight!", moves: { 61: '', 25: 'B' } },
-        { msg: "4. Black ignores the threat and moves Pawn to h6. Danger!", moves: { 15: '', 23: 'p' } },
-        { msg: "5. BETRAYAL! The Knight is undefended. It turns RED!", betray: 16 },
-        { msg: "6. The traitor Knight captures the Black Queen!", moves: { 16: '', 3: 'n' }, remove: 3 }
+    const moves = [
+        { msg: "1. White: Pawn to e4", change: { 52: '', 36: 'P' } },
+        { msg: "2. Black: Knight to a6", change: { 1: '', 16: 'n' } },
+        { msg: "3. White: Bishop to b5 (Threatens Knight!)", change: { 61: '', 25: 'B' } },
+        { msg: "4. Black: Pawn to h6 (Left Knight alone!)", change: { 15: '', 23: 'p' } },
+        { msg: "5. BETRAYAL! Knight turns RED!", betray: 16 },
+        { msg: "6. Traitor Knight takes Black Queen!", change: { 16: '', 3: 'n' } }
     ];
 
-    function renderBoard() {
+    function draw() {
         board.innerHTML = '';
-        for (let i = 0; i < 64; i++) {
-            const square = document.createElement('div');
-            const row = Math.floor(i / 8);
-            const col = i % 8;
-            square.className = square ${(row + col) % 2 === 0 ? 'white' : 'black'};
+        layout.forEach((p, i) => {
+            const sq = document.createElement('div');
+            const isBlack = (Math.floor(i/8) + (i%8)) % 2 !== 0;
+            sq.className = square ${isBlack ? 'black' : 'white'};
             
-            if (layout[i]) {
-                const piece = document.createElement('div');
-                piece.className = piece ${piecesToClass[layout[i]]};
-                
-                // İhanet efekti kontrolü
-                if (currentStep > 0 && i === tutorialSteps[currentStep-1]?.betray) {
-                    piece.classList.add('betrayal-glow');
-                }
-                
-                square.appendChild(piece);
+            if (p) {
+                sq.textContent = pieces[p];
+                // İhanet efekti
+                if (step > 0 && i === moves[step-1].betray) sq.classList.add('betrayal');
             }
-            board.appendChild(square);
-        }
+            board.appendChild(sq);
+        });
     }
 
     function nextStep() {
-        if (currentStep >= tutorialSteps.length) {
-            alert("Tutorial ended. Refresh to reset board.");
-            return;
-        }
-
-        const step = tutorialSteps[currentStep];
-        document.getElementById('step-msg').innerText = step.msg;
-
-        if (step.moves) {
-            for (let [idx, p] of Object.entries(step.moves)) {
-                layout[idx] = p;
-            }
+        if (step >= moves.length) return alert("Tutorial End");
+        
+        const m = moves[step];
+        document.getElementById('status').innerText = m.msg;
+        
+        if (m.change) {
+            for (let idx in m.change) layout[idx] = m.change[idx];
         }
         
-        renderBoard();
-        currentStep++;
+        step++;
+        draw();
     }
 
-    // İlk yükleme
-    renderBoard();
+    draw(); // Sayfa açıldığında tahtayı çiz
 </script>
 
 </body>
