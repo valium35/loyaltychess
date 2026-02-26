@@ -162,18 +162,12 @@
 
             // Taş yerleştirme
           
-const pieceSymbol = layout[i];
-if (pieceSymbol) {
-    square.textContent = pieces[pieceSymbol];
-    
-    // Küçük harfler siyah, büyük harfler beyaz taşları temsil ediyor
-    if (pieceSymbol === pieceSymbol.toLowerCase()) {
-        square.style.color = "#000"; // Siyah taşlar tam siyah
-    } else {
-        square.style.color = "#fff"; // Beyaz taşlar tam beyaz
-        square.style.textShadow = "0 0 3px #000"; // Beyaz taşın etrafına siyah çerçeve
-    }
-}
+ if (layout[i]) {
+                square.textContent = pieces[layout[i]];
+            }
+
+            board.appendChild(square);
+        }
     </script>
 </body>
 </html>
