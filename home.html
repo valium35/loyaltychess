@@ -3,24 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LoyaltyChess - Betrayal Edition</title>
+    <title>LoyaltyChess - Special Rules Edition</title>
     <style>
-        /* GENEL SAYFA TASARIMI */
         body {
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
             min-height: 100vh;
             background-color: #1a1a1a;
             margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             color: #ecf0f1;
         }
 
+        .header { margin: 20px 0; text-align: center; }
+        .header h1 { color: #f1c40f; margin-bottom: 5px; }
+
         .main-container {
             display: flex;
-            gap: 40px;
-            padding: 30px;
+            gap: 30px;
+            padding: 20px;
             background-color: #2c3e50;
             border-radius: 15px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.7);
@@ -28,178 +30,143 @@
             justify-content: center;
         }
 
-        /* SATRANÇ TAHTASI TASARIMI */
         #chess-board {
             display: grid;
-            grid-template-columns: repeat(8, 70px);
-            grid-template-rows: repeat(8, 70px);
-            border: 8px solid #34495e;
-            border-radius: 4px;
-            user-select: none;
+            grid-template-columns: repeat(8, 65px);
+            grid-template-rows: repeat(8, 65px);
+            border: 5px solid #34495e;
         }
 
         .square {
-            width: 70px;
-            height: 70px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: all 0.2s;
+            width: 65px; height: 65px;
+            display: flex; justify-content: center; align-items: center;
         }
 
-        /* Kare Renkleri (Daha Yüksek Kontrast) */
         .white { background-color: #ebecd0; }
         .black { background-color: #779556; }
 
-        .square:hover {
-            filter: brightness(1.05);
-            cursor: pointer;
-        }
-
-        /* TAŞLARIN TASARIMI (SVG) */
         .piece {
-            width: 90%;
-            height: 90%;
+            width: 90%; height: 90%;
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
-            pointer-events: none; /* Tıklamayı arka plandaki kareye iletir */
+            transition: all 0.4s ease;
         }
 
-        /* Beyaz Taşlar */
-        .w-k { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg'); }
-        .w-q { background-image: url('https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg'); }
-        .w-r { background-image: url('https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg'); }
-        .w-b { background-image: url('https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg'); }
-        .w-n { background-image: url('https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg'); }
+        /* İHANET EFEKTİ (Sadece At, Fil, Kale için) */
+        .betrayal-glow {
+            filter: drop-shadow(0 0 10px red) sepia(1) saturate(5) hue-rotate(-50deg);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .side-panel { max-width: 350px; display: flex; flex-direction: column; gap: 15px; }
+        .step-box { background-color: #16a085; padding: 15px; border-radius: 8px; font-weight: bold; }
+        .info-box { background-color: #34495e; padding: 20px; border-radius: 10px; border-left: 5px solid #e74c3c; }
+        
+        button {
+            padding: 12px; background-color: #f1c40f; border: none; border-radius: 5px;
+            font-weight: bold; cursor: pointer; font-size: 16px;
+        }
+
+        /* SVG Linkleri */
         .w-p { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'); }
-
-        /* Siyah Taşlar */
-        .b-k { background-image: url('https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg'); }
-        .b-q { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg'); }
+        .w-n { background-image: url('https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg'); }
         .b-r { background-image: url('https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg'); }
-        .b-b { background-image: url('https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg'); }
-        .b-n { background-image: url('https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg'); }
         .b-p { background-image: url('https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg'); }
-
-        /* KURALLAR PANELİ TASARIMI */
-        .rules-panel {
-            max-width: 380px;
-            background-color: #34495e;
-            padding: 25px;
-            border-radius: 10px;
-            border-left: 5px solid #f1c40f;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
-        }
-
-        .rules-panel h2 {
-            margin-top: 0;
-            color: #f1c40f;
-            font-size: 24px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-bottom: 1px solid #5d6d7e;
-            padding-bottom: 10px;
-        }
-
-        .rules-list {
-            list-style-type: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .rules-list li {
-            margin-bottom: 15px;
-            line-height: 1.4;
-            font-size: 14.5px;
-        }
-
-        .rules-list b {
-            color: #f39c12;
-            display: block;
-            margin-bottom: 2px;
-            font-size: 16px;
-        }
-
-        hr {
-            border: 0;
-            border-top: 1px solid #5d6d7e;
-            margin: 15px 0;
-        }
-
-        /* MOBİL UYUMLULUK */
-        @media (max-width: 850px) {
-            .main-container { flex-direction: column; align-items: center; padding: 15px; }
-            #chess-board { grid-template-columns: repeat(8, 45px); grid-template-rows: repeat(8, 45px); }
-            .square { width: 45px; height: 45px; }
-            .rules-panel { max-width: 340px; }
-        }
     </style>
 </head>
 <body>
 
+<div class="header">
+    <h1>LoyaltyChess</h1>
+    <p>Exclusive Rules: Betrayal mechanics for Rooks, Knights, and Bishops.</p>
+</div>
+
 <div class="main-container">
     <div id="chess-board"></div>
 
-    <div class="rules-panel">
-        <h2>LoyaltyChess Rules</h2>
-        <ul class="rules-list">
-            <li><b>The Betrayal Rule:</b> If a piece is threatened by the opponent, the player must either move or protect that piece. If it's left undefended and the opponent is allowed to take it, the "Betrayal" begins.</li>
-            <li><b>Traitors:</b> Instead of removing the undefended piece, the opponent uses it as their own for ONE immediate move.</li>
-            <li><b>Limitations:</b> A traitor piece CANNOT deliver a check or checkmate. However, it can capture any other piece.</li>
-            <li><b>Sacrifice:</b> Once the betrayal move is complete, the piece has fulfilled its duty and is removed from the board permanently.</li>
-            <hr>
-            <li><b>Piece Movement:</b> Standard chess movements apply for King (♔), Queen (♕), Rook (♖), Bishop (♗), Knight (♘), and Pawn (♙).</li>
-        </ul>
+    <div class="side-panel">
+        <div id="tutorial-text" class="step-box">
+            Ready to see the Rook's betrayal? Click Next.
+        </div>
+        
+        <button onclick="nextStep()">Next Step</button>
+
+        <div class="info-box">
+            <h3>Special Limitations</h3>
+            <p style="color: #f1c40f;"><b>Note:</b> Pawns (♙) and Queens (♕) are <u>EXEMPT</u> from betrayal. They are too loyal (or too important) to betray their King!</p>
+            <p>Only Rooks, Knights, and Bishops can become Traitors.</p>
+        </div>
     </div>
 </div>
 
 <script>
     const board = document.getElementById('chess-board');
+    let currentStep = 0;
 
-    // Taşların CSS sınıflarıyla eşleşmesi
     const piecesToClass = {
-        'r': 'b-r', 'n': 'b-n', 'b': 'b-b', 'q': 'b-q', 'k': 'b-k', 'p': 'b-p', // Black
-        'R': 'w-r', 'N': 'w-n', 'B': 'w-b', 'Q': 'w-q', 'K': 'w-k', 'P': 'w-p'  // White
+        'P': 'w-p', 'N': 'w-n',
+        'p': 'b-p', 'r': 'b-r'
     };
 
-    // Standart Başlangıç Dizilimi
-    const layout = [
-        'r','n','b','q','k','b','n','r',
-        'p','p','p','p','p','p','p','p',
-        '','','','','','','','',
-        '','','','','','','','',
-        '','','','','','','','',
-        '','','','','','','','',
-        'P','P','P','P','P','P','P','P',
-        'R','N','B','Q','K','B','N','R'
+    // Senaryo: Siyah Kale (Rook) üzerinden örnekleme
+    const tutorialSteps = [
+        { msg: "White plays Pawn to e4.", moves: { 52: '', 36: 'P' } },
+        { msg: "Black plays Rook to a6 (improper move for tutorial).", moves: { 0: '', 16: 'r' } },
+        { msg: "White moves Knight to f3, threatening the Black Rook!", moves: { 62: '', 45: 'N' } },
+        { msg: "Black plays Pawn to h6, leaving the Rook undefended.", moves: { 15: '', 23: 'p' } },
+        { msg: "BETRAYAL! The Rook is now a Traitor. (Pawns & Queens wouldn't do this!)", betray: 16 },
+        { msg: "The traitor Rook captures the Black Pawn and leaves the game!", moves: { 16: '', 23: 'r' }, remove: 23 }
     ];
 
-    function initGame() {
+    let layout = Array(64).fill('');
+    layout[52] = 'P'; layout[0] = 'r'; layout[62] = 'N'; layout[15] = 'p';
+
+    function renderBoard() {
+        board.innerHTML = '';
         for (let i = 0; i < 64; i++) {
             const square = document.createElement('div');
-            square.classList.add('square');
-
-            // Renklendirme mantığı
-            const row = Math.floor(i / 8);
-            const col = i % 8;
-            square.classList.add((row + col) % 2 === 0 ? 'white' : 'black');
-
-            // Taş varsa ekle
-            const pieceSymbol = layout[i];
-            if (pieceSymbol) {
-                const pieceDiv = document.createElement('div');
-                pieceDiv.classList.add('piece');
-                pieceDiv.classList.add(piecesToClass[pieceSymbol]);
-                square.appendChild(pieceDiv);
+            square.className = square ${(Math.floor(i/8) + (i%8)) % 2 === 0 ? 'white' : 'black'};
+            
+            if (layout[i]) {
+                const piece = document.createElement('div');
+                piece.className = piece ${piecesToClass[layout[i]]};
+                // Sadece kurala dahil olan taşlarda (r, n, b) ihanet efekti göster
+                if (i === tutorialSteps[currentStep-1]?.betray) {
+                    piece.classList.add('betrayal-glow');
+                }
+                square.appendChild(piece);
             }
-
             board.appendChild(square);
         }
     }
 
-    initGame();
-</script>
+    function nextStep() {
+        if (currentStep >= tutorialSteps.length) {
+            alert("Tutorial Completed!");
+            return;
+        }
 
+        const step = tutorialSteps[currentStep];
+        document.getElementById('tutorial-text').innerText = step.msg;
+
+        if (step.moves) {
+            for (let [idx, p] of Object.entries(step.moves)) {
+                layout[idx] = p;
+            }
+        }
+        
+        renderBoard();
+        currentStep++;
+    }
+
+    renderBoard();
+</script>
 </body>
 </html>
