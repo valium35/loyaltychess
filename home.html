@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Satranç Tahtası ve Kurallar</title>
+    <title>LoyaltyChess - Betrayal Edition</title>
     <style>
-        /* GENEL SAYFA DÜZENİ */
+        /* GENEL SAYFA TASARIMI */
         body {
             display: flex;
             justify-content: center;
@@ -17,72 +17,87 @@
             color: #ecf0f1;
         }
 
-        /* ANA KAPSAYICI: Tahta ve Kuralları yan yana getirir */
         .main-container {
             display: flex;
             gap: 40px;
-            padding: 20px;
+            padding: 30px;
             background-color: #2c3e50;
-            border-radius: 12px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
-            flex-wrap: wrap; /* Mobilde alt alta geçmesi için */
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+            flex-wrap: wrap;
             justify-content: center;
         }
 
-        /* TAHTA TASARIMI */
+        /* SATRANÇ TAHTASI TASARIMI */
         #chess-board {
             display: grid;
-            grid-template-columns: repeat(8, 65px);
-            grid-template-rows: repeat(8, 65px);
-            border: 5px solid #34495e;
+            grid-template-columns: repeat(8, 70px);
+            grid-template-rows: repeat(8, 70px);
+            border: 8px solid #34495e;
+            border-radius: 4px;
+            user-select: none;
         }
 
         .square {
-    width: 70px;
-    height: 70px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-}
+            width: 70px;
+            height: 70px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s;
+        }
 
-/* Taşların genel stili */
-.piece {
-    width: 90%;
-    height: 90%;
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    pointer-events: none; /* Tıklamayı kareye geçirir */
-}
+        /* Kare Renkleri (Daha Yüksek Kontrast) */
+        .white { background-color: #ebecd0; }
+        .black { background-color: #779556; }
 
-/* BEYAZ TAŞLAR (Wikipedia SVG Linkleri) */
-.white-king   { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg'); }
-.white-queen  { background-image: url('https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg'); }
-.white-rook   { background-image: url('https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg'); }
-.white-bishop { background-image: url('https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg'); }
-.white-knight { background-image: url('https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg'); }
-.white-pawn   { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'); }
+        .square:hover {
+            filter: brightness(1.05);
+            cursor: pointer;
+        }
 
-/* SİYAH TAŞLAR */
-.black-king   { background-image: url('https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg'); }
-.black-queen  { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg'); }
-.black-rook   { background-image: url('https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg'); }
-.black-bishop { background-image: url('https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg'); }
-.black-knight { background-image: url('https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg'); }
-.black-pawn   { background-image: url('https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg'); }
-        /* KURALLAR PANELİ */
+        /* TAŞLARIN TASARIMI (SVG) */
+        .piece {
+            width: 90%;
+            height: 90%;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            pointer-events: none; /* Tıklamayı arka plandaki kareye iletir */
+        }
+
+        /* Beyaz Taşlar */
+        .w-k { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg'); }
+        .w-q { background-image: url('https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg'); }
+        .w-r { background-image: url('https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg'); }
+        .w-b { background-image: url('https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg'); }
+        .w-n { background-image: url('https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg'); }
+        .w-p { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'); }
+
+        /* Siyah Taşlar */
+        .b-k { background-image: url('https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg'); }
+        .b-q { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg'); }
+        .b-r { background-image: url('https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg'); }
+        .b-b { background-image: url('https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg'); }
+        .b-n { background-image: url('https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg'); }
+        .b-p { background-image: url('https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg'); }
+
+        /* KURALLAR PANELİ TASARIMI */
         .rules-panel {
-            max-width: 350px;
+            max-width: 380px;
             background-color: #34495e;
             padding: 25px;
-            border-radius: 8px;
-            border-left: 4px solid #f1c40f;
+            border-radius: 10px;
+            border-left: 5px solid #f1c40f;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
         }
 
         .rules-panel h2 {
             margin-top: 0;
             color: #f1c40f;
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
             border-bottom: 1px solid #5d6d7e;
             padding-bottom: 10px;
         }
@@ -90,76 +105,101 @@
         .rules-list {
             list-style-type: none;
             padding: 0;
+            margin: 0;
         }
 
         .rules-list li {
             margin-bottom: 15px;
-            line-height: 1.5;
-            font-size: 14px;
+            line-height: 1.4;
+            font-size: 14.5px;
         }
 
         .rules-list b {
             color: #f39c12;
             display: block;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
+            font-size: 16px;
         }
 
-        /* Responsive: Küçük ekranlarda hizalama */
-        @media (max-width: 800px) {
-            .main-container { flex-direction: column; align-items: center; }
+        hr {
+            border: 0;
+            border-top: 1px solid #5d6d7e;
+            margin: 15px 0;
+        }
+
+        /* MOBİL UYUMLULUK */
+        @media (max-width: 850px) {
+            .main-container { flex-direction: column; align-items: center; padding: 15px; }
             #chess-board { grid-template-columns: repeat(8, 45px); grid-template-rows: repeat(8, 45px); }
-            .square { width: 45px; height: 45px; font-size: 28px; }
+            .square { width: 45px; height: 45px; }
+            .rules-panel { max-width: 340px; }
         }
     </style>
 </head>
 <body>
 
+<div class="main-container">
+    <div id="chess-board"></div>
+
     <div class="rules-panel">
-    <h2>LoyaltyChess Rules</h2>
-    <ul class="rules-list">
-        <li><b>The Betrayal Rule:</b> If a piece is under attack, it MUST be protected or moved. If left undefended, it becomes a "Traitor".</li>
-        <li><b>Traitors:</b> The opponent can use the traitor piece for ONE move instead of capturing it.</li>
-        <li><b>Limitations:</b> A traitor piece cannot deliver a check (Check) or a checkmate (Mate).</li>
-        <li><b>Sacrifice:</b> A traitor can capture any of its original owner's pieces. After the betrayal move, the traitor piece is removed from the game.</li>
-        <hr style="border: 0; border-top: 1px solid #5d6d7e; margin: 15px 0;">
-  
+        <h2>LoyaltyChess Rules</h2>
+        <ul class="rules-list">
+            <li><b>The Betrayal Rule:</b> If a piece is threatened by the opponent, the player must either move or protect that piece. If it's left undefended and the opponent is allowed to take it, the "Betrayal" begins.</li>
+            <li><b>Traitors:</b> Instead of removing the undefended piece, the opponent uses it as their own for ONE immediate move.</li>
+            <li><b>Limitations:</b> A traitor piece CANNOT deliver a check or checkmate. However, it can capture any other piece.</li>
+            <li><b>Sacrifice:</b> Once the betrayal move is complete, the piece has fulfilled its duty and is removed from the board permanently.</li>
+            <hr>
+            <li><b>Piece Movement:</b> Standard chess movements apply for King (♔), Queen (♕), Rook (♖), Bishop (♗), Knight (♘), and Pawn (♙).</li>
+        </ul>
+    </div>
 </div>
 
-    <script>
-        const board = document.getElementById('chess-board');
-        const pieces = {
-            'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
-            'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
-        };
+<script>
+    const board = document.getElementById('chess-board');
 
-        const layout = [
-            'r','n','b','q','k','b','n','r',
-            'p','p','p','p','p','p','p','p',
-            '','','','','','','','',
-            '','','','','','','','',
-            '','','','','','','','',
-            '','','','','','','','',
-            'P','P','P','P','P','P','P','P',
-            'R','N','B','Q','K','B','N','R'
-        ];
+    // Taşların CSS sınıflarıyla eşleşmesi
+    const piecesToClass = {
+        'r': 'b-r', 'n': 'b-n', 'b': 'b-b', 'q': 'b-q', 'k': 'b-k', 'p': 'b-p', // Black
+        'R': 'w-r', 'N': 'w-n', 'B': 'w-b', 'Q': 'w-q', 'K': 'w-k', 'P': 'w-p'  // White
+    };
 
+    // Standart Başlangıç Dizilimi
+    const layout = [
+        'r','n','b','q','k','b','n','r',
+        'p','p','p','p','p','p','p','p',
+        '','','','','','','','',
+        '','','','','','','','',
+        '','','','','','','','',
+        '','','','','','','','',
+        'P','P','P','P','P','P','P','P',
+        'R','N','B','Q','K','B','N','R'
+    ];
+
+    function initGame() {
         for (let i = 0; i < 64; i++) {
             const square = document.createElement('div');
-            square.className = 'square';
-            
+            square.classList.add('square');
+
+            // Renklendirme mantığı
             const row = Math.floor(i / 8);
             const col = i % 8;
-            
-            // Renk belirleme
             square.classList.add((row + col) % 2 === 0 ? 'white' : 'black');
 
-            // Taş yerleştirme
-            if (layout[i]) {
-                square.textContent = pieces[layout[i]];
+            // Taş varsa ekle
+            const pieceSymbol = layout[i];
+            if (pieceSymbol) {
+                const pieceDiv = document.createElement('div');
+                pieceDiv.classList.add('piece');
+                pieceDiv.classList.add(piecesToClass[pieceSymbol]);
+                square.appendChild(pieceDiv);
             }
 
             board.appendChild(square);
         }
-    </script>
+    }
+
+    initGame();
+</script>
+
 </body>
 </html>
