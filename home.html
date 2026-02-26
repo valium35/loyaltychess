@@ -4,112 +4,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Satranç Tahtası ve Kurallar</title>
-    <style>
-        /* GENEL SAYFA DÜZENİ */
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background-color: #1a1a1a;
-            margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #ecf0f1;
-        }
-
-        /* ANA KAPSAYICI: Tahta ve Kuralları yan yana getirir */
-        .main-container {
-            display: flex;
-            gap: 40px;
-            padding: 20px;
-            background-color: #2c3e50;
-            border-radius: 12px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
-            flex-wrap: wrap; /* Mobilde alt alta geçmesi için */
-            justify-content: center;
-        }
-
-        /* TAHTA TASARIMI */
-        #chess-board {
-            display: grid;
-            grid-template-columns: repeat(8, 65px);
-            grid-template-rows: repeat(8, 65px);
-            border: 5px solid #34495e;
-        }
-
-        .square {
+    <style>.square {
     width: 70px;
     height: 70px;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 50px; /* Taşları biraz daha büyüttük */
     cursor: pointer;
-    user-select: none;
-    /* Taşların etrafına hafif bir hat çizerek kontrastı artırıyoruz */
-    text-shadow: 0px 0px 2px rgba(0,0,0,0.2); 
-    transition: all 0.2s;
 }
 
-/* Beyaz taşlar için (eğer ayrı sınıflar tanımlarsan) */
-.white-piece {
-    color: #ffffff;
-    text-shadow: 0 0 5px rgba(0,0,0,0.5); /* Beyaz taşın etrafına siyah gölge */
+/* Taşların genel stili */
+.piece {
+    width: 90%;
+    height: 90%;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    pointer-events: none; /* Tıklamayı kareye geçirir */
 }
 
-/* Siyah taşlar için */
-.black-piece {
-    color: #000000;
-}
+/* BEYAZ TAŞLAR (Wikipedia SVG Linkleri) */
+.white-king   { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg'); }
+.white-queen  { background-image: url('https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg'); }
+.white-rook   { background-image: url('https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg'); }
+.white-bishop { background-image: url('https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg'); }
+.white-knight { background-image: url('https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg'); }
+.white-pawn   { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'); }
 
-/* Kare Renklerini Daha Net Yapalım */
-.white { 
-    background-color: #ebecd0; /* Biraz daha krem/beyaz */
-}
-.black { 
-    background-color: #779556; /* Daha doygun bir yeşil */
-}
-        
-
-        /* KURALLAR PANELİ */
-        .rules-panel {
-            max-width: 350px;
-            background-color: #34495e;
-            padding: 25px;
-            border-radius: 8px;
-            border-left: 4px solid #f1c40f;
-        }
-
-        .rules-panel h2 {
-            margin-top: 0;
-            color: #f1c40f;
-            border-bottom: 1px solid #5d6d7e;
-            padding-bottom: 10px;
-        }
-
-        .rules-list {
-            list-style-type: none;
-            padding: 0;
-        }
-
-        .rules-list li {
-            margin-bottom: 15px;
-            line-height: 1.5;
-            font-size: 14px;
-        }
-
-        .rules-list b {
-            color: #f39c12;
-            display: block;
-            margin-bottom: 3px;
-        }
-
-        /* Responsive: Küçük ekranlarda hizalama */
-        @media (max-width: 800px) {
-            .main-container { flex-direction: column; align-items: center; }
-            #chess-board { grid-template-columns: repeat(8, 45px); grid-template-rows: repeat(8, 45px); }
-            .square { width: 45px; height: 45px; font-size: 28px; }
-        }
+/* SİYAH TAŞLAR */
+.black-king   { background-image: url('https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg'); }
+.black-queen  { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg'); }
+.black-rook   { background-image: url('https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg'); }
+.black-bishop { background-image: url('https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg'); }
+.black-knight { background-image: url('https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg'); }
+.black-pawn   { background-image: url('https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg'); }
     </style>
 </head>
 <body>
@@ -131,39 +59,31 @@
     </div>
 
     <script>
-        const board = document.getElementById('chess-board');
-        const pieces = {
-            'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
-            'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
-        };
+      const piecesToClass = {
+    'r': 'black-rook',   'n': 'black-knight', 'b': 'black-bishop', 'q': 'black-queen', 'k': 'black-king',   'p': 'black-pawn',
+    'R': 'white-rook',   'N': 'white-knight', 'B': 'white-bishop', 'Q': 'white-queen', 'K': 'white-king',   'P': 'white-pawn'
+};
 
-        const layout = [
-            'r','n','b','q','k','b','n','r',
-            'p','p','p','p','p','p','p','p',
-            '','','','','','','','',
-            '','','','','','','','',
-            '','','','','','','','',
-            '','','','','','','','',
-            'P','P','P','P','P','P','P','P',
-            'R','N','B','Q','K','B','N','R'
-        ];
+function createBoard() {
+    for (let i = 0; i < 64; i++) {
+        const square = document.createElement('div');
+        square.classList.add('square');
+        
+        const row = Math.floor(i / 8);
+        const col = i % 8;
+        square.classList.add((row + col) % 2 === 0 ? 'white' : 'black');
 
-        for (let i = 0; i < 64; i++) {
-            const square = document.createElement('div');
-            square.className = 'square';
-            
-            const row = Math.floor(i / 8);
-            const col = i % 8;
-            
-            // Renk belirleme
-            square.classList.add((row + col) % 2 === 0 ? 'white' : 'black');
-
-            // Taş yerleştirme
-            if (layout[i]) {
-                square.textContent = pieces[layout[i]];
-            }
-
-            board.appendChild(square);
+        // YENİ KISIM: Karakter yerine DIV (taş) ekliyoruz
+        const pieceSymbol = layout[i];
+        if (pieceSymbol) {
+            const pieceDiv = document.createElement('div');
+            pieceDiv.classList.add('piece');
+            pieceDiv.classList.add(piecesToClass[pieceSymbol]);
+            square.appendChild(pieceDiv);
         }
+
+        board.appendChild(square);
+    }
+}
     </script>
 </body>
