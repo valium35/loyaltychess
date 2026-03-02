@@ -1,3 +1,5 @@
+console.log("JS dosyası başarıyla yüklendi!");
+alert("Merhaba! JS çalışıyor.");
 const board = document.getElementById('chess-board');
 const nextBtn = document.getElementById('next-btn');
 const statusText = document.getElementById('status');
