@@ -1,3 +1,7 @@
+@charset "UTF-8";
+
+/* Hemen altına test için şunu ekleyin, sayfa gri olursa CSS çalışıyor demektir */
+body { background-color: #1a1a1a !important; }
 /* GENEL SAYFA YAPISI */
 body { 
     background: #1a1a1a; color: white; display: flex; 
