@@ -1,4 +1,7 @@
-/* GENEL SAYFA TASARIMI */
+/* GENEL SAYFA TASARIMI *
+/body {
+    background-color: red !important;
+}
 body {
     display: flex;
     flex-direction: column;
