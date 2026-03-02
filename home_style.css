@@ -1,0 +1,26 @@
+body { background: #1a1a1a; color: white; display: flex; justify-content: center; padding: 20px; font-family: sans-serif; }
+.main-container { display: flex; gap: 20px; flex-wrap: wrap; }
+
+/* TAHTA DİZİLİMİ */
+#chess-board { 
+    display: grid; 
+    grid-template-columns: repeat(8, 60px); 
+    grid-template-rows: repeat(8, 60px); 
+    border: 8px solid #34495e; 
+}
+.square { width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; }
+.white { background: #eeeed2; }
+.black { background: #769656; }
+
+/* TAŞLAR (CSS İÇİNE GÖMÜLÜ SVG) */
+.piece { width: 90%; height: 90%; background-size: contain; background-repeat: no-repeat; background-position: center; }
+
+/* Örnek Beyaz Piyon */
+.w-p { background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PHBhdGggZD0iTTIyLjUgOWMtMi4yMSAwLTQgMS43OS00IDRzMS43OSA0IDQgNCA0LTEuNzkgNC00LTEuNzktNC00LTR6TTIyLjUgMTljLTUgMC05IDQtOSA5djNoMTh2LTNjMC01LTQtOS05LTl6IiBmaWxsPSIjZmZmIiBzdHJva2U9IiMwMDAiLz48L3N2Zz4='); }
+/* Örnek Siyah At */
+.b-n { background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PHBhdGggZD0iTTIyIDZzLTQgMi00IDdjMCAzIDIgOCAyIDhzNSAwIDUgNS00IDUtNCA1aDIwVjZIMjJ6IiBmaWxsPSIjMDAwIiBzdHJva2U9IiNmZmYiLz48L3N2Zz4='); }
+
+/* PANEL */
+.side-panel { width: 300px; background: #2c3e50; padding: 15px; border-radius: 10px; }
+.msg-box { background: #16a085; padding: 10px; margin-bottom: 10px; border-radius: 5px; font-weight: bold; text-align: center; }
+button { width: 100%; padding: 15px; background: #f1c40f; border: none; font-weight: bold; cursor: pointer; }
