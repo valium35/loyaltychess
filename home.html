@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoyaltyChess - Oyun</title>
+    <link rel="stylesheet" href="home_style.css">
+</head>
+<body>
+    <div class="main-container">
+        <div id="chess-board"></div>
+        <div class="side-panel">
+            <div id="status" class="msg-box">Yükleniyor...</div>
+            <button id="nextBtn" onclick="nextStep()">Sonraki Hamle</button>
+            <div class="rules-box">
+                <h3>LoyaltyChess Kuralları</h3>
+                <p id="rule-text">Bir taşın rakip tarafından istenmesi durumunda, oyuncu ya taşı kaçmalı ya da korumalıdır.</p>
+            </div>
+        </div>
+    </div>
+    <script src="home_script.js"></script>
+</body>
+</html>
