@@ -43,30 +43,46 @@ function draw() {
 
 // SENARYO ADIMLARI
 const tutorialSteps = [
-    { msg: "1. Beyaz e4, Siyah b6 ile b-piyonunu açar.", run: () => { 
-        layout[52]=''; layout[36]='w-p'; // Beyaz e4
-        layout[9]=''; layout[17]='b-p';  // Siyah b6
-    }},
-    { msg: "2. Beyaz d4, Siyah e6 ile e-piyonunu açar.", run: () => { 
-        layout[51]=''; layout[35]='w-p'; // Beyaz d4
-        layout[12]=''; layout[20]='b-p'; // Siyah e6
-    }},
-    { msg: "3. Siyah d6 sürerek merkez piyonlarını dağıtır.", run: () => { 
-        layout[11]=''; layout[19]='b-p'; // Siyah d6
-    }},
-    { msg: "4. Siyah At c6'ya gelir. (Tüm korumalar kalktı!)", run: () => { 
-        layout[1]=''; layout[18]='b-n';  // At c6'ya
-    }},
-    { msg: "5. Beyaz Fil b5'ten Atı ister. Siyah h6 ile pas geçer!", run: () => { 
-        layout[61]=''; layout[25]='w-b'; // Fil b5'e
-        layout[15]=''; layout[23]='b-p'; // Alakasız hamle h6
-    }},
-    { msg: "6. İHANET! Sahipsiz At taraf değiştirir.", run: () => { 
-        // Efekt i=18 için çalışıyor
-    }},
-    { msg: "7. Hain At, Siyah Vezir'i (d8) alır ve oyundan çıkar!", run: () => { 
-        layout[18]=''; layout[3]=''; 
-    }}
+    { 
+        msg: "1. Beyaz e4, Siyah b6 ile b-piyonunu açar.", 
+        run: () => { 
+            layout[52]=''; layout[36]='w-p'; layout[9]=''; layout[17]='b-p'; 
+            // Her seferinde eski vurguları temizlemek için bir fonksiyon çağırabiliriz (aşağıda açıklayacağım)
+            vurgula(1); 
+        }
+    },
+    { 
+        msg: "2. Beyaz d4, Siyah e6 ile e-piyonunu açar.", 
+        run: () => { layout[51]=''; layout[35]='w-p'; layout[12]=''; layout[20]='b-p'; vurgula(1); }
+    },
+    { 
+        msg: "3. Siyah d6 sürerek merkez piyonlarını dağıtır.", 
+        run: () => { layout[11]=''; layout[19]='b-p'; vurgula(1); }
+    },
+    { 
+        msg: "4. Siyah At c6'ya gelir. (Hala korunmuyor!)", 
+        run: () => { layout[1]=''; layout[18]='b-n'; vurgula(1); }
+    },
+    { 
+        msg: "5. Beyaz Fil b5'ten Atı ister. Siyah pas geçer!", 
+        run: () => { 
+            layout[61]=''; layout[25]='w-b'; layout[15]=''; layout[23]='b-p'; 
+            vurgula(1); // "Tehdit edilen taş korunmalı" kuralını vurgula
+        }
+    },
+    { 
+        msg: "6. İHANET! Sahipsiz kalan At taraf değiştirir!", 
+        run: () => { 
+            vurgula(2); // "Korumasız kalan taş ihanet eder" kuralını vurgula
+        }
+    },
+    { 
+        msg: "7. Hain At, Siyah Vezir'i (d8) alır ve çıkar!", 
+        run: () => { 
+            layout[18]=''; layout[3]=''; 
+            vurgula(6); // "Hamle sonrası taş oyundan çıkar" kuralını vurgula
+        }
+    }
 ];
 // BUTONA BASILDIĞINDA ÇALIŞAN FONKSİYON
 function nextStep() {
@@ -84,3 +100,14 @@ function nextStep() {
 // SAYFA İLK AÇILDIĞINDA ÇALIŞTIR
 draw();
 statusElement.innerText = "Başlamak için 'Sonraki Hamle'ye basın.";
+function vurgula(kuralNo) {
+    // Önce tüm kurallardan aktiflik sınıfını kaldır
+    for (let i = 1; i <= 7; i++) {
+        const el = document.getElementById(`rule-${i}`);
+        if (el) el.classList.remove('active-rule');
+    }
+    // Sadece istediğimiz kuralı parlat
+    const activeEl = document.getElementById(`rule-${kuralNo}`);
+    if (activeEl) activeEl.classList.add('active-rule');
+}
+
