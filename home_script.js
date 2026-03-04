@@ -43,12 +43,27 @@ function draw() {
 
 // SENARYO ADIMLARI
 const tutorialSteps = [
-    { msg: "1. Beyaz piyon e4 karesine çıkar.", run: () => { layout[52]=''; layout[36]='w-p'; } },
-    { msg: "2. Siyah At c6 karesine hamle yapar.", run: () => { layout[1]=''; layout[18]='b-n'; } },
-    { msg: "3. Beyaz Fil (b5), c6'daki At'ı tehdit eder!", run: () => { layout[61]=''; layout[25]='w-b'; } },
-    { msg: "4. Siyah, At'ı korumak yerine h6 piyonunu oynar (İhmal!)", run: () => { layout[15]=''; layout[23]='b-p'; } },
-    { msg: "5. İHANET! Sahipsiz kalan At taraf değiştirir!", run: () => { /* Kırmızı Parlama */ } },
-    { msg: "6. Hain At, Siyah Vezir'i (d8) alır ve oyundan çıkar!", run: () => { layout[18]=''; layout[3]=''; } }
+    { msg: "1. Beyaz e4, Siyah b6 oynayarak b-piyonunu açar.", run: () => { 
+        layout[52]=''; layout[36]='w-p'; // Beyaz e4
+        layout[9]=''; layout[17]='b-p';  // Siyah b6
+    }},
+    { msg: "2. Beyaz d4, Siyah e6 oynayarak e-piyonunu açar.", run: () => { 
+        layout[51]=''; layout[35]='w-p'; // Beyaz d4
+        layout[12]=''; layout[20]='b-p'; // Siyah e6
+    }},
+    { msg: "3. Siyah At c6 karesine gelir. (Korunmuyor!)", run: () => { 
+        layout[1]=''; layout[18]='b-n';  // At c6'ya
+    }},
+    { msg: "4. Beyaz Fil (b5), Atı tehdit eder. Siyah pasif kalır!", run: () => { 
+        layout[61]=''; layout[25]='w-b'; // Fil b5'e
+        layout[15]=''; layout[23]='b-p'; // Alakasız hamle h6
+    }},
+    { msg: "5. İHANET! At artık rakibin kontrolünde!", run: () => { 
+        // Efekt i=18 için draw fonksiyonunda tetikleniyor
+    }},
+    { msg: "6. Hain At, Siyah Vezir'i (d8) alır ve çıkar!", run: () => { 
+        layout[18]=''; layout[3]=''; 
+    }}
 ];
 // BUTONA BASILDIĞINDA ÇALIŞAN FONKSİYON
 function nextStep() {
