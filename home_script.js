@@ -34,14 +34,13 @@ function draw() {
 }
 
 const tutorialSteps = [
-    { msg: "1. Beyaz piyon e4'e çıkar.", run: () => { layout[52]=''; layout[36]='w-p'; } },
-    { msg: "2. Siyah At f6'ya hamle yapar.", run: () => { layout[6]=''; layout[21]='b-n'; } },
-    { msg: "3. Beyaz Fil b5'e gelerek At'ı tehdit eder.", run: () => { layout[61]=''; layout[27]='w-b'; } },
-    { msg: "4. Siyah At'ı korumaz. (İhanet Riski!)", run: () => { layout[15]=''; layout[23]='b-p'; } },
-    { msg: "5. İHANET! At artık rakibin kontrolünde! (Kırmızı Parlama)", run: () => { /* Efekt draw'da */ } },
-    { msg: "6. İhanet eden At, piyonu alır ve oyundan çıkar!", run: () => { layout[21]=''; layout[36]=''; } }
+    { msg: "1. Beyaz piyon e4 karesine çıkar.", run: () => { layout[52]=''; layout[36]='w-p'; } },
+    { msg: "2. Siyah At c6 karesine hamle yapar.", run: () => { layout[1]=''; layout[18]='b-n'; } },
+    { msg: "3. Beyaz Fil, At'ı tehdit eder (b5)!", run: () => { layout[61]=''; layout[25]='w-b'; } },
+    { msg: "4. Siyah At'ı korumaz! (d6 piyonu sürer)", run: () => { layout[11]=''; layout[19]='b-p'; } },
+    { msg: "5. İHANET! At artık kırmızı parlıyor!", run: () => { /* Efekt i=18 için çalışacak */ } },
+    { msg: "6. Hain At, Siyah Vezir'i (d8) alır ve oyundan çıkar!", run: () => { layout[18]=''; layout[3]=''; } }
 ];
-
 function nextStep() {
     if (step < tutorialSteps.length) {
         tutorialSteps[step].run();
