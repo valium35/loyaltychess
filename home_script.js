@@ -1,34 +1,86 @@
-body { background: #121212; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-.main-container { display: flex; gap: 30px; padding: 20px; background: #1e1e1e; border-radius: 15px; box-shadow: 0 20px 50px rgba(0,0,0,0.7); }
+const boardElement = document.getElementById('chess-board');
+const statusElement = document.getElementById('status');
+let step = 0;
 
-/* TAHTA */
-#chess-board { display: grid; grid-template-columns: repeat(8, 60px); grid-template-rows: repeat(8, 60px); border: 10px solid #34495e; border-radius: 5px; }
-.square { width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; }
-.white { background: #ebecd0; }
-.black { background: #779556; }
+// BAŞLANGIÇ DİZİLİMİ
+let layout = [
+    'b-r','b-n','b-b','b-q','b-k','b-b','b-n','b-r',
+    'b-p','b-p','b-p','b-p','b-p','b-p','b-p','b-p',
+    '','','','','','','','',
+    '','','','','','','','',
+    '','','','','','','','',
+    '','','','','','','','',
+    'w-p','w-p','w-p','w-p','w-p','w-p','w-p','w-p',
+    'w-r','w-n','w-b','w-q','w-k','w-b','w-n','w-r'
+];
 
-/* TAŞLAR */
-.piece { width: 100%; height: 100%; background-size: 80%; background-repeat: no-repeat; background-position: center; cursor: pointer; }
-.w-p { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'); }
-.b-p { background-image: url('https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg'); }
-.w-n { background-image: url('https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg'); }
-.b-n { background-image: url('https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg'); }
-.w-b { background-image: url('https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg'); }
-.b-b { background-image: url('https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg'); }
-.w-r { background-image: url('https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg'); }
-.b-r { background-image: url('https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg'); }
-.w-q { background-image: url('https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg'); }
-.b-q { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg'); }
-.w-k { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg'); }
-.b-k { background-image: url('https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg'); }
+// TAHTAYI ÇİZEN ANA FONKSİYON
+function draw() {
+    boardElement.innerHTML = ''; 
+    
+    for (let i = 0; i < 64; i++) {
+        const square = document.createElement('div');
+        const row = Math.floor(i / 8);
+        const col = i % 8;
+        const isBlack = (row + col) % 2 !== 0;
+        
+        square.className = `square ${isBlack ? 'black' : 'white'}`;
+        
+        if (layout[i]) {
+            const piece = document.createElement('div');
+            piece.className = `piece ${layout[i]}`;
+            
+            // İhanet Efekti: 5. adımda c6 karesindeki (index 18) atı kırmızı yap
+            if (step === 5 && i === 18) {
+                piece.classList.add('betrayal');
+            }
+            
+            square.appendChild(piece);
+        }
+        boardElement.appendChild(square);
+    }
+}
 
-/* EFEKTLER */
-.betrayal { filter: drop-shadow(0 0 10px #e74c3c) brightness(1.2); animation: pulse 1s infinite; border: 2px solid red; border-radius: 50%; }
-@keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+// SENARYO ADIMLARI
+const tutorialSteps = [
+    { msg: "1. Beyaz e4, Siyah b6 ile b-piyonunu açar.", run: () => { 
+        layout[52]=''; layout[36]='w-p'; // Beyaz e4
+        layout[9]=''; layout[17]='b-p';  // Siyah b6
+    }},
+    { msg: "2. Beyaz d4, Siyah e6 ile e-piyonunu açar.", run: () => { 
+        layout[51]=''; layout[35]='w-p'; // Beyaz d4
+        layout[12]=''; layout[20]='b-p'; // Siyah e6
+    }},
+    { msg: "3. Siyah d6 sürerek merkez piyonlarını dağıtır.", run: () => { 
+        layout[11]=''; layout[19]='b-p'; // Siyah d6
+    }},
+    { msg: "4. Siyah At c6'ya gelir. (Tüm korumalar kalktı!)", run: () => { 
+        layout[1]=''; layout[18]='b-n';  // At c6'ya
+    }},
+    { msg: "5. Beyaz Fil b5'ten Atı ister. Siyah h6 ile pas geçer!", run: () => { 
+        layout[61]=''; layout[25]='w-b'; // Fil b5'e
+        layout[15]=''; layout[23]='b-p'; // Alakasız hamle h6
+    }},
+    { msg: "6. İHANET! Sahipsiz At taraf değiştirir.", run: () => { 
+        // Efekt i=18 için çalışıyor
+    }},
+    { msg: "7. Hain At, Siyah Vezir'i (d8) alır ve oyundan çıkar!", run: () => { 
+        layout[18]=''; layout[3]=''; 
+    }}
+];
+// BUTONA BASILDIĞINDA ÇALIŞAN FONKSİYON
+function nextStep() {
+    if (step < tutorialSteps.length) {
+        tutorialSteps[step].run();
+        statusElement.innerText = tutorialSteps[step].msg;
+        step++;
+        draw();
+    } else {
+        statusElement.innerText = "LoyaltyChess Kuralları Gösterildi!";
+        statusElement.style.background = "#2980b9";
+    }
+}
 
-/* PANEL */
-.side-panel { width: 300px; display: flex; flex-direction: column; gap: 15px; }
-.msg-box { background: #27ae60; padding: 15px; border-radius: 8px; font-weight: bold; text-align: center; color: white; }
-.rules-box { background: #2c3e50; padding: 15px; border-radius: 8px; font-size: 0.9rem; border-left: 5px solid #f1c40f; }
-button { padding: 15px; background: #f1c40f; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 1rem; }
-button:hover { background: #d4ac0d; }
+// SAYFA İLK AÇILDIĞINDA ÇALIŞTIR
+draw();
+statusElement.innerText = "Başlamak için 'Sonraki Hamle'ye basın.";
