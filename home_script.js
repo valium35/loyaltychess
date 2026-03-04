@@ -34,13 +34,16 @@ function draw() {
 }
 
 const tutorialSteps = [
-    { msg: "Beyaz piyon e4 karesine çıkar.", run: () => { layout[52]=''; layout[36]='w-p'; } },
-    { msg: "Siyah At a6 karesine hamle yapar.", run: () => { layout[1]=''; layout[16]='b-n'; } },
-    { msg: "Beyaz Fil, Siyah At'ı tehdit eder!", run: () => { layout[61]=''; layout[25]='w-b'; } },
-    { msg: "Siyah, At'ı korumaz veya kaçmaz! (Tehlike!)", run: () => { layout[15]=''; layout[23]='b-p'; } },
-    { msg: "İHANET! Rakip artık bu Atı kullanabilir.", run: () => {} },
-    { msg: "İhanet eden At, Siyah Vezir'i alır ve çıkar!", run: () => { layout[16]=''; layout[3]=''; } }
+    { msg: "1. Beyaz piyon e4 karesine çıkar.", run: () => { layout[52]=''; layout[36]='w-p'; } },
+    { msg: "2. Siyah At f6 karesine hamle yapar.", run: () => { layout[5]=''; layout[21]='b-n'; } },
+    { msg: "3. Beyaz Fil, At'ı tehdit eder (b5)!", run: () => { layout[61]=''; layout[25]='w-b'; } },
+    { msg: "4. Siyah At'ı korumaz! (d6 piyonu sürer)", run: () => { layout[11]=''; layout[19]='b-p'; } },
+    { msg: "5. İHANET! At artık kırmızı parlıyor!", run: () => { /* Efekt i=21 için çalışacak */ } },
+    { msg: "6. Hain At, Siyah piyonu (d7) alır ve çıkar!", run: () => { layout[21]=''; layout[11]=''; } }
 ];
+
+// Not: draw fonksiyonundaki ihanet satırını da i === 21 yaparsan tam isabet olur:
+// if (step === 5 && i === 21) piece.classList.add('betrayal');
 
 function nextStep() {
     if (step < tutorialSteps.length) {
