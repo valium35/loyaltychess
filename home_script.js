@@ -46,7 +46,33 @@ function nextStep() {
         tutorialSteps[step].run();
         statusElement.innerText = tutorialSteps[step].msg;
         step++;
-        draw();
+        function draw() {
+    boardElement.innerHTML = ''; // Tahtayı temizle
+    
+    for (let i = 0; i < 64; i++) {
+        const square = document.createElement('div');
+        const row = Math.floor(i / 8);
+        const col = i % 8;
+        
+        // Kare renklerini belirle
+        const isBlack = (row + col) % 2 !== 0;
+        square.className = `square ${isBlack ? 'black' : 'white'}`;
+        
+        // Eğer o karede bir taş varsa ekle
+        if (layout[i]) {
+            const piece = document.createElement('div');
+            piece.className = `piece ${layout[i]}`;
+            
+            // İHANET EFEKTİ: 5. adımda ve 18. karede (c6) olan taşa efekti ver
+            if (step === 5 && i === 18) {
+                piece.classList.add('betrayal');
+            }
+            
+            square.appendChild(piece);
+        }
+        boardElement.appendChild(square);
+    }
+}
     } else {
         statusElement.innerText = "Eğitim bitti!";
         statusElement.style.background = "#2980b9";
