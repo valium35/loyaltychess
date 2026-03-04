@@ -100,6 +100,7 @@ function nextStep() {
 // SAYFA İLK AÇILDIĞINDA ÇALIŞTIR
 draw();
 statusElement.innerText = "Başlamak için 'Sonraki Hamle'ye basın.";
+// BU YARDIMCI FONKSİYONU JS DOSYANIN EN ALTINA EKLE
 function vurgula(kuralNo) {
     // Önce tüm kurallardan aktiflik sınıfını kaldır
     for (let i = 1; i <= 7; i++) {
@@ -110,4 +111,3 @@ function vurgula(kuralNo) {
     const activeEl = document.getElementById(`rule-${kuralNo}`);
     if (activeEl) activeEl.classList.add('active-rule');
 }
-
