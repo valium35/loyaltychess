@@ -71,7 +71,15 @@ const tutorialSteps = [
 // BUTONA BASILDIĞINDA ÇALIŞAN FONKSİYON
 function nextStep() {
     if (step < tutorialSteps.length) {
-        tutorialSteps[step].run();
+        tutorialSteps[step].run(){ msg: "5. Beyaz Fil b5'ten Atı ister. Siyah pas geçer!", run: () => { 
+    layout[61]=''; layout[25]='w-b'; layout[15]=''; layout[23]='b-p'; 
+    document.getElementById('rule-1').classList.add('active-rule'); // 1. Kuralı vurgula
+}},
+{ msg: "6. İHANET! Sahipsiz kalan At taraf değiştirir!", run: () => { 
+    document.getElementById('rule-1').classList.remove('active-rule');
+    document.getElementById('rule-2').classList.add('active-rule'); // 2. Kuralı vurgula
+    document.getElementById('rule-3').classList.add('active-rule'); // 3. Kuralı vurgula
+}},;
         statusElement.innerText = tutorialSteps[step].msg;
         step++;
         draw();
