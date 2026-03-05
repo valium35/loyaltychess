@@ -104,7 +104,7 @@ const tutorialSteps = [
                 layout[3]=''; // d8 karesini (At ve Vezir) tamamen temizle
                 draw(); // Tahtayı son haliyle çiz
                 console.log("Taşlar başarıyla alındı ve temizlendi.");
-            }, 600); // CSS animasyon süresiyle aynı olmalı (0.6s = 600ms)
+            }, 1200); // CSS animasyon süresiyle aynı olmalı (0.6s = 600ms)
         }
     }
 ];
