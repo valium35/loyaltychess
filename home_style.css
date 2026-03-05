@@ -175,7 +175,7 @@ button:hover { background: #d4ac0d; transform: scale(1.02); }
 .popup-btn:hover { background: #555; }
 /* TAŞIN ALINMA/PATLAMA EFEKTİ */
 .piece-capture {
-    animation: captureBlast 0.6s ease-out forwards;
+    animation: captureBlast 1,2s ease-out forwards;
     z-index: 100; /* Diğer taşların üstünde görünsün */
 }
 
