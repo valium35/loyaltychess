@@ -58,52 +58,41 @@ const tutorialSteps = [
     },
     { 
         msg: "2. Beyaz d4, Siyah e6 ile e-piyonunu açar.", 
-        run: () => { 
-            layout[51]=''; layout[35]='w-p'; layout[12]=''; layout[20]='b-p'; 
-            vurgula(1); 
-        }
+        run: () => { layout[51]=''; layout[35]='w-p'; layout[12]=''; layout[20]='b-p'; vurgula(1); }
     },
     { 
         msg: "3. Siyah d6 sürerek merkez piyonlarını dağıtır.", 
+        run: () => { layout[11]=''; layout[19]='b-p'; vurgula(1); }
+    },
+    { 
+        msg: "4. Siyah At c6'ya gelir.", 
+        run: () => { layout[1]=''; layout[18]='b-n'; vurgula(1); }
+    },
+    { 
+        msg: "5. Beyaz Fil b5'te. At tehlikede!", 
         run: () => { 
-            layout[11]=''; layout[19]='b-p'; 
-            vurgula(1); 
+            layout[61]=''; layout[25]='w-b'; 
+            // DİKKAT: Burada 'alert' yerine showPop kullanıyoruz
+            showPop("⚠️ DİKKAT", "Taş korumasız, ihanet edebilir!", "Kural 1: Tehdit edilen taş korunmalıdır.", "#f1c40f");
+            vurgula(1);
         }
     },
     { 
-        msg: "4. Siyah At c6'ya gelir. (Hala korunmuyor!)", 
+        msg: "6. İHANET! Sahipsiz kalan At taraf değiştirir!", 
         run: () => { 
-            layout[1]=''; layout[18]='b-n'; 
-            vurgula(1); 
+            // Atın rengini burada veya bir sonraki adımda değiştirebiliriz
+            showPop("🔥 İHANET", "Siyah At taraf değiştirdi!", "Kural 2 & 3: Korumasız taş rakibe geçer.", "#ff3333");
+            vurgula(2);
         }
     },
-    // 5. ADIM: Tehdit oluştuğunda uyarı ver
-// home_script.js içindeki tutorialSteps kısmını buna göre güncelle:
-
-{ 
-    msg: "5. Beyaz Fil b5'te. At tehlikede!", 
-    run: () => { 
-        layout[61]=''; layout[25]='w-b'; 
-        // Tarayıcı alert() yerine bizim pop-up:
-        showPop("⚠️ DİKKAT", "Siyah At korumasız kaldı! İhanet riski var.", "Kural 1: Tehdit edilen taş korunmalıdır.", "#f1c40f"); 
-        vurgula(1);
+    { 
+        msg: "7. Hain At, Siyah Vezir'i (d8) alır ve çıkar!", 
+        run: () => { 
+            layout[18]=''; layout[3]=''; 
+            showPop("⚖️ CEZALANDIRILDI", "Taş görevini tamamladı ve oyundan çıkarıldı.", "Kural 6: İhanet hamlesi sonrası taş oyundan çıkar.", "#ffffff");
+            vurgula(6);
+        }
     }
-},
-{ 
-    msg: "6. İHANET!", 
-    run: () => { 
-        showPop("🔥 İHANET", "Siyah At taraf değiştirdi!", "Kural 2 & 3: Korumasız taş rakibe geçer.", "#ff3333");
-        vurgula(2);
-    }
-},
-{ 
-    msg: "7. At Veziri aldı ve elendi.", 
-    run: () => { 
-        layout[18]=''; layout[3]=''; 
-        showPop("⚖️ CEZALANDIRILDI", "Hain taş görevini yaptı ve oyundan çıkarıldı.", "Kural 6: İhanet hamlesi sonrası taş çıkarılır.", "#ffffff");
-        vurgula(6);
-    }
-}
 ];
 
 // BUTON FONKSİYONU
