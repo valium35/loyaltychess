@@ -77,26 +77,35 @@ const tutorialSteps = [
             vurgula(1); 
         }
     },
-    { 
-        msg: "5. Beyaz Fil b5'ten Atı ister. Siyah h6 ile pas geçer!", 
-        run: () => { 
-            layout[61]=''; layout[25]='w-b'; layout[15]=''; layout[23]='b-p'; 
-            vurgula(1); // 1. Kural: Tehdit edilen taş korunmalı
-        }
-    },
-    { 
-        msg: "6. İHANET! Sahipsiz kalan At taraf değiştirir!", 
-        run: () => { 
-            vurgula(2); // 2. Kural: Korunmayan taş ihanet eder
-        }
-    },
-    { 
-        msg: "7. Hain At, Siyah Vezir'i (d8) alır ve çıkar!", 
-        run: () => { 
-            layout[18]=''; layout[3]=''; 
-            vurgula(6); // 6. Kural: Hamle sonrası taş oyundan çıkar
-        }
+    // 5. ADIM: Tehdit oluştuğunda uyarı ver
+{ 
+    msg: "5. Beyaz Fil b5'te. At tehlikede!", 
+    run: () => { 
+        layout[61]=''; layout[25]='w-b'; 
+        // 1. KURAL UYARISI: Tarayıcı uyarısı (confirm)
+        alert("UYARI: Taş korumasız, ihanet edebilir!"); 
+        vurgula(1);
     }
+},
+
+// 6. ADIM: İhanet gerçekleştiğinde
+{ 
+    msg: "6. İHANET!", 
+    run: () => { 
+        triggerBetrayalPopup(); // Pop-up açılır
+        vurgula(2);
+    }
+},
+
+// 7. ADIM: Ceza ve Çıkış
+{ 
+    msg: "7. At Veziri aldı ve elendi.", 
+    run: () => { 
+        layout[18]=''; layout[3]=''; // At ve Vezir gider
+        triggerPunishmentPopup(); // Ceza Pop-up'ı açılır
+        vurgula(6);
+    }
+}
 ];
 
 // BUTON FONKSİYONU
