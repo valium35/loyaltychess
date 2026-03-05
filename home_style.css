@@ -117,45 +117,59 @@ button:hover { background: #d4ac0d; transform: scale(1.02); }
     z-index: 9999;
 }
 
+/* Pop-up artık tüm ekranı kaplamıyor, sol tarafta duruyor */
+.popup-overlay {
+    position: fixed;
+    top: 50%; /* Ekranın ortasından başla */
+    left: 20px; /* Soldan 20px boşluk */
+    transform: translateY(-50%); /* Tam dikey merkezleme */
+    width: 320px; /* Panelle aynı genişlikte olması şık durur */
+    display: none; /* JS tetikleyene kadar gizli */
+    z-index: 1000;
+}
+
+/* Bildirim kutusu tasarımı */
 .popup-content {
     background: #1e1e1e;
-    padding: 30px;
-    border-radius: 15px;
-    border: 2px solid #ff3333; 
-    text-align: center;
-    max-width: 400px;
+    padding: 20px;
+    border-radius: 12px;
+    border-left: 8px solid #ff3333; /* Kalın bir sol çizgi "tehlike" hissi verir */
     color: white;
-    box-shadow: 0 0 40px rgba(255, 51, 51, 0.4);
-    animation: slideIn 0.3s ease-out; /* Pop-up girişi için animasyon */
+    box-shadow: 10px 10px 30px rgba(0, 0, 0, 0.5);
+    animation: slideFromLeft 0.5s ease-out; /* Soldan süzülerek gelsin */
 }
 
-@keyframes slideIn {
-    from { transform: translateY(-50px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+/* Soldan giriş animasyonu */
+@keyframes slideFromLeft {
+    from { opacity: 0; transform: translateX(-100px); }
+    to { opacity: 1; transform: translateX(0); }
 }
 
-.alert-title { color: #ff3333; margin-top: 0; font-size: 1.8rem; }
+.alert-title { 
+    color: #ff3333; 
+    margin: 0 0 10px 0; 
+    font-size: 1.4rem; 
+    text-transform: uppercase;
+}
 
 .popup-rule-box {
     background: #2c3e50;
-    padding: 12px;
-    margin: 20px 0;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    border-left: 5px solid #f1c40f;
-    line-height: 1.4;
+    padding: 10px;
+    margin: 15px 0;
+    border-radius: 5px;
+    font-size: 0.85rem;
+    border-bottom: 2px solid #f1c40f;
 }
 
 .popup-btn {
-    background: #ff3333;
+    background: #444; /* Daha az dikkat çeken bir buton */
     color: white;
     border: none;
-    padding: 15px;
-    border-radius: 8px;
+    padding: 10px;
+    border-radius: 5px;
     cursor: pointer;
-    font-weight: bold;
     width: 100%;
-    font-size: 1.1rem;
+    font-weight: bold;
 }
 
-.popup-btn:hover { background: #cc0000; box-shadow: 0 0 10px rgba(255, 0, 0, 0.5); }
+.popup-btn:hover { background: #555; }
