@@ -12,33 +12,31 @@ function showPop(title, message, rule, color = "#ff3333") {
     const ruleEl = document.getElementById('popup-rule');
     const contentEl = document.querySelector('.popup-content');
 
-    // Hata Kontrolü: Eğer HTML'de bir eleman eksikse kodu bozmadan uyarır
+    // Güvenlik Kontrolü
     if (!overlay || !titleEl || !msgEl || !ruleEl || !contentEl) {
-        console.error("HATA: Pop-up elementlerinden biri bulunamadı. HTML ID'lerini kontrol edin!");
+        console.error("HATA: Pop-up elementleri bulunamadı!");
         return;
     }
 
-    // İçerikleri Yerleştir
+    // Metinleri Güncelle
     titleEl.innerText = title;
     msgEl.innerText = message;
     ruleEl.innerText = rule;
 
-    // Görsel Düzenlemeler
-    contentEl.style.borderColor = color; // Çerçeve rengi
-    titleEl.style.color = color;       // Başlık rengi (Uyumlu olması için)
+    // Görsel Uyumu Sağla (Hata Yapma İhtimalini Bitiriyoruz)
+    titleEl.style.color = color; // Başlık rengi parametreye göre (Sarı/Kırmızı/Beyaz)
     
-    // Görünür Yap
-    overlay.style.display = 'flex';
-    console.log(`Pop-up tetiklendi: [${title}]`);
+    // DİKKAT: Burada 'borderColor' yerine 'borderLeftColor' kullanıyoruz 
+    // Böylece CSS'teki kalın sol çizgi değişir, diğer taraflar sabit kalır.
+    contentEl.style.borderLeftColor = color; 
+    
+    // Kutuyu göster
+    overlay.style.display = 'block'; 
 }
 
-/**
- * Pop-up'ı kapatır
- */
 function closePopup() {
     const overlay = document.getElementById('betrayal-popup');
     if (overlay) {
         overlay.style.display = 'none';
-        console.log("Pop-up kapatıldı, oyun devam ediyor.");
     }
 }
