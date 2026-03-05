@@ -173,3 +173,21 @@ button:hover { background: #d4ac0d; transform: scale(1.02); }
 }
 
 .popup-btn:hover { background: #555; }
+/* TAŞIN ALINMA/PATLAMA EFEKTİ */
+.piece-capture {
+    animation: captureBlast 0.6s ease-out forwards;
+    z-index: 100; /* Diğer taşların üstünde görünsün */
+}
+
+@keyframes captureBlast {
+    0% { transform: scale(1); filter: brightness(1) blur(0px); opacity: 1; }
+    30% { transform: scale(1.4); filter: brightness(2) blur(2px); opacity: 1; border-radius: 50%; box-shadow: 0 0 30px #fff; }
+    100% { transform: scale(0.2); filter: brightness(3) blur(10px); opacity: 0; }
+}
+
+/* Hain Atın Son Hamlesi İçin Özel Vurgu (İsteğe bağlı) */
+.traitor-final-move {
+    border: 4px solid #ff3333 !important;
+    box-shadow: 0 0 20px #ff3333;
+    background-color: rgba(255, 0, 0, 0.2);
+}
