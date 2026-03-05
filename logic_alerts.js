@@ -16,5 +16,9 @@ function showPop(title, message, rule, color = "#ff3333") {
 }
 
 function closePopup() {
-    document.getElementById('betrayal-popup').style.display = 'none';
+    const overlay = document.getElementById('betrayal-popup');
+    if (overlay) {
+        overlay.style.display = 'none';
+        console.log("Pop-up kapatıldı, oyun devam ediyor.");
+    }
 }
