@@ -68,31 +68,32 @@ const tutorialSteps = [
         msg: "4. Siyah At c6'ya gelir.", 
         run: () => { layout[1]=''; layout[18]='b-n'; vurgula(1); }
     },
+   // ... önceki adımlar aynı ...
     { 
         msg: "5. Beyaz Fil b5'te. At tehlikede!", 
         run: () => { 
             layout[61]=''; layout[25]='w-b'; 
-            // DİKKAT: Burada 'alert' yerine showPop kullanıyoruz
-            showPop("⚠️ DİKKAT", "Taş korumasız, ihanet edebilir!", "Kural 1: Tehdit edilen taş korunmalıdır.", "#f1c40f");
             vurgula(1);
+            // alert() SİLİNDİ, sadece bizim pop-up:
+            showPop("⚠️ DİKKAT", "Siyah At korumasız kaldı! İhanet riski var.", "Kural 1: Tehdit edilen taş korunmalıdır.", "#f1c40f");
         }
     },
     { 
         msg: "6. İHANET! Sahipsiz kalan At taraf değiştirir!", 
         run: () => { 
-            // Atın rengini burada veya bir sonraki adımda değiştirebiliriz
-            showPop("🔥 İHANET", "Siyah At taraf değiştirdi!", "Kural 2 & 3: Korumasız taş rakibe geçer.", "#ff3333");
             vurgula(2);
+            showPop("🔥 İHANET", "Siyah At taraf değiştirdi!", "Kural 2 & 3: Korumasız taş rakibe geçer.", "#ff3333");
         }
     },
     { 
         msg: "7. Hain At, Siyah Vezir'i (d8) alır ve çıkar!", 
         run: () => { 
-            layout[18]=''; layout[3]=''; 
-            showPop("⚖️ CEZALANDIRILDI", "Taş görevini tamamladı ve oyundan çıkarıldı.", "Kural 6: İhanet hamlesi sonrası taş oyundan çıkar.", "#ffffff");
+            layout[18]=''; layout[3]=''; // At ve Vezir silindi
             vurgula(6);
+            showPop("⚖️ CEZALANDIRILDI", "Hain taş görevini yaptı ve oyundan çıkarıldı.", "Kural 6: İhanet hamlesi sonrası taş çıkarılır.", "#ffffff");
         }
     }
+// ...
 ];
 
 // BUTON FONKSİYONU
