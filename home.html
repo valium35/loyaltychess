@@ -6,27 +6,12 @@
     <title>LoyaltyChess - Oyun</title>
     <link rel="stylesheet" href="home_style.css">
 </head>
-    <div id="betrayal-popup" class="popup-overlay" style="display: none;">
-    <div class="popup-content">
-        <h2 class="alert-title">⚠️ BİLDİRİM</h2>
-        <p id="popup-msg">Buraya uyarı mesajı gelecek...</p>
-        <div class="popup-rule-box">
-            <strong>LoyaltyChess Kanunu:</strong> 
-            <span id="popup-rule">İhanet kuralları geçerli.</span>
-        </div>
-        <button onclick="closePopup()" class="popup-btn">ANLADIM</button>
-    </div>
-</div>
-<script src="logic_alerts.js"></script>
-<script src="home_script.js"></script>
 <body>
-
 
     <div class="main-container">
         <div id="chess-board"></div>
 
         <div class="side-panel">
-            
             <div id="status" class="msg-box">Başlamak için butona basın.</div>
             
             <button onclick="nextStep()">Sonraki Hamle</button>
@@ -43,8 +28,23 @@
                     <li id="rule-7">7. İhanet hamlesi, ek bir hamle sayılır.</li>
                 </ul>
             </div>
+        </div> 
+    </div>
 
-        </div> </div> <script src="home_script.js"></script>
+    <div id="betrayal-popup" class="popup-overlay" style="display: none;">
+        <div class="popup-content">
+            <h2 class="alert-title">⚠️ BİLDİRİM</h2>
+            <p id="popup-msg">Buraya uyarı mesajı gelecek...</p>
+            <div class="popup-rule-box">
+                <strong>LoyaltyChess Kanunu:</strong> 
+                <span id="popup-rule">İhanet kuralları geçerli.</span>
+            </div>
+            <button onclick="closePopup()" class="popup-btn">ANLADIM</button>
+        </div>
+    </div>
+
+    <script src="logic_alerts.js"></script>
+    <script src="home_script.js"></script>
+
 </body>
-
 </html>
