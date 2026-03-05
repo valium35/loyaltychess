@@ -27,3 +27,6 @@ function triggerPunishmentPopup() {
     overlay.style.display = 'flex';
     overlay.style.borderColor = "#f1c40f"; // Altın/Ceza teması
 }
+function closePopup() {
+    document.getElementById('betrayal-popup').style.display = 'none';
+}
