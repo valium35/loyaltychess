@@ -2,7 +2,6 @@ const boardElement = document.getElementById('chess-board');
 const statusElement = document.getElementById('status');
 let step = 0;
 
-// BAŞLANGIÇ DİZİLİMİ (WİKİPEDİA LİNKLERİ İÇİN TEMİZ YAPI)
 let layout = [
     'b-r','b-n','b-b','b-q','b-k','b-b','b-n','b-r',
     'b-p','b-p','b-p','b-p','b-p','b-p','b-p','b-p',
@@ -14,7 +13,6 @@ let layout = [
     'w-r','w-n','w-b','w-q','w-k','w-b','w-n','w-r'
 ];
 
-// TAHTAYI ÇİZEN FONKSİYON
 function draw() {
     boardElement.innerHTML = ''; 
     for (let i = 0; i < 64; i++) {
@@ -27,7 +25,7 @@ function draw() {
         if (layout[i]) {
             const piece = document.createElement('div');
             piece.className = `piece ${layout[i]}`;
-            // İHANET EFEKTİ: 6. adımda c6 karesindeki atı parlat
+            // İhanet vurgusunu 6. adımda tetikle
             if (step === 6 && i === 18) piece.classList.add('betrayal');
             square.appendChild(piece);
         }
@@ -35,19 +33,16 @@ function draw() {
     }
 }
 
-// YARDIMCI FONKSİYON: Kuralları Parlatır
 function vurgula(kuralNo) {
-    // Önce hepsini söndür
     for (let i = 1; i <= 7; i++) {
         const el = document.getElementById(`rule-${i}`);
         if (el) el.classList.remove('active-rule');
     }
-    // Seçileni yak
     const activeEl = document.getElementById(`rule-${kuralNo}`);
     if (activeEl) activeEl.classList.add('active-rule');
 }
 
-// SENARYO ADIMLARI
+// DİZİDEKİ TÜM ADIMLARI TEK TEK SIRALADIM
 const tutorialSteps = [
     { 
         msg: "1. Beyaz e4, Siyah b6 ile b-piyonunu açar.", 
@@ -68,13 +63,11 @@ const tutorialSteps = [
         msg: "4. Siyah At c6'ya gelir.", 
         run: () => { layout[1]=''; layout[18]='b-n'; vurgula(1); }
     },
-   // ... önceki adımlar aynı ...
     { 
         msg: "5. Beyaz Fil b5'te. At tehlikede!", 
         run: () => { 
             layout[61]=''; layout[25]='w-b'; 
             vurgula(1);
-            // alert() SİLİNDİ, sadece bizim pop-up:
             showPop("⚠️ DİKKAT", "Siyah At korumasız kaldı! İhanet riski var.", "Kural 1: Tehdit edilen taş korunmalıdır.", "#f1c40f");
         }
     },
@@ -88,26 +81,27 @@ const tutorialSteps = [
     { 
         msg: "7. Hain At, Siyah Vezir'i (d8) alır ve çıkar!", 
         run: () => { 
-            layout[18]=''; layout[3]=''; // At ve Vezir silindi
+            layout[18]=''; layout[3]=''; 
             vurgula(6);
             showPop("⚖️ CEZALANDIRILDI", "Hain taş görevini yaptı ve oyundan çıkarıldı.", "Kural 6: İhanet hamlesi sonrası taş çıkarılır.", "#ffffff");
         }
     }
-// ...
 ];
 
-// BUTON FONKSİYONU
 function nextStep() {
     if (step < tutorialSteps.length) {
+        // ÖNCE işlemi yap
         tutorialSteps[step].run();
+        // SONRA mesajı güncelle
         statusElement.innerText = tutorialSteps[step].msg;
+        // ADIMI artır
         step++;
+        // TAHTAYI yeniden çiz
         draw();
     } else {
         statusElement.innerText = "Eğitim Tamamlandı!";
-        vurgula(0); // Hepsini söndür
+        vurgula(0);
     }
 }
 
-// İLK ÇALIŞTIRMA
 draw();
