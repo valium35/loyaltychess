@@ -81,9 +81,30 @@ const tutorialSteps = [
     { 
         msg: "7. Hain At, Siyah Vezir'i (d8) alır ve çıkar!", 
         run: () => { 
-            layout[18]=''; layout[3]=''; 
+            // 1. AŞAMA: Hain Atı Vezirin Karesine Taşı (Görselleştirme)
+            layout[18]=''; // Atın eski yeri (c6) boşalır
+            layout[3]='w-n'; // At, Vezir'in (d8) üzerine oturur (Burada Atı geçici olarak Beyaz yapıyoruz ki hain olduğu anlaşılsın)
+            draw(); // Tahtayı çiz (At Vezir'in üstünde)
+
+            // 2. AŞAMA: Patlama Efektini Uygula
+            // d8 karesindeki (index 3) elementi bul ve efekti ekle
+            const capturedSquare = boardElement.children[3]; // d8 karesi
+            const capturedPiece = capturedSquare.querySelector('.piece');
+            
+            if (capturedPiece) {
+                capturedPiece.classList.add('piece-capture'); // CSS efektini başlat
+            }
+
+            // 3. AŞAMA: Sol Pop-up'ı Göster (Zamanlamayı senkronize et)
             vurgula(6);
-            showPop("⚖️ CEZALANDIRILDI", "Hain taş görevini yaptı ve oyundan çıkarıldı.", "Kural 6: İhanet hamlesi sonrası taş çıkarılır.", "#ffffff");
+            showPop("⚖️ CEZALANDIRILDI", "Görev tamamlandı! Hain At ve kurbanı Vezir oyundan çıkarıldı.", "Kural 6: İhanet hamlesi sonrası taş çıkarılır.", "#ffffff");
+
+            // 4. AŞAMA: Gecikmeli Silme (0.6 saniye sonra)
+            setTimeout(() => {
+                layout[3]=''; // d8 karesini (At ve Vezir) tamamen temizle
+                draw(); // Tahtayı son haliyle çiz
+                console.log("Taşlar başarıyla alındı ve temizlendi.");
+            }, 600); // CSS animasyon süresiyle aynı olmalı (0.6s = 600ms)
         }
     }
 ];
