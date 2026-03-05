@@ -78,31 +78,29 @@ const tutorialSteps = [
         }
     },
     // 5. ADIM: Tehdit oluştuğunda uyarı ver
+// home_script.js içindeki tutorialSteps kısmını buna göre güncelle:
+
 { 
     msg: "5. Beyaz Fil b5'te. At tehlikede!", 
     run: () => { 
         layout[61]=''; layout[25]='w-b'; 
-        // 1. KURAL UYARISI: Tarayıcı uyarısı (confirm)
-        alert("UYARI: Taş korumasız, ihanet edebilir!"); 
+        // Tarayıcı alert() yerine bizim pop-up:
+        showPop("⚠️ DİKKAT", "Siyah At korumasız kaldı! İhanet riski var.", "Kural 1: Tehdit edilen taş korunmalıdır.", "#f1c40f"); 
         vurgula(1);
     }
 },
-
-// 6. ADIM: İhanet gerçekleştiğinde
 { 
     msg: "6. İHANET!", 
     run: () => { 
-        triggerBetrayalPopup(); // Pop-up açılır
+        showPop("🔥 İHANET", "Siyah At taraf değiştirdi!", "Kural 2 & 3: Korumasız taş rakibe geçer.", "#ff3333");
         vurgula(2);
     }
 },
-
-// 7. ADIM: Ceza ve Çıkış
 { 
     msg: "7. At Veziri aldı ve elendi.", 
     run: () => { 
-        layout[18]=''; layout[3]=''; // At ve Vezir gider
-        triggerPunishmentPopup(); // Ceza Pop-up'ı açılır
+        layout[18]=''; layout[3]=''; 
+        showPop("⚖️ CEZALANDIRILDI", "Hain taş görevini yaptı ve oyundan çıkarıldı.", "Kural 6: İhanet hamlesi sonrası taş çıkarılır.", "#ffffff");
         vurgula(6);
     }
 }
