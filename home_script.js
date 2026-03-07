@@ -1,4 +1,71 @@
-const boardElement = document.getElementById('chess-board');
+// Dil Sözlüğü
+const translations = {
+    tr: {
+        status: "Başlamak için butona basın.",
+        nextBtn: "Sonraki Hamle",
+        rulesTitle: "📜 İhanet Yasaları",
+        rules: [
+            "1. Tehdit edilen taş kaçılmalı veya korunmalıdır.",
+            "2. Korumasız bırakılan taş ihanet eder.",
+            "3. Rakip, hain taşı hemen kendi taşı gibi kullanır.",
+            "4. İhanet hamlesiyle şah/mat yapılamaz.",
+            "5. Şah hariç her rakip taş alınabilir.",
+            "6. Hamle sonrası hain taş oyundan çıkar.",
+            "7. İhanet hamlesi, ek bir hamle sayılır."
+        ],
+        alertTitle: "⚠️ BİLDİRİM",
+        alertBtn: "ANLADIM"
+    },
+    en: {
+        status: "Press the button to start.",
+        nextBtn: "Next Move",
+        rulesTitle: "📜 Betrayal Laws",
+        rules: [
+            "1. Threatened pieces must be moved or protected.",
+            "2. Unprotected pieces will betray you.",
+            "3. Opponent uses the traitor piece immediately.",
+            "4. Betrayal moves cannot result in check/mate.",
+            "5. Any piece except the King can be captured.",
+            "6. Traitor pieces are removed after the move.",
+            "7. Betrayal move counts as an extra turn."
+        ],
+        alertTitle: "⚠️ NOTIFICATION",
+        alertBtn: "I UNDERSTAND"
+    }
+};
+
+// Sayfa yüklendiğinde dili uygula
+document.addEventListener("DOMContentLoaded", () => {
+    const lang = localStorage.getItem('gameLang') || 'tr'; // Seçim yoksa varsayılan TR
+    applyLanguage(lang);
+});
+
+function applyLanguage(lang) {
+    const t = translations[lang];
+    
+    // Status kutusu
+    document.getElementById('status').innerText = t.status;
+    
+    // "Sonraki Hamle" butonu
+    document.querySelector('.side-panel button').innerText = t.nextBtn;
+    
+    // Kurallar başlığı
+    document.querySelector('.full-rules-panel h3').innerText = t.rulesTitle;
+    
+    // Kurallar listesi
+    const rulesList = document.getElementById('rules-list');
+    rulesList.innerHTML = ""; // Eski listeyi temizle
+    t.rules.forEach((rule, index) => {
+        const li = document.createElement('li');
+        li.id = `rule-${index + 1}`;
+        li.innerText = rule;
+        rulesList.appendChild(li);
+    });
+
+    // Pop-up buton ve başlık
+    document.querySelector('.alert-title').innerText = t.alertTitle;
+    document.querySelector('.popup-btn').innerText = t.alertBtn;
+}const boardElement = document.getElementById('chess-board');
 const statusElement = document.getElementById('status');
 let step = 0;
 
