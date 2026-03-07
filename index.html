@@ -35,23 +35,19 @@
             max-width: 600px;
         }
 
-        .btn { 
-            padding: 20px 50px; 
-            background: #f1c40f; 
-            color: #121212; 
-            text-decoration: none; 
-            font-weight: bold; 
-            border-radius: 50px; 
-            font-size: 1.5rem; 
-            transition: all 0.3s ease; 
-            box-shadow: 0 10px 20px rgba(241, 196, 15, 0.2);
-        }
+       <div style="display: flex; gap: 20px; justify-content: center;">
+    <button onclick="startWithLang('tr')" class="btn">TÜRKÇE OYNA 🇹🇷</button>
+    <button onclick="startWithLang('en')" class="btn">PLAY ENGLISH 🇺🇸</button>
+</div>
 
-        .btn:hover { 
-            background: #d4ac0d; 
-            transform: translateY(-5s); 
-            box-shadow: 0 15px 30px rgba(241, 196, 15, 0.4);
-        }
+<script>
+function startWithLang(lang) {
+    // Oyuncunun seçimini tarayıcı hafızasına (localStorage) kaydediyoruz
+    localStorage.setItem('gameLang', lang);
+    // Seçim yapıldıktan sonra oyun sayfasına (home.html) yönlendiriyoruz
+    window.location.href = 'home.html';
+}
+</script>
     </style>
 </head>
 <body>
