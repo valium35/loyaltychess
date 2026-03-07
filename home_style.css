@@ -39,10 +39,10 @@ body {
     background-repeat: no-repeat; 
     background-position: center; 
     cursor: pointer; 
-    transition: all 0.3s ease; /* Yumuşak geçiş ekledik */
+    transition: all 0.3s ease; 
 }
 
-/* WİKİPEDİA SVG LİNKLERİ (Mevcut olanlar doğru) */
+/* TAŞ GÖRSELLERİ */
 .w-p { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'); }
 .b-p { background-image: url('https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg'); }
 .w-n { background-image: url('https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg'); }
@@ -56,7 +56,7 @@ body {
 .w-k { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg'); }
 .b-k { background-image: url('https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg'); }
 
-/* İHANET EFEKTİ (TAŞ ÜZERİNDE) */
+/* EFEKTLER */
 .betrayal { 
     filter: drop-shadow(0 0 15px #e74c3c) brightness(1.5); 
     animation: pulse 0.8s infinite; 
@@ -73,9 +73,8 @@ body {
 .side-panel { width: 320px; display: flex; flex-direction: column; gap: 15px; }
 .msg-box { background: #27ae60; padding: 15px; border-radius: 8px; font-weight: bold; text-align: center; color: white; }
 
-/* Kurallar listesinin varsayılan hali (Düzeltildi) */
 #rules-list li {
-    opacity: 0.4; /* Normalde sönük duracaklar */
+    opacity: 0.4;
     transition: all 0.4s ease;
     margin-bottom: 8px;
     list-style-type: none;
@@ -83,11 +82,10 @@ body {
     border-radius: 4px;
 }
 
-/* AKTİF KURAL VURGUSU (Düzeltildi) */
 .active-rule {
     opacity: 1 !important;
     color: #f1c40f !important; 
-    background: rgba(241, 196, 15, 0.1); /* Hafif arka plan ışığı */
+    background: rgba(241, 196, 15, 0.1); 
     font-weight: bold !important;
     transform: translateX(10px);
     text-shadow: 0 0 10px rgba(241, 196, 15, 0.8);
@@ -105,41 +103,27 @@ button {
 }
 button:hover { background: #d4ac0d; transform: scale(1.02); }
 
-/* POP-UP SİSTEMİ */
+/* POP-UP SİSTEMİ (SOLA SABİTLENDİ) */
 .popup-overlay {
     position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.9); 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-}
-
-/* Pop-up artık tüm ekranı kaplamıyor, sol tarafta duruyor */
-.popup-overlay {
-    position: fixed;
-    top: 50%; /* Ekranın ortasından başla */
-    left: 20px; /* Soldan 20px boşluk */
-    transform: translateY(-50%); /* Tam dikey merkezleme */
-    width: 320px; /* Panelle aynı genişlikte olması şık durur */
-    display: none; /* JS tetikleyene kadar gizli */
+    top: 50%; 
+    left: 20px; 
+    transform: translateY(-50%); 
+    width: 320px; 
+    display: none; 
     z-index: 1000;
 }
 
-/* Bildirim kutusu tasarımı */
 .popup-content {
     background: #1e1e1e;
     padding: 20px;
     border-radius: 12px;
-    border-left: 8px solid #ff3333; /* Kalın bir sol çizgi "tehlike" hissi verir */
+    border-left: 8px solid #ff3333; 
     color: white;
     box-shadow: 10px 10px 30px rgba(0, 0, 0, 0.5);
-    animation: slideFromLeft 0.5s ease-out; /* Soldan süzülerek gelsin */
+    animation: slideFromLeft 0.5s ease-out; 
 }
 
-/* Soldan giriş animasyonu */
 @keyframes slideFromLeft {
     from { opacity: 0; transform: translateX(-100px); }
     to { opacity: 1; transform: translateX(0); }
@@ -162,7 +146,7 @@ button:hover { background: #d4ac0d; transform: scale(1.02); }
 }
 
 .popup-btn {
-    background: #444; /* Daha az dikkat çeken bir buton */
+    background: #444; 
     color: white;
     border: none;
     padding: 10px;
@@ -171,24 +155,17 @@ button:hover { background: #d4ac0d; transform: scale(1.02); }
     width: 100%;
     font-weight: bold;
 }
-
 .popup-btn:hover { background: #555; }
+
 /* TAŞIN ALINMA/PATLAMA EFEKTİ */
 .piece-capture {
-    animation: captureBlast 1,2s ease-out forwards;
-    z-index: 100; /* Diğer taşların üstünde görünsün */
+    /* DÜZELTME: Virgül yerine nokta kullanıldı */
+    animation: captureBlast 1.2s ease-out forwards;
+    z-index: 100;
 }
 
 @keyframes captureBlast {
     0% { transform: scale(1); filter: brightness(1) blur(0px); opacity: 1; }
-    30% { transform: scale(1.4); filter: brightness(2) blur(2px); opacity: 1; border-radius: 50%; box-shadow: 0 0 30px #fff; }
-    100% { transform: scale(0.2); filter: brightness(3) blur(10px); opacity: 0; }
+    40% { transform: scale(1.6); filter: brightness(2.5) blur(2px); opacity: 1; border-radius: 50%; box-shadow: 0 0 40px #ff3333; }
+    100% { transform: scale(0); filter: brightness(5) blur(20px); opacity: 0; }
 }
-
-/* Hain Atın Son Hamlesi İçin Özel Vurgu (İsteğe bağlı) */
-.traitor-final-move {
-    border: 4px solid #ff3333 !important;
-    box-shadow: 0 0 20px #ff3333;
-    background-color: rgba(255, 0, 0, 0.2);
-}
-
