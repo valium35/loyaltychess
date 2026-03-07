@@ -191,3 +191,30 @@ button:hover { background: #d4ac0d; transform: scale(1.02); }
     box-shadow: 0 0 20px #ff3333;
     background-color: rgba(255, 0, 0, 0.2);
 }
+/* GAME HEADER VE LOGO */
+.game-header {
+    text-align: center;
+    margin-bottom: 40px; /* Tahtadan biraz uzak dursun */
+    width: 100%;
+}
+
+.logo-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.brand-title {
+    font-size: 3rem; /* Logonun büyüklüğü */
+    letter-spacing: 5px; /* Harfler arası boşluk */
+    color: #f1c40f; /* Altın Sarısı */
+    margin: 0;
+    font-weight: 900; /* Çok kalın */
+    text-shadow: 0 0 15px rgba(241, 196, 15, 0.4); /* Sarı Parlama */
+}
+
+.brand-title span {
+    color: #ffffff; /* CHESS kısmı Beyaz */
+    font-weight: 300; /* CHESS kısmı daha ince */
+}
