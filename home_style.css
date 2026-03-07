@@ -191,8 +191,4 @@ button:hover { background: #d4ac0d; transform: scale(1.02); }
     box-shadow: 0 0 20px #ff3333;
     background-color: rgba(255, 0, 0, 0.2);
 }
-<header class="game-header">
-    <div class="logo-container">
-        <h1 class="brand-title">LOYALTY<span>CHESS</span></h1>
-    </div>
-</header>
+
