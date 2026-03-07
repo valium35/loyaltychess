@@ -35,25 +35,51 @@
             max-width: 600px;
         }
 
-       <div style="display: flex; gap: 20px; justify-content: center;">
-    <button onclick="startWithLang('tr')" class="btn">TÜRKÇE OYNA 🇹🇷</button>
-    <button onclick="startWithLang('en')" class="btn">PLAY ENGLISH 🇺🇸</button>
-</div>
+        .btn-container {
+            display: flex; 
+            gap: 20px; 
+            justify-content: center;
+        }
 
-<script>
-function startWithLang(lang) {
-    // Oyuncunun seçimini tarayıcı hafızasına (localStorage) kaydediyoruz
-    localStorage.setItem('gameLang', lang);
-    // Seçim yapıldıktan sonra oyun sayfasına (home.html) yönlendiriyoruz
-    window.location.href = 'home.html';
-}
-</script>
+        .btn { 
+            padding: 20px 40px; 
+            background: #f1c40f; 
+            color: #121212; 
+            text-decoration: none; 
+            font-weight: bold; 
+            border: none;
+            border-radius: 50px; 
+            font-size: 1.2rem; 
+            transition: all 0.3s ease; 
+            box-shadow: 0 10px 20px rgba(241, 196, 15, 0.2);
+            cursor: pointer;
+        }
+
+        .btn:hover { 
+            background: #d4ac0d; 
+            transform: translateY(-5px); 
+            box-shadow: 0 15px 30px rgba(241, 196, 15, 0.4);
+        }
     </style>
 </head>
 <body>
+
     <h1>LOYALTY<span>CHESS</span></h1>
-    <p>İhanetin kural olduğu tek satranç arenasına hoş geldiniz. Hazırsanız hamlenizi yapın.</p>
+    <p id="welcome-text">İhanetin kural olduğu tek satranç arenasına hoş geldiniz. Hazırsanız hamlenizi yapın.</p>
     
-    <a href="home.html" class="btn">OYUNA BAŞLA</a>
+    <div class="btn-container">
+        <button onclick="startWithLang('tr')" class="btn">TÜRKÇE OYNA 🇹🇷</button>
+        <button onclick="startWithLang('en')" class="btn">PLAY ENGLISH 🇺🇸</button>
+    </div>
+
+    <script>
+        function startWithLang(lang) {
+            // Seçimi kaydet
+            localStorage.setItem('gameLang', lang);
+            // Oyun sayfasına yönlendir
+            window.location.href = 'home.html';
+        }
+    </script>
+
 </body>
 </html>
