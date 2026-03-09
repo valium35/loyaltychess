@@ -170,7 +170,7 @@ const tutorialSteps = [
             vurgula(3); 
             pop(7, 2, "#ffffff"); // Silinme kuralı mesajı
             
-            const tId = setTimeout(() => { layout[38]=''; draw(); }, 1500);
+            const tId = setTimeout(() => { layout[33]=''; draw(); }, 1500);
             timeouts.push(tId);
         } 
     }
