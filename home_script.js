@@ -27,6 +27,15 @@ const translations = {
             step7Title: "⚖️ CEZALANDIRILDI",
             step7Msg: "Görev tamamlandı! Hain At ve kurbanı Vezir oyundan çıkarıldı."
         }
+        tutorialMsgs: [
+            "1. Beyaz e4, Siyah b6.",
+            "2. Beyaz d4, Siyah e6.",
+            "3. Siyah d6 sürer.",
+            "4. Siyah At c6'ya gelir.",
+            "5. Beyaz Fil b5'te. At tehlikede!",
+            "6. İHANET! At taraf değiştirir!",
+            "7. Hain At, Siyah Vezir'i (d8) alır ve çıkar!"
+        ]
     },
     en: {
         status: "Press the button to start.",
@@ -53,6 +62,15 @@ const translations = {
             step7Title: "⚖️ PUNISHED",
             step7Msg: "Mission complete! The traitor Knight and the Queen are removed."
         }
+        tutorialMsgs: [
+            "1. White e4, Black b6.",
+            "2. White d4, Black e6.",
+            "3. Black plays d6.",
+            "4. Black Knight moves to c6.",
+            "5. White Bishop at b5. Knight in danger!",
+            "6. BETRAYAL! Knight switches sides!",
+            "7. The Traitor Knight takes the Queen (d8) and leaves!"
+        ]
     }
 };
 
@@ -141,34 +159,29 @@ function vurgula(kuralNo) {
 // 4. EĞİTİM ADIMLARI
 // ==========================================
 const tutorialSteps = [
-    { msg: "1. Beyaz e4, Siyah b6.", run: () => { layout[52]=''; layout[36]='w-p'; layout[9]=''; layout[17]='b-p'; vurgula(1); } },
-    { msg: "2. Beyaz d4, Siyah e6.", run: () => { layout[51]=''; layout[35]='w-p'; layout[12]=''; layout[20]='b-p'; vurgula(1); } },
-    { msg: "3. Siyah d6 sürer.", run: () => { layout[11]=''; layout[19]='b-p'; vurgula(1); } },
-    { msg: "4. Siyah At c6'ya gelir.", run: () => { layout[1]=''; layout[18]='b-n'; vurgula(1); } },
+    { run: () => { layout[52]=''; layout[36]='w-p'; layout[9]=''; layout[17]='b-p'; vurgula(1); } },
+    { run: () => { layout[51]=''; layout[35]='w-p'; layout[12]=''; layout[20]='b-p'; vurgula(1); } },
+    { run: () => { layout[11]=''; layout[19]='b-p'; vurgula(1); } },
+    { run: () => { layout[1]=''; layout[18]='b-n'; vurgula(1); } },
     { 
-        msg: "5. Beyaz Fil b5'te. At tehlikede!", 
         run: () => { 
             layout[61]=''; layout[25]='w-b'; vurgula(1);
             pop(5, 0, "#f1c40f");
         }
     },
     { 
-        msg: "6. İHANET! At taraf değiştirir!", 
         run: () => { 
             vurgula(2);
             pop(6, 1, "#ff3333");
         }
     },
     { 
-        msg: "7. Hain At, Siyah Vezir'i (d8) alır ve çıkar!", 
         run: () => { 
             layout[18]=''; layout[3]='w-n'; draw();
             const capturedPiece = boardElement.children[3].querySelector('.piece');
             if (capturedPiece) capturedPiece.classList.add('piece-capture');
-
             vurgula(7);
             pop(7, 6, "#ffffff");
-
             const tId = setTimeout(() => { layout[3]=''; draw(); }, 1200);
             timeouts.push(tId);
         }
@@ -189,20 +202,20 @@ function pop(stepNo, ruleIdx, color) {
 // ==========================================
 
 function nextStep() {
+    const lang = localStorage.getItem('gameLang') || 'tr';
     if (step < tutorialSteps.length) {
         tutorialSteps[step].run();
-        statusElement.innerText = tutorialSteps[step].msg;
+        // Mesajı sözlükten çekiyoruz
+        statusElement.innerText = translations[lang].tutorialMsgs[step];
         step++;
         draw();
     } else {
         resetBoard();
-        const lang = localStorage.getItem('gameLang') || 'tr';
         statusElement.innerText = translations[lang].status;
         draw();
     }
     updateButtonStates();
 }
-
 function prevStep() {
     if (step > 0) {
         step--;
