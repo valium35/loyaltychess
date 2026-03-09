@@ -26,7 +26,7 @@ const translations = {
             step6Msg: "Siyah At taraf değiştirdi!",
             step7Title: "⚖️ CEZALANDIRILDI",
             step7Msg: "Görev tamamlandı! Hain At ve kurbanı Vezir oyundan çıkarıldı."
-        }
+        },
         tutorialMsgs: [
             "1. Beyaz e4, Siyah b6.",
             "2. Beyaz d4, Siyah e6.",
@@ -61,7 +61,7 @@ const translations = {
             step6Msg: "The Black Knight has switched sides!",
             step7Title: "⚖️ PUNISHED",
             step7Msg: "Mission complete! The traitor Knight and the Queen are removed."
-        }
+        },
         tutorialMsgs: [
             "1. White e4, Black b6.",
             "2. White d4, Black e6.",
@@ -80,9 +80,9 @@ const translations = {
 const boardElement = document.getElementById('chess-board');
 const statusElement = document.getElementById('status');
 let step = 0;
-let timeouts = []; // Çalışan zamanlayıcıları temizlemek için
+let timeouts = [];
 
-let layout = []; // Başlangıçta boş, resetBoard ile dolacak
+let layout = []; 
 
 // ==========================================
 // 3. ÇEKİRDEK FONKSİYONLAR
@@ -90,7 +90,6 @@ let layout = []; // Başlangıçta boş, resetBoard ile dolacak
 
 function resetBoard() {
     step = 0;
-    // Zamanlayıcıları temizle (Vezir'in kaybolmasını önler)
     timeouts.forEach(t => clearTimeout(t));
     timeouts = [];
 
@@ -110,11 +109,8 @@ function resetBoard() {
 function applyLanguage(lang) {
     const t = translations[lang];
     statusElement.innerText = t.status;
-    
-    // Panel Başlığı
     document.querySelector('.full-rules-panel h3').innerText = t.rulesTitle;
     
-    // Kurallar Listesi
     const rulesList = document.getElementById('rules-list');
     rulesList.innerHTML = ""; 
     t.rules.forEach((rule, index) => {
@@ -138,7 +134,6 @@ function draw() {
         if (layout[i]) {
             const piece = document.createElement('div');
             piece.className = `piece ${layout[i]}`;
-            // 6. Adımda atı parlat
             if (step === 6 && i === 18) piece.classList.add('betrayal');
             square.appendChild(piece);
         }
@@ -180,88 +175,3 @@ const tutorialSteps = [
             layout[18]=''; layout[3]='w-n'; draw();
             const capturedPiece = boardElement.children[3].querySelector('.piece');
             if (capturedPiece) capturedPiece.classList.add('piece-capture');
-            vurgula(7);
-            pop(7, 6, "#ffffff");
-            const tId = setTimeout(() => { layout[3]=''; draw(); }, 1200);
-            timeouts.push(tId);
-        }
-    }
-];
-
-// Pop-up Yardımcısı
-function pop(stepNo, ruleIdx, color) {
-    const lang = localStorage.getItem('gameLang') || 'tr';
-    const p = translations[lang].popups[`step${stepNo}Title`];
-    const m = translations[lang].popups[`step${stepNo}Msg`];
-    const r = translations[lang].rules[ruleIdx];
-    showPop(p, m, r, color);
-}
-
-// ==========================================
-// 5. KONTROLLER
-// ==========================================
-
-function nextStep() {
-    const lang = localStorage.getItem('gameLang') || 'tr';
-    if (step < tutorialSteps.length) {
-        tutorialSteps[step].run();
-        // Mesajı sözlükten çekiyoruz
-        statusElement.innerText = translations[lang].tutorialMsgs[step];
-        step++;
-        draw();
-    } else {
-        resetBoard();
-        statusElement.innerText = translations[lang].status;
-        draw();
-    }
-    updateButtonStates();
-}
-function prevStep() {
-    if (step > 0) {
-        step--;
-        resetBoard();
-        const currentStep = step; // Hedef adımı sakla
-        for (let i = 0; i < currentStep; i++) {
-            tutorialSteps[i].run();
-        }
-        step = currentStep; // Adımı geri yükle
-        statusElement.innerText = step === 0 ? translations[localStorage.getItem('gameLang') || 'tr'].status : tutorialSteps[step - 1].msg;
-        draw();
-        updateButtonStates();
-    }
-}
-
-function updateButtonStates() {
-    const lang = localStorage.getItem('gameLang') || 'tr';
-    const prevBtn = document.getElementById('prev-btn');
-    const nextBtn = document.getElementById('next-btn');
-
-    if(prevBtn) {
-        prevBtn.innerText = translations[lang].backBtn;
-        prevBtn.disabled = (step === 0);
-    }
-    if(nextBtn) {
-        nextBtn.innerText = (step >= tutorialSteps.length) ? translations[lang].resetBtn : translations[lang].nextBtn;
-    }
-}
-
-function showPop(title, msg, rule, color) {
-    const popup = document.getElementById('betrayal-popup');
-    if(!popup) return;
-    document.querySelector('.alert-title').innerText = title;
-    document.getElementById('popup-msg').innerText = msg;
-    document.getElementById('popup-rule').innerText = rule;
-    document.querySelector('.popup-content').style.borderColor = color;
-    popup.style.display = 'flex';
-}
-
-function closePopup() {
-    document.getElementById('betrayal-popup').style.display = 'none';
-}
-
-// BAŞLAT
-document.addEventListener("DOMContentLoaded", () => {
-    resetBoard();
-    applyLanguage(localStorage.getItem('gameLang') || 'tr');
-    draw();
-});
