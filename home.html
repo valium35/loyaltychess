@@ -6,7 +6,7 @@
     <title>LoyaltyChess - Oyun</title>
     <link rel="stylesheet" href="home_style.css">
     <style>
-        /* Butonların yan yana durması için küçük bir ekleme */
+        /* Modern ve Sadeleştirilmiş Yan Panel CSS */
         .controls {
             display: flex;
             gap: 10px;
@@ -17,21 +17,66 @@
             padding: 12px;
             cursor: pointer;
             font-weight: bold;
-            border-radius: 5px;
+            border-radius: 8px;
             border: 1px solid #f1c40f;
-            background: #222;
+            background: rgba(241, 196, 15, 0.05);
             color: #f1c40f;
             transition: 0.3s;
+            text-transform: uppercase;
+            font-size: 0.8rem;
         }
         .controls button:hover:not(:disabled) {
             background: #f1c40f;
-            color: #222;
+            color: #121212;
         }
         .controls button:disabled {
-            opacity: 0.3;
+            opacity: 0.2;
             cursor: not-allowed;
             border-color: #555;
             color: #555;
+        }
+
+        /* 3 Yasa Paneli Tasarımı */
+        .full-rules-panel {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .full-rules-panel h3 {
+            color: #f1c40f;
+            font-size: 1.1rem;
+            margin-top: 0;
+            border-bottom: 1px solid rgba(241, 196, 15, 0.3);
+            padding-bottom: 10px;
+            text-align: center;
+        }
+        .law-item {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px border rgba(255, 255, 255, 0.05);
+        }
+        .law-item:last-child { border-bottom: none; }
+        .law-item strong {
+            display: block;
+            color: #ffffff;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        .law-item span {
+            display: block;
+            color: #aaa;
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+
+        /* Pop-up Güzelleştirme */
+        .popup-content {
+            background: #1a1a1a;
+            border: 2px solid #f1c40f;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
         }
     </style>
 </head>
@@ -41,28 +86,40 @@
         <div id="chess-board"></div>
 
         <div class="side-panel">
-            <div id="status" class="msg-box">Başlamak için butona basın.</div>
+            <div id="status" class="msg-box">Sıra Beyazda / White's Turn</div>
             
             <div class="controls">
-                <button onclick="prevStep()" id="prev-btn" disabled>Geri</button>
-                <button onclick="nextStep()" id="next-btn">Sonraki Hamle</button>
+                <button onclick="prevStep()" id="prev-btn" disabled>Geri / Back</button>
+                <button onclick="nextStep()" id="next-btn">Sıradaki / Next</button>
             </div>
             
             <div class="full-rules-panel">
-                <h3>📜 İhanet Yasaları</h3>
-                <ul id="rules-list">
-                    </ul>
+                <h3 id="panel-title">📜 THE 3 LAWS</h3>
+                <div id="rules-content">
+                    <div class="law-item">
+                        <strong>⚡ 1. ACTIVE THREAT</strong>
+                        <span id="rule-1-desc">İhanet sadece taze tehditlerde tetiklenir. Feda edilen taşlar bağışıktır. / Betrayal only triggers on fresh threats. Self-sacrifices are immune.</span>
+                    </div>
+                    <div class="law-item">
+                        <strong>🔄 2. THE CHOICE</strong>
+                        <span id="rule-2-desc">At, Kale ve Fil ihanet edebilir. Vezir ve Piyonlar sadıktır. / Knights, Rooks, and Bishops can betray. Queens and Pawns are loyal.</span>
+                    </div>
+                    <div class="law-item">
+                        <strong>💨 3. FINAL MISSION</strong>
+                        <span id="rule-3-desc">İhanet eden taş şah çekemez. Hamle sonrası tahtadan silinir. / Traitors cannot check. Removed after move.</span>
+                    </div>
+                </div>
             </div>
         </div> 
     </div>
 
     <div id="betrayal-popup" class="popup-overlay" style="display: none;">
         <div class="popup-content">
-            <h2 class="alert-title">⚠️ BİLDİRİM</h2>
-            <p id="popup-msg">Mesaj buraya gelecek...</p>
+            <h2 class="alert-title">⚠️ BİLDİRİM / ALERT</h2>
+            <p id="popup-msg">Mesaj...</p>
             <div class="popup-rule-box">
-                <strong>Kanun:</strong> 
-                <span id="popup-rule">Kural açıklaması.</span>
+                <strong id="popup-law-label">KANUN / LAW:</strong> 
+                <span id="popup-rule">...</span>
             </div>
             <button onclick="closePopup()" class="popup-btn">OK</button>
         </div>
