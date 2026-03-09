@@ -150,27 +150,27 @@ const tutorialSteps = [
     { 
         run: () => { 
             layout[5]=''; // f8'deki (filin başlangıcı) fili kaldır
-            layout[41]='b-b'; // b4 karesine (index 41) koy
+            layout[38]='b-b'; // b4 karesine (index 41) koy
             vurgula(2); 
             pop(6, 1, "#ff3333"); // İhanet mesajı
         } 
     },
     
-    // 7. ADIM: Hain At (c6), b4'teki (41) Fil'i alır
+    // 7. ADIM: Hain At (c6), b4'teki (38) Fil'i alır
     { 
         run: () => { 
             layout[18]=''; // At c6'dan (index 18) kalkar
-            layout[41]='w-n'; // b4'teki (index 41) Fil'i vurur
+            layout[38]='w-n'; // b4'teki (index 38) Fil'i vurur
             draw();
             
-            // Vurulan karede (41) patlama efekti
+            // Vurulan karede (38) patlama efekti
             const capturedPiece = boardElement.children[41].querySelector('.piece');
             if (capturedPiece) capturedPiece.classList.add('piece-capture');
             
             vurgula(3); 
             pop(7, 2, "#ffffff"); // Silinme kuralı mesajı
             
-            const tId = setTimeout(() => { layout[41]=''; draw(); }, 1500);
+            const tId = setTimeout(() => { layout[38]=''; draw(); }, 1500);
             timeouts.push(tId);
         } 
     }
