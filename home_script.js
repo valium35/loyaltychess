@@ -34,7 +34,34 @@ const translations = {
         ],
         alertTitle: "⚠️ NOTIFICATION",
         alertBtn: "I UNDERSTAND"
+    }const translations = {
+    tr: {
+        // ... (diğer kısımlar aynı kalsın)
+        alertTitle: "⚠️ İHANET BİLDİRİMİ",
+        alertBtn: "ANLADIM",
+        messages: {
+            betrayalAction: "Bir taş ihanet etti!",
+            knightBetrayal: "At saf değiştirdi!",
+            bishopBetrayal: "Fil taraf değiştirdi!",
+            rookBetrayal: "Kale ihanet etti!",
+            invalidMove: "Geçersiz hamle! Önce şahı korumalısın.",
+            pieceRemoved: "İhanet eden taş görevini tamamladı ve oyundan çıktı."
+        }
+    },
+    en: {
+        // ... (diğer kısımlar aynı kalsın)
+        alertTitle: "⚠️ BETRAYAL NOTICE",
+        alertBtn: "I UNDERSTAND",
+        messages: {
+            betrayalAction: "A piece has committed betrayal!",
+            knightBetrayal: "A Knight has switched sides!",
+            bishopBetrayal: "A Bishop has switched sides!",
+            rookBetrayal: "A Rook has committed betrayal!",
+            invalidMove: "Invalid move! Protect your King first.",
+            pieceRemoved: "The traitor piece has completed its task and left the board."
+        }
     }
+}
 };
 // Sayfa yüklendiğinde dili uygula
 document.addEventListener("DOMContentLoaded", () => {
