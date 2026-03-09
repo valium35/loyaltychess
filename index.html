@@ -7,109 +7,126 @@
     <style>
         /* 1. ARKA PLAN VE ANA DÜZEN */
         body { 
-            background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.8)), 
+            background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)), 
                               url('https://raw.githubusercontent.com/valium35/loyaltychess/refs/heads/main/logo.jpg');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
             background-repeat: no-repeat;
             background-color: #121212;
-
             color: white; 
             text-align: center; 
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
             display: flex; 
             flex-direction: column; 
-            justify-content: center; 
+            justify-content: flex-start; /* Üstten başlaması için */
             align-items: center; 
-            height: 100vh; 
+            min-height: 100vh; 
             margin: 0; 
-            overflow: hidden;
+            padding-top: 50px;
+            overflow-x: hidden;
         }
 
-        /* 2. ANİMASYON TANIMLARI */
+        /* 2. ANİMASYONLAR */
         @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Başlangıçta öğeleri gizle ve animasyonu hazırla */
-        .reveal {
-            opacity: 0;
-            animation: fadeInUp 1s ease-out forwards;
-        }
+        .reveal { opacity: 0; animation: fadeInUp 0.8s ease-out forwards; }
 
-        /* 3. ÖĞE GECİKMELERİ (Resim göründükten sonra sırayla gelecekler) */
+        /* 3. BAŞLIK VE METİN */
         h1 { 
-            font-size: 4rem; 
-            letter-spacing: 8px; 
+            font-size: 3.5rem; 
+            letter-spacing: 10px; 
             color: #f1c40f; 
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             font-weight: 900;
             text-shadow: 0 5px 15px rgba(0,0,0,0.5);
-            animation-delay: 0.8s; /* Resimden 0.8 saniye sonra */
+            animation-delay: 0.3s;
         }
-
         h1 span { color: #ffffff; font-weight: 300; }
 
-        p { 
-            font-size: 1.2rem; 
-            color: #ddd; 
-            margin-bottom: 40px; 
-            max-width: 600px;
-            line-height: 1.6;
-            animation-delay: 1.2s; /* Başlıktan biraz sonra */
+        .tagline { 
+            font-size: 1.1rem; 
+            color: #aaa; 
+            margin-bottom: 30px; 
+            animation-delay: 0.5s; 
         }
 
+        /* 4. KURALLAR PANELİ (THE 3 LAWS) */
+        .rules-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 1000px;
+            margin-bottom: 40px;
+            padding: 0 20px;
+            animation-delay: 0.8s;
+        }
+
+        .rule-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px border rgba(241, 196, 15, 0.2);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }
+        .rule-card:hover { transform: translateY(-5px); border-color: #f1c40f; }
+        .rule-card h3 { color: #f1c40f; margin-top: 0; font-size: 1rem; text-transform: uppercase; }
+        .rule-card p { font-size: 0.85rem; color: #ddd; margin: 0; line-height: 1.4; text-align: left; }
+
+        /* 5. BUTONLAR */
         .btn-container {
             display: flex; 
             gap: 20px; 
-            justify-content: center;
-            animation-delay: 1.6s; /* En son butonlar */
+            margin-bottom: 50px;
+            animation-delay: 1.1s;
         }
 
-        /* 4. BUTON TASARIMI */
         .btn { 
-            padding: 18px 35px; 
+            padding: 15px 35px; 
             background: #f1c40f; 
             color: #121212; 
             text-decoration: none; 
             font-weight: bold; 
             border: none;
             border-radius: 50px; 
-            font-size: 1.1rem; 
+            font-size: 1rem; 
             transition: all 0.3s ease; 
             box-shadow: 0 10px 20px rgba(241, 196, 15, 0.2);
             cursor: pointer;
-            text-transform: uppercase;
         }
 
-        .btn:hover { 
-            background: #ffffff; 
-            transform: translateY(-5px); 
-            box-shadow: 0 15px 30px rgba(255, 255, 255, 0.2);
-        }
+        .btn:hover { background: #ffffff; transform: scale(1.05); }
 
-        @media (max-width: 600px) {
-            h1 { font-size: 2.5rem; letter-spacing: 4px; }
-            .btn-container { flex-direction: column; gap: 15px; }
+        @media (max-width: 850px) {
+            .rules-container { grid-template-columns: 1fr; }
+            h1 { font-size: 2.5rem; }
+            body { padding-top: 20px; overflow-y: auto; }
         }
     </style>
 </head>
 <body>
 
     <h1 class="reveal">LOYALTY<span>CHESS</span></h1>
+    <p class="tagline reveal">The only arena where betrayal is a legal move.</p>
     
-    <p id="welcome-text" class="reveal">
-        Welcome to the only chess arena where betrayal is the rule. <br>
-        If you are ready, make your move.
-    </p>
+    <div class="rules-container reveal">
+        <div class="rule-card">
+            <h3>⚡ 1. Active Threat</h3>
+            <p>Betrayal only triggers on <b>fresh threats</b>. If your opponent attacks your piece and you don't defend it, it may turn. <i>Passive or self-sacrificed pieces are immune.</i></p>
+        </div>
+        <div class="rule-card">
+            <h3>🔄 2. The Choice</h3>
+            <p>Your opponent can use the betrayed piece for one move. <b>Knight, Bishop, and Rooks</b> can betray. <i>Queens and Pawns are always loyal.</i></p>
+        </div>
+        <div class="rule-card">
+            <h3>💨 3. Final Mission</h3>
+            <p>A traitor can capture allies but <b>cannot Check or Mate</b>. After its move, the piece is removed from the board forever.</p>
+        </div>
+    </div>
     
     <div class="btn-container reveal">
         <button onclick="startWithLang('tr')" class="btn">TÜRKÇE OYNA 🇹🇷</button>
@@ -121,9 +138,6 @@
             localStorage.setItem('gameLang', lang);
             window.location.href = 'home.html';
         }
-
-        // Sayfa yüklendiğinde metni dile göre anlık değiştirmek istersen (opsiyonel)
-        // Şimdilik ana metni İngilizce yaptım çünkü global bir arena vurgusu verdik.
     </script>
 
 </body>
