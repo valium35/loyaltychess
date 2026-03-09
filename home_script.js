@@ -146,11 +146,11 @@ const tutorialSteps = [
             pop(5, 0, "#f1c40f"); 
         } 
     },
-    // 6. ADIM: Siyah Fil b4'e (index 41) gelir
+    // 6. ADIM: Siyah Fil b4'e (index 33) gelir
     { 
         run: () => { 
             layout[5]=''; // f8'deki (filin başlangıcı) fili kaldır
-            layout[43]='b-b'; // b4 karesine (index 43) koy
+            layout[33]='b-b'; // b4 karesine (index 33) koy
             vurgula(2); 
             pop(6, 1, "#ff3333"); // İhanet mesajı
         } 
@@ -160,7 +160,7 @@ const tutorialSteps = [
     { 
         run: () => { 
             layout[18]=''; // At c6'dan (index 18) kalkar
-            layout[43]='w-n'; // b4'teki (index 38) Fil'i vurur
+            layout[33]='w-n'; // b4'teki (index 33) Fil'i vurur
             draw();
             
             // Vurulan karede (38) patlama efekti
