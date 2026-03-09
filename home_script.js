@@ -1,5 +1,5 @@
 // ==========================================
-// 1. DİL SÖZLÜĞÜ VE YENİ 3 YASA YAPISI
+// 1. DİL SÖZLÜĞÜ (TR/EN GÜNCEL)
 // ==========================================
 const translations = {
     tr: {
@@ -14,23 +14,21 @@ const translations = {
             "3. SON GÖREV: İhanet eden taş şah çekemez. Hamle sonrası tahtadan sonsuza dek silinir."
         ],
         popups: {
-            step3Title: "🛡️ AKTİF FEDA",
-            step3Msg: "Siyah At'ı f4 piyonunun menziline (c6) kendin getirdin. Bu bir feda hamlesidir, İHANET tetiklenmez.",
             step5Title: "⚠️ TAZE TEHDİT",
-            step5Msg: "Beyaz Fil b5'e gelerek At'ı doğrudan tehdit etti! At şu an korumasız.",
+            step5Msg: "Beyaz Fil b5'e gelerek c6'daki At'ı doğrudan tehdit etti!",
             step6Title: "🔥 İHANET!",
-            step6Msg: "At korumasız bırakıldı! Rakip Fil b4'teki At'ı vurmak yerine, c6'daki At'ı İHANET ettiriyor!",
+            step6Msg: "Siyah, Atı korumak yerine Filini b4'e sürerek Atı terk etti. İhanet Yasası işliyor!",
             step7Title: "⚔️ İNTİKAM",
-            step7Msg: "Hain At, b4'teki kendi Filini aldı! Görev bitti ve At tahtadan silindi."
+            step7Msg: "Hain At, b4'teki kendi Filini yok etti ve görevini tamamlayıp tahtadan ayrıldı."
         },
         tutorialMsgs: [
             "1. Beyaz e4, Siyah e5. Merkez mücadelesi başlıyor.",
-            "2. Beyaz f4 (Şah Gambiti tarzı), Siyah d6 ile karşılık veriyor.",
-            "3. Beyaz At f3, Siyah At c6. (At f4 piyonu menzilinde ama Aktif Feda olduğu için güvende).",
-            "4. Beyaz g3 sürerken, Siyah b6 ile fil yolu açıyor.",
-            "5. TAZE TEHDİT: Beyaz Fil b5'e geldi! At c6'da doğrudan saldırı altında!",
-            "6. İHANET SEÇİMİ: Siyah, Atı korumak yerine Fil b4 yaptı. At artık rakibin kontrolünde!",
-            "7. SON HAMLE: Hain At, b4'teki Siyah Fil'i aldı ve her iki taş da tahtadan çıktı."
+            "2. Beyaz f4, Siyah d5 ile merkezi zorluyor.",
+            "3. Beyaz Af3, Siyah Ac6 gelişimi. (Ac6 Aktif Feda olduğu için güvende).",
+            "4. Beyaz g3 hazırlığı, Siyah b6 sürüyor.",
+            "5. TAZE TEHDİT: Beyaz Fil b5'e indi, At tehlikede!",
+            "6. İHANET: Siyah Fil b4'e geldi! At korumasız kaldığı için taraf değiştirdi.",
+            "7. SON: Hain At, b4'teki Fil'i aldı ve her iki taş da silindi."
         ]
     },
     en: {
@@ -45,29 +43,27 @@ const translations = {
             "3. FINAL MISSION: Traitors cannot check. They are removed from the board after the move."
         ],
         popups: {
-            step3Title: "🛡️ ACTIVE SACRIFICE",
-            step3Msg: "You moved the Knight to c6 yourself. This is a sacrifice, NOT a betrayal.",
             step5Title: "⚠️ FRESH THREAT",
-            step5Msg: "White Bishop moved to b5! The Knight is now under threat.",
-            step6Title: "🔥 BETRAYAL",
-            step6Msg: "The Knight was abandoned! Opponent is using your Knight to betray you.",
-            step7Title: "💨 REMOVAL",
-            step7Msg: "The traitor took the Bishop and both are removed from the board."
+            step5Msg: "White Bishop moved to b5, threatening the Knight on c6!",
+            step6Title: "🔥 BETRAYAL!",
+            step6Msg: "Black moved the Bishop to b4, abandoning the Knight. Law of Betrayal is active!",
+            step7Title: "⚔️ REVENGE",
+            step7Msg: "The traitor Knight destroyed its own Bishop on b4 and left the board."
         },
         tutorialMsgs: [
-            "1. White e4, Black e5.",
-            "2. White f4, Black d6.",
-            "3. White Nf3, Black Nc6. (Active Sacrifice, no betrayal).",
-            "4. White g3, Black b6.",
-            "5. FRESH THREAT: White Bishop to b5!",
-            "6. BETRAYAL: Black played Bishop b4, leaving the Knight unprotected.",
-            "7. FINAL: The traitor Knight took the Bishop on b4 and vanished."
+            "1. White e4, Black e5. Center battle begins.",
+            "2. White f4, Black d5 challenging the center.",
+            "3. White Nf3, Black Nc6 development. (Active sacrifice, so it's safe).",
+            "4. White g3 prep, Black plays b6.",
+            "5. FRESH THREAT: White Bishop to b5, the Knight is in danger!",
+            "6. BETRAYAL: Black played Bishop b4! The abandoned Knight switched sides.",
+            "7. FINAL: The traitor Knight took the Bishop on b4 and both were removed."
         ]
     }
 };
 
 // ==========================================
-// 2. TEMEL DEĞİŞKENLER
+// 2. TEMEL DEĞİŞKENLER VE TAHTA
 // ==========================================
 const boardElement = document.getElementById('chess-board');
 const statusElement = document.getElementById('status');
@@ -92,21 +88,6 @@ function resetBoard() {
     vurgula(0);
 }
 
-// ==========================================
-// 3. ÇEKİRDEK FONKSİYONLAR
-// ==========================================
-function applyLanguage(lang) {
-    const t = translations[lang];
-    statusElement.innerText = t.status;
-    document.querySelector('.full-rules-panel h3').innerText = t.rulesTitle;
-    
-    document.getElementById('rule-1-desc').innerText = t.rules[0];
-    document.getElementById('rule-2-desc').innerText = t.rules[1];
-    document.getElementById('rule-3-desc').innerText = t.rules[2];
-    
-    updateButtonStates();
-}
-
 function draw() {
     boardElement.innerHTML = ''; 
     for (let i = 0; i < 64; i++) {
@@ -119,7 +100,7 @@ function draw() {
         if (layout[i]) {
             const piece = document.createElement('div');
             piece.className = `piece ${layout[i]}`;
-            // İhanet anında (adım 6) c6 karesindeki (indeks 18) atı parlat
+            // Adım 6'da c6'daki atı (index 18) parlat
             if (step === 6 && i === 18) piece.classList.add('betrayal');
             square.appendChild(piece);
         }
@@ -142,34 +123,31 @@ function vurgula(kuralNo) {
 }
 
 // ==========================================
-// 4. EĞİTİM ADIMLARI (SENARYO)
+// 3. SENARYO ADIMLARI
 // ==========================================
 const tutorialSteps = [
     // 1. e4 e5
     { run: () => { layout[52]=''; layout[36]='w-p'; layout[12]=''; layout[28]='b-p'; vurgula(0); } },
-    // 2. f4 d6
-    { run: () => { layout[53]=''; layout[37]='w-p'; layout[11]=''; layout[19]='b-p'; vurgula(0); } },
-    // 3. Nf3 Nc6 (Aktif Feda Bilgisi)
-    { run: () => { 
-        layout[62]=''; layout[45]='w-n'; layout[1]=''; layout[18]='b-n'; 
-        vurgula(1); pop(3, 0, "#3498db"); 
-    } },
+    // 2. f4 d5 (Yeni hamle)
+    { run: () => { layout[53]=''; layout[37]='w-p'; layout[11]=''; layout[27]='b-p'; vurgula(0); } },
+    // 3. Nf3 Nc6 (Pop-up silindi, sadece hamle)
+    { run: () => { layout[62]=''; layout[45]='w-n'; layout[1]=''; layout[18]='b-n'; vurgula(0); } },
     // 4. g3 b6
     { run: () => { layout[54]=''; layout[46]='w-p'; layout[9]=''; layout[17]='b-p'; vurgula(0); } },
-    // 5. Fb5 (Taze Tehdit)
+    // 5. Bb5 (Fresh Threat)
     { run: () => { 
         layout[61]=''; layout[25]='w-b'; 
         vurgula(1); pop(5, 0, "#f1c40f"); 
     } },
-    // 6. Fil b4 (İHANET TETİKLENİR)
+    // 6. Bb4 (Betrayal Trigger)
     { run: () => { 
         layout[5]=''; layout[26]='b-b'; 
         vurgula(2); pop(6, 1, "#ff3333"); 
     } },
-    // 7. Hain At Fil'i alır ve silinir
+    // 7. Take & Remove
     { run: () => { 
-        layout[18]=''; // c6'daki at gider
-        layout[26]='w-n'; // b4'te at görünür (geçici)
+        layout[18]=''; 
+        layout[26]='w-n'; 
         draw();
         const capturedPiece = boardElement.children[26].querySelector('.piece');
         if (capturedPiece) capturedPiece.classList.add('piece-capture');
@@ -188,7 +166,7 @@ function pop(stepNo, ruleIdx, color) {
 }
 
 // ==========================================
-// 5. KONTROLLER
+// 4. KONTROLLER
 // ==========================================
 function nextStep() {
     const lang = localStorage.getItem('gameLang') || 'tr';
@@ -248,6 +226,19 @@ function showPop(title, msg, rule, color) {
 
 function closePopup() {
     document.getElementById('betrayal-popup').style.display = 'none';
+}
+
+function applyLanguage(lang) {
+    const t = translations[lang];
+    statusElement.innerText = t.status;
+    const title = document.querySelector('.full-rules-panel h3');
+    if(title) title.innerText = t.rulesTitle;
+    
+    document.getElementById('rule-1-desc').innerText = t.rules[0];
+    document.getElementById('rule-2-desc').innerText = t.rules[1];
+    document.getElementById('rule-3-desc').innerText = t.rules[2];
+    
+    updateButtonStates();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
