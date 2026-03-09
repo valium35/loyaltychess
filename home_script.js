@@ -214,4 +214,45 @@ function prevStep() {
         for (let i = 0; i < targetStep; i++) {
             tutorialSteps[i].run();
         }
-        step = targetStep
+        step = targetStep; 
+        statusElement.innerText = (step === 0) ? translations[lang].status : translations[lang].tutorialMsgs[step - 1];
+        draw();
+        updateButtonStates();
+    }
+}
+
+function updateButtonStates() {
+    const lang = localStorage.getItem('gameLang') || 'tr';
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    if(prevBtn) {
+        prevBtn.innerText = (lang === 'tr' ? 'Geri' : 'Back');
+        prevBtn.disabled = (step === 0);
+    }
+    if(nextBtn) {
+        nextBtn.innerText = (step >= tutorialSteps.length) ? translations[lang].resetBtn : translations[lang].nextBtn;
+    }
+}
+
+function showPop(title, msg, rule, color) {
+    const popup = document.getElementById('betrayal-popup');
+    if(!popup) return;
+    document.querySelector('.alert-title').innerText = title;
+    document.getElementById('popup-msg').innerText = msg;
+    document.getElementById('popup-rule').innerText = rule;
+    const content = document.querySelector('.popup-content');
+    if(content) content.style.borderLeftColor = color;
+    document.querySelector('.alert-title').style.color = color;
+    popup.style.display = 'flex';
+}
+
+function closePopup() {
+    document.getElementById('betrayal-popup').style.display = 'none';
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    resetBoard();
+    const currentLang = localStorage.getItem('gameLang') || 'tr';
+    applyLanguage(currentLang);
+    draw();
+});
