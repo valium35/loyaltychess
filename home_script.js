@@ -258,4 +258,51 @@ function nextStep() {
         draw();
     }
     updateButtonStates();
+}// ==========================================
+// 6. POP-UP VE YARDIMCI FONKSİYONLAR
+// ==========================================
+
+function showPop(title, msg, rule, color) {
+    const popup = document.getElementById('betrayal-popup');
+    const popupContent = document.querySelector('.popup-content');
+    
+    // HTML içindeki alanları doldur
+    document.querySelector('.alert-title').innerText = title;
+    document.getElementById('popup-msg').innerText = msg;
+    document.getElementById('popup-rule').innerText = rule;
+    
+    // Kenarlık rengini kurala göre ayarla
+    popupContent.style.borderColor = color;
+    
+    // Görünür yap
+    popup.style.display = 'flex';
+}
+
+function closePopup() {
+    const popup = document.getElementById('betrayal-popup');
+    popup.style.display = 'none';
+}
+
+// applyLanguage fonksiyonunu butonları da kapsayacak şekilde güncelleyelim
+// Mevcut applyLanguage fonksiyonunun yerini bu alabilir:
+function applyLanguage(lang) {
+    const t = translations[lang];
+    statusElement.innerText = t.status;
+    
+    // Buton metinlerini güncelle
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    if(prevBtn) prevBtn.innerText = (lang === 'en' ? "Back" : "Geri");
+    if(nextBtn) nextBtn.innerText = t.nextBtn;
+    
+    document.querySelector('.full-rules-panel h3').innerText = t.rulesTitle;
+    
+    const rulesList = document.getElementById('rules-list');
+    rulesList.innerHTML = ""; 
+    t.rules.forEach((rule, index) => {
+        const li = document.createElement('li');
+        li.id = `rule-${index + 1}`;
+        li.innerText = rule;
+        rulesList.appendChild(li);
+    });
 }
