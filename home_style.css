@@ -7,12 +7,12 @@ body {
     color: #fff; /* Yazı renklerini beyaza çek ki arkaplanda okunsun */
 
     /* 🔥 ARKA PLAN AYARLARI (Burayı ekle) */
-    background-image: url('logo.jpg'); /* Dosya yolunu göster */
-    background-size: cover;          /* Resmi tüm ekrana sığdırır (boşluk bırakmaz) */
-    background-position: center;      /* Resmi ortalar */
-    background-repeat: no-repeat;    /* Resim küçükse tekrar etmesini engeller */
-    background-attachment: fixed;     /* Sayfa kayarken resim sabit kalır (havalı durur) */
-    background-color: #111;           /* Resim yüklenmezse diye siyah bir yedek renk */
+   background-image: url('https://raw.githubusercontent.com/valium35/loyaltychess/refs/heads/main/logo.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-color: #111;
     background: #121212; 
     color: white; 
     display: flex; 
