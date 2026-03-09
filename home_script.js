@@ -194,3 +194,68 @@ document.addEventListener("DOMContentLoaded", () => {
     applyLanguage(lang);
     draw();
 });
+// Geri gitme fonksiyonu
+function prevStep() {
+    if (step > 0) {
+        step--; // Adımı bir geri çek
+        resetBoard(); // Tahtayı başlangıç dizilimine getir
+        
+        // Kaldığımız adıma kadar olan tüm hamleleri baştan oynat
+        for (let i = 0; i < step; i++) {
+            tutorialSteps[i].run();
+        }
+        
+        // Mesajı ve tahtayı güncelle
+        if (step === 0) {
+            const lang = localStorage.getItem('gameLang') || 'tr';
+            statusElement.innerText = translations[lang].status;
+        } else {
+            statusElement.innerText = tutorialSteps[step - 1].msg;
+        }
+        
+        updateButtonStates();
+        draw();
+    }
+}
+
+// Tahtayı ilk haline döndüren yardımcı fonksiyon
+function resetBoard() {
+    layout = [
+        'b-r','b-n','b-b','b-q','b-k','b-b','b-n','b-r',
+        'b-p','b-p','b-p','b-p','b-p','b-p','b-p','b-p',
+        '','','','','','','','',
+        '','','','','','','','',
+        '','','','','','','','',
+        '','','','','','','','',
+        'w-p','w-p','w-p','w-p','w-p','w-p','w-p','w-p',
+        'w-r','w-n','w-b','w-q','w-k','w-b','w-n','w-r'
+    ];
+}
+
+// Butonların aktiflik durumunu kontrol et
+function updateButtonStates() {
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    
+    prevBtn.disabled = (step === 0);
+    nextBtn.innerText = (step >= tutorialSteps.length) ? "Başa Dön" : (localStorage.getItem('gameLang') === 'en' ? "Next Move" : "Sonraki Hamle");
+}
+
+// Mevcut nextStep fonksiyonunu da güncelleyelim (Başa dönme özelliği için)
+function nextStep() {
+    if (step < tutorialSteps.length) {
+        tutorialSteps[step].run();
+        statusElement.innerText = tutorialSteps[step].msg;
+        step++;
+        draw();
+    } else {
+        // Eğitim bittiyse tıklandığında başa sar
+        step = 0;
+        resetBoard();
+        const lang = localStorage.getItem('gameLang') || 'tr';
+        statusElement.innerText = translations[lang].status;
+        vurgula(0);
+        draw();
+    }
+    updateButtonStates();
+}
