@@ -1,5 +1,8 @@
 /* GENEL AYARLAR */
 body { 
+    background-image: url('arka-plan.jpg');
+    background-size: cover;
+    background-attachment: fixed;
     background: #121212; 
     color: white; 
     display: flex; 
