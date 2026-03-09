@@ -80,8 +80,7 @@ const translations = {
 const boardElement = document.getElementById('chess-board');
 const statusElement = document.getElementById('status');
 let step = 0;
-let timeouts = [];
-
+let timeouts = []; 
 let layout = []; 
 
 // ==========================================
@@ -90,6 +89,7 @@ let layout = [];
 
 function resetBoard() {
     step = 0;
+    // Zamanlayıcıları temizle (Vezir'in geri dönünce silinmesini engeller)
     timeouts.forEach(t => clearTimeout(t));
     timeouts = [];
 
@@ -134,6 +134,7 @@ function draw() {
         if (layout[i]) {
             const piece = document.createElement('div');
             piece.className = `piece ${layout[i]}`;
+            // 6. Adımda atın taraf değiştirdiğini belirtmek için parlatma
             if (step === 6 && i === 18) piece.classList.add('betrayal');
             square.appendChild(piece);
         }
@@ -151,7 +152,7 @@ function vurgula(kuralNo) {
 }
 
 // ==========================================
-// 4. EĞİTİM ADIMLARI
+// 4. EĞİTİM ADIMLARI (TUTORIAL STEPS)
 // ==========================================
 const tutorialSteps = [
     { run: () => { layout[52]=''; layout[36]='w-p'; layout[9]=''; layout[17]='b-p'; vurgula(1); } },
@@ -175,3 +176,94 @@ const tutorialSteps = [
             layout[18]=''; layout[3]='w-n'; draw();
             const capturedPiece = boardElement.children[3].querySelector('.piece');
             if (capturedPiece) capturedPiece.classList.add('piece-capture');
+            vurgula(7);
+            pop(7, 6, "#ffffff");
+            const tId = setTimeout(() => { layout[3]=''; draw(); }, 1200);
+            timeouts.push(tId);
+        }
+    }
+];
+
+function pop(stepNo, ruleIdx, color) {
+    const lang = localStorage.getItem('gameLang') || 'tr';
+    const p = translations[lang].popups[`step${stepNo}Title`];
+    const m = translations[lang].popups[`step${stepNo}Msg`];
+    const r = translations[lang].rules[ruleIdx];
+    showPop(p, m, r, color);
+}
+
+// ==========================================
+// 5. KONTROLLER
+// ==========================================
+
+function nextStep() {
+    const lang = localStorage.getItem('gameLang') || 'tr';
+    if (step < tutorialSteps.length) {
+        tutorialSteps[step].run();
+        statusElement.innerText = translations[lang].tutorialMsgs[step];
+        step++;
+        draw();
+    } else {
+        resetBoard();
+        statusElement.innerText = translations[lang].status;
+        draw();
+    }
+    updateButtonStates();
+}
+
+function prevStep() {
+    const lang = localStorage.getItem('gameLang') || 'tr';
+    if (step > 0) {
+        step--;
+        const targetStep = step; 
+        resetBoard(); // Tahtayı başlangıca çeker
+        
+        // Kaldığımız yere kadar hamleleri yeniden hesapla
+        for (let i = 0; i < targetStep; i++) {
+            tutorialSteps[i].run();
+        }
+        
+        step = targetStep; 
+        statusElement.innerText = (step === 0) ? translations[lang].status : translations[lang].tutorialMsgs[step - 1];
+        draw();
+        updateButtonStates();
+    }
+}
+
+function updateButtonStates() {
+    const lang = localStorage.getItem('gameLang') || 'tr';
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+
+    if(prevBtn) {
+        prevBtn.innerText = translations[lang].backBtn;
+        prevBtn.disabled = (step === 0);
+    }
+    if(nextBtn) {
+        nextBtn.innerText = (step >= tutorialSteps.length) ? translations[lang].resetBtn : translations[lang].nextBtn;
+    }
+}
+
+function showPop(title, msg, rule, color) {
+    const popup = document.getElementById('betrayal-popup');
+    if(!popup) return;
+    document.querySelector('.alert-title').innerText = title;
+    document.getElementById('popup-msg').innerText = msg;
+    document.getElementById('popup-rule').innerText = rule;
+    document.querySelector('.popup-content').style.borderColor = color;
+    popup.style.display = 'flex';
+}
+
+function closePopup() {
+    document.getElementById('betrayal-popup').style.display = 'none';
+}
+
+// ==========================================
+// 6. BAŞLATICI
+// ==========================================
+document.addEventListener("DOMContentLoaded", () => {
+    resetBoard();
+    const currentLang = localStorage.getItem('gameLang') || 'tr';
+    applyLanguage(currentLang);
+    draw();
+});
