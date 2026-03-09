@@ -1,8 +1,18 @@
 /* GENEL AYARLAR */
 body { 
-    background-image: url('arka-plan.jpg');
-    background-size: cover;
-    background-attachment: fixed;
+    /* Temel Ayarlar (Eskiler dursun, yenileri ekle) */
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', sans-serif; /* Varsa yazı tipin */
+    color: #fff; /* Yazı renklerini beyaza çek ki arkaplanda okunsun */
+
+    /* 🔥 ARKA PLAN AYARLARI (Burayı ekle) */
+    background-image: url('logo.jpg'); /* Dosya yolunu göster */
+    background-size: cover;          /* Resmi tüm ekrana sığdırır (boşluk bırakmaz) */
+    background-position: center;      /* Resmi ortalar */
+    background-repeat: no-repeat;    /* Resim küçükse tekrar etmesini engeller */
+    background-attachment: fixed;     /* Sayfa kayarken resim sabit kalır (havalı durur) */
+    background-color: #111;           /* Resim yüklenmezse diye siyah bir yedek renk */
     background: #121212; 
     color: white; 
     display: flex; 
