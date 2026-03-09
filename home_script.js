@@ -190,4 +190,7 @@ function nextStep() {
 // 5. BAŞLATICI (INIT)
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
-    const lang = localStorage.getItem('gameLang') || 'tr
+    const lang = localStorage.getItem('gameLang') || 'tr';
+    applyLanguage(lang);
+    draw();
+});
