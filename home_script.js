@@ -150,17 +150,17 @@ const tutorialSteps = [
     { 
         run: () => { 
             layout[5]=''; // f8'deki (filin başlangıcı) fili kaldır
-            layout[38]='b-b'; // b4 karesine (index 41) koy
+            layout[43]='b-b'; // b4 karesine (index 43) koy
             vurgula(2); 
             pop(6, 1, "#ff3333"); // İhanet mesajı
         } 
     },
     
-    // 7. ADIM: Hain At (c6), b4'teki (38) Fil'i alır
+    // 7. ADIM: Hain At (c6), b4'teki (43) Fil'i alır
     { 
         run: () => { 
             layout[18]=''; // At c6'dan (index 18) kalkar
-            layout[38]='w-n'; // b4'teki (index 38) Fil'i vurur
+            layout[43]='w-n'; // b4'teki (index 38) Fil'i vurur
             draw();
             
             // Vurulan karede (38) patlama efekti
