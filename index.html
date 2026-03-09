@@ -3,31 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LoyaltyChess - Hoş Geldiniz</title>
+    <title>LoyaltyChess - Welcome</title>
     <style>
+        /* 1. ARKA PLAN VE ANA DÜZEN */
         body { 
-            /* Arka Plan Ayarları */
-            background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
+            background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.8)), 
                               url('https://raw.githubusercontent.com/valium35/loyaltychess/refs/heads/main/logo.jpg');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
             background-repeat: no-repeat;
-            background-color: #121212; /* Resim yüklenene kadar yedek renk */
+            background-color: #121212;
 
-            /* Sayfa Düzeni */
             color: white; 
             text-align: center; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
             display: flex; 
             flex-direction: column; 
             justify-content: center; 
             align-items: center; 
             height: 100vh; 
             margin: 0; 
-            overflow: hidden; /* Kaydırma çubuğunu gizle */
+            overflow: hidden;
         }
 
+        /* 2. ANİMASYON TANIMLARI */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Başlangıçta öğeleri gizle ve animasyonu hazırla */
+        .reveal {
+            opacity: 0;
+            animation: fadeInUp 1s ease-out forwards;
+        }
+
+        /* 3. ÖĞE GECİKMELERİ (Resim göründükten sonra sırayla gelecekler) */
         h1 { 
             font-size: 4rem; 
             letter-spacing: 8px; 
@@ -35,6 +53,7 @@
             margin-bottom: 10px;
             font-weight: 900;
             text-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            animation-delay: 0.8s; /* Resimden 0.8 saniye sonra */
         }
 
         h1 span { color: #ffffff; font-weight: 300; }
@@ -45,15 +64,17 @@
             margin-bottom: 40px; 
             max-width: 600px;
             line-height: 1.6;
-            text-shadow: 0 2px 5px rgba(0,0,0,0.8);
+            animation-delay: 1.2s; /* Başlıktan biraz sonra */
         }
 
         .btn-container {
             display: flex; 
             gap: 20px; 
             justify-content: center;
+            animation-delay: 1.6s; /* En son butonlar */
         }
 
+        /* 4. BUTON TASARIMI */
         .btn { 
             padding: 18px 35px; 
             background: #f1c40f; 
@@ -67,41 +88,42 @@
             box-shadow: 0 10px 20px rgba(241, 196, 15, 0.2);
             cursor: pointer;
             text-transform: uppercase;
-            letter-spacing: 1px;
         }
 
         .btn:hover { 
             background: #ffffff; 
-            color: #121212;
             transform: translateY(-5px); 
             box-shadow: 0 15px 30px rgba(255, 255, 255, 0.2);
         }
 
-        /* Mobil cihazlar için uyum */
         @media (max-width: 600px) {
             h1 { font-size: 2.5rem; letter-spacing: 4px; }
             .btn-container { flex-direction: column; gap: 15px; }
-            p { font-size: 1rem; padding: 0 20px; }
         }
     </style>
 </head>
 <body>
 
-    <h1>LOYALTY<span>CHESS</span></h1>
-    <p id="welcome-text">İhanetin kural olduğu tek satranç arenasına hoş geldiniz. Hazırsanız hamlenizi yapın.</p>
+    <h1 class="reveal">LOYALTY<span>CHESS</span></h1>
     
-    <div class="btn-container">
+    <p id="welcome-text" class="reveal">
+        Welcome to the only chess arena where betrayal is the rule. <br>
+        If you are ready, make your move.
+    </p>
+    
+    <div class="btn-container reveal">
         <button onclick="startWithLang('tr')" class="btn">TÜRKÇE OYNA 🇹🇷</button>
         <button onclick="startWithLang('en')" class="btn">PLAY ENGLISH 🇺🇸</button>
     </div>
 
     <script>
         function startWithLang(lang) {
-            // Seçimi kaydet
             localStorage.setItem('gameLang', lang);
-            // Oyun sayfasına yönlendir
             window.location.href = 'home.html';
         }
+
+        // Sayfa yüklendiğinde metni dile göre anlık değiştirmek istersen (opsiyonel)
+        // Şimdilik ana metni İngilizce yaptım çünkü global bir arena vurgusu verdik.
     </script>
 
 </body>
