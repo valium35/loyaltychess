@@ -168,4 +168,14 @@ button:hover { background: #d4ac0d; transform: scale(1.02); }
     0% { transform: scale(1); filter: brightness(1) blur(0px); opacity: 1; }
     40% { transform: scale(1.6); filter: brightness(2.5) blur(2px); opacity: 1; border-radius: 50%; box-shadow: 0 0 40px #ff3333; }
     100% { transform: scale(0); filter: brightness(5) blur(20px); opacity: 0; }
+}@keyframes shake {
+  0% { transform: translate(1px, 1px) rotate(0deg); }
+  10% { transform: translate(-1px, -2px) rotate(-1deg); }
+  30% { transform: translate(3px, 2px) rotate(0deg); }
+  50% { transform: translate(-1px, 2px) rotate(1deg); }
+  100% { transform: translate(1px, -2px) rotate(-1deg); }
+}
+
+.custom-popup.active {
+    animation: shake 0.5s; /* İhanet anında paneli sarsar */
 }
