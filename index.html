@@ -6,7 +6,16 @@
     <title>LoyaltyChess - Hoş Geldiniz</title>
     <style>
         body { 
-          background-image: url('https://raw.githubusercontent.com/valium35/loyaltychess/refs/heads/main/logo.jpg');
+            /* Arka Plan Ayarları */
+            background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
+                              url('https://raw.githubusercontent.com/valium35/loyaltychess/refs/heads/main/logo.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            background-color: #121212; /* Resim yüklenene kadar yedek renk */
+
+            /* Sayfa Düzeni */
             color: white; 
             text-align: center; 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
@@ -16,6 +25,7 @@
             align-items: center; 
             height: 100vh; 
             margin: 0; 
+            overflow: hidden; /* Kaydırma çubuğunu gizle */
         }
 
         h1 { 
@@ -24,15 +34,18 @@
             color: #f1c40f; 
             margin-bottom: 10px;
             font-weight: 900;
+            text-shadow: 0 5px 15px rgba(0,0,0,0.5);
         }
 
         h1 span { color: #ffffff; font-weight: 300; }
 
         p { 
             font-size: 1.2rem; 
-            color: #aaa; 
+            color: #ddd; 
             margin-bottom: 40px; 
             max-width: 600px;
+            line-height: 1.6;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.8);
         }
 
         .btn-container {
@@ -42,23 +55,33 @@
         }
 
         .btn { 
-            padding: 20px 40px; 
+            padding: 18px 35px; 
             background: #f1c40f; 
             color: #121212; 
             text-decoration: none; 
             font-weight: bold; 
             border: none;
             border-radius: 50px; 
-            font-size: 1.2rem; 
+            font-size: 1.1rem; 
             transition: all 0.3s ease; 
             box-shadow: 0 10px 20px rgba(241, 196, 15, 0.2);
             cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .btn:hover { 
-            background: #d4ac0d; 
+            background: #ffffff; 
+            color: #121212;
             transform: translateY(-5px); 
-            box-shadow: 0 15px 30px rgba(241, 196, 15, 0.4);
+            box-shadow: 0 15px 30px rgba(255, 255, 255, 0.2);
+        }
+
+        /* Mobil cihazlar için uyum */
+        @media (max-width: 600px) {
+            h1 { font-size: 2.5rem; letter-spacing: 4px; }
+            .btn-container { flex-direction: column; gap: 15px; }
+            p { font-size: 1rem; padding: 0 20px; }
         }
     </style>
 </head>
