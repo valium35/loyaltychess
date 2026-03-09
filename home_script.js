@@ -146,31 +146,31 @@ const tutorialSteps = [
             pop(5, 0, "#f1c40f"); 
         } 
     },
-    
-    // 6. İHANET ANI: Siyah Fil b4 karesine (index 26) geliyor! 
-    // Atı korumak yerine yanına geldi, At artık kontrolümüzde.
+    // 6. ADIM: Siyah Fil b4'e (index 41) gelir
     { 
         run: () => { 
-            layout[5]=''; layout[26]='b-b'; // Siyah Fil b4'e (index 26)
+            layout[5]=''; // f8'deki (filin başlangıcı) fili kaldır
+            layout[41]='b-b'; // b4 karesine (index 41) koy
             vurgula(2); 
-            pop(6, 1, "#ff3333"); 
+            pop(6, 1, "#ff3333"); // İhanet mesajı
         } 
     },
     
-    // 7. SON GÖREV: Hain At, b4'teki Siyah Fil'i alır ve ikisi de yok olur.
+    // 7. ADIM: Hain At (c6), b4'teki (41) Fil'i alır
     { 
         run: () => { 
-            layout[18]=''; // Hain At c6'dan kalkar
-            layout[26]='w-n'; // At b4'teki (index 26) Siyah Fil'i vurur
+            layout[18]=''; // At c6'dan (index 18) kalkar
+            layout[41]='w-n'; // b4'teki (index 41) Fil'i vurur
             draw();
             
-            const capturedPiece = boardElement.children[26].querySelector('.piece');
+            // Vurulan karede (41) patlama efekti
+            const capturedPiece = boardElement.children[41].querySelector('.piece');
             if (capturedPiece) capturedPiece.classList.add('piece-capture');
             
             vurgula(3); 
-            pop(7, 2, "#ffffff"); 
+            pop(7, 2, "#ffffff"); // Silinme kuralı mesajı
             
-            const tId = setTimeout(() => { layout[26]=''; draw(); }, 1500);
+            const tId = setTimeout(() => { layout[41]=''; draw(); }, 1500);
             timeouts.push(tId);
         } 
     }
