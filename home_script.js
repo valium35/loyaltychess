@@ -5,6 +5,8 @@ const translations = {
     tr: {
         status: "Başlamak için butona basın.",
         nextBtn: "Sonraki Hamle",
+        backBtn: "Geri",
+        resetBtn: "Başa Dön",
         rulesTitle: "📜 İhanet Yasaları",
         rules: [
             "1. Tehdit edilen taş ya korunmalı ya da yer değiştirmelidir.",
@@ -29,6 +31,8 @@ const translations = {
     en: {
         status: "Press the button to start.",
         nextBtn: "Next Move",
+        backBtn: "Back",
+        resetBtn: "Reset",
         rulesTitle: "📜 Betrayal Laws",
         rules: [
             "1. A threatened piece must either be protected or moved.",
@@ -53,33 +57,46 @@ const translations = {
 };
 
 // ==========================================
-// 2. TAHTA VE OYUN MANTIĞI DEĞİŞKENLERİ
+// 2. TEMEL DEĞİŞKENLER VE TAHTA DİZİLİMİ
 // ==========================================
 const boardElement = document.getElementById('chess-board');
 const statusElement = document.getElementById('status');
 let step = 0;
+let timeouts = []; // Çalışan zamanlayıcıları temizlemek için
 
-let layout = [
-    'b-r','b-n','b-b','b-q','b-k','b-b','b-n','b-r',
-    'b-p','b-p','b-p','b-p','b-p','b-p','b-p','b-p',
-    '','','','','','','','',
-    '','','','','','','','',
-    '','','','','','','','',
-    '','','','','','','','',
-    'w-p','w-p','w-p','w-p','w-p','w-p','w-p','w-p',
-    'w-r','w-n','w-b','w-q','w-k','w-b','w-n','w-r'
-];
+let layout = []; // Başlangıçta boş, resetBoard ile dolacak
 
 // ==========================================
-// 3. FONKSİYONLAR
+// 3. ÇEKİRDEK FONKSİYONLAR
 // ==========================================
+
+function resetBoard() {
+    step = 0;
+    // Zamanlayıcıları temizle (Vezir'in kaybolmasını önler)
+    timeouts.forEach(t => clearTimeout(t));
+    timeouts = [];
+
+    layout = [
+        'b-r','b-n','b-b','b-q','b-k','b-b','b-n','b-r',
+        'b-p','b-p','b-p','b-p','b-p','b-p','b-p','b-p',
+        '','','','','','','','',
+        '','','','','','','','',
+        '','','','','','','','',
+        '','','','','','','','',
+        'w-p','w-p','w-p','w-p','w-p','w-p','w-p','w-p',
+        'w-r','w-n','w-b','w-q','w-k','w-b','w-n','w-r'
+    ];
+    vurgula(0);
+}
 
 function applyLanguage(lang) {
     const t = translations[lang];
     statusElement.innerText = t.status;
-    document.querySelector('.side-panel button').innerText = t.nextBtn;
+    
+    // Panel Başlığı
     document.querySelector('.full-rules-panel h3').innerText = t.rulesTitle;
     
+    // Kurallar Listesi
     const rulesList = document.getElementById('rules-list');
     rulesList.innerHTML = ""; 
     t.rules.forEach((rule, index) => {
@@ -88,6 +105,7 @@ function applyLanguage(lang) {
         li.innerText = rule;
         rulesList.appendChild(li);
     });
+    updateButtonStates();
 }
 
 function draw() {
@@ -102,6 +120,7 @@ function draw() {
         if (layout[i]) {
             const piece = document.createElement('div');
             piece.className = `piece ${layout[i]}`;
+            // 6. Adımda atı parlat
             if (step === 6 && i === 18) piece.classList.add('betrayal');
             square.appendChild(piece);
         }
@@ -119,129 +138,56 @@ function vurgula(kuralNo) {
 }
 
 // ==========================================
-// 4. EĞİTİM ADIMLARI (TUTORIAL STEPS)
+// 4. EĞİTİM ADIMLARI
 // ==========================================
 const tutorialSteps = [
-    { 
-        msg: "1. Beyaz e4, Siyah b6 ile b-piyonunu açar.", 
-        run: () => { layout[52]=''; layout[36]='w-p'; layout[9]=''; layout[17]='b-p'; vurgula(1); }
-    },
-    { 
-        msg: "2. Beyaz d4, Siyah e6 ile e-piyonunu açar.", 
-        run: () => { layout[51]=''; layout[35]='w-p'; layout[12]=''; layout[20]='b-p'; vurgula(1); }
-    },
-    { 
-        msg: "3. Siyah d6 sürerek merkez piyonlarını dağıtır.", 
-        run: () => { layout[11]=''; layout[19]='b-p'; vurgula(1); }
-    },
-    { 
-        msg: "4. Siyah At c6'ya gelir.", 
-        run: () => { layout[1]=''; layout[18]='b-n'; vurgula(1); }
-    },
+    { msg: "1. Beyaz e4, Siyah b6.", run: () => { layout[52]=''; layout[36]='w-p'; layout[9]=''; layout[17]='b-p'; vurgula(1); } },
+    { msg: "2. Beyaz d4, Siyah e6.", run: () => { layout[51]=''; layout[35]='w-p'; layout[12]=''; layout[20]='b-p'; vurgula(1); } },
+    { msg: "3. Siyah d6 sürer.", run: () => { layout[11]=''; layout[19]='b-p'; vurgula(1); } },
+    { msg: "4. Siyah At c6'ya gelir.", run: () => { layout[1]=''; layout[18]='b-n'; vurgula(1); } },
     { 
         msg: "5. Beyaz Fil b5'te. At tehlikede!", 
         run: () => { 
-            layout[61]=''; layout[25]='w-b'; 
-            vurgula(1);
-            const lang = localStorage.getItem('gameLang') || 'tr';
-            showPop(translations[lang].popups.step5Title, translations[lang].popups.step5Msg, translations[lang].rules[0], "#f1c40f");
+            layout[61]=''; layout[25]='w-b'; vurgula(1);
+            pop(5, 0, "#f1c40f");
         }
     },
     { 
-        msg: "6. İHANET! Sahipsiz kalan At taraf değiştirir!", 
+        msg: "6. İHANET! At taraf değiştirir!", 
         run: () => { 
             vurgula(2);
-            const lang = localStorage.getItem('gameLang') || 'tr';
-            showPop(translations[lang].popups.step6Title, translations[lang].popups.step6Msg, translations[lang].rules[1], "#ff3333");
+            pop(6, 1, "#ff3333");
         }
     },
     { 
         msg: "7. Hain At, Siyah Vezir'i (d8) alır ve çıkar!", 
         run: () => { 
             layout[18]=''; layout[3]='w-n'; draw();
-            const capturedSquare = boardElement.children[3];
-            const capturedPiece = capturedSquare.querySelector('.piece');
+            const capturedPiece = boardElement.children[3].querySelector('.piece');
             if (capturedPiece) capturedPiece.classList.add('piece-capture');
 
-            const lang = localStorage.getItem('gameLang') || 'tr';
             vurgula(7);
-            showPop(translations[lang].popups.step7Title, translations[lang].popups.step7Msg, translations[lang].rules[6], "#ffffff");
+            pop(7, 6, "#ffffff");
 
-            setTimeout(() => {
-                layout[3]=''; draw();
-            }, 1200);
+            const tId = setTimeout(() => { layout[3]=''; draw(); }, 1200);
+            timeouts.push(tId);
         }
     }
 ];
 
-function nextStep() {
-    if (step < tutorialSteps.length) {
-        tutorialSteps[step].run();
-        statusElement.innerText = tutorialSteps[step].msg;
-        step++;
-        draw();
-    } else {
-        statusElement.innerText = "Eğitim Tamamlandı!";
-        vurgula(0);
-    }
-}
-
-// ==========================================
-// 5. BAŞLATICI (INIT)
-// ==========================================
-document.addEventListener("DOMContentLoaded", () => {
+// Pop-up Yardımcısı
+function pop(stepNo, ruleIdx, color) {
     const lang = localStorage.getItem('gameLang') || 'tr';
-    applyLanguage(lang);
-    draw();
-});
-// Geri gitme fonksiyonu
-function prevStep() {
-    if (step > 0) {
-        step--; // Adımı bir geri çek
-        resetBoard(); // Tahtayı başlangıç dizilimine getir
-        
-        // Kaldığımız adıma kadar olan tüm hamleleri baştan oynat
-        for (let i = 0; i < step; i++) {
-            tutorialSteps[i].run();
-        }
-        
-        // Mesajı ve tahtayı güncelle
-        if (step === 0) {
-            const lang = localStorage.getItem('gameLang') || 'tr';
-            statusElement.innerText = translations[lang].status;
-        } else {
-            statusElement.innerText = tutorialSteps[step - 1].msg;
-        }
-        
-        updateButtonStates();
-        draw();
-    }
+    const p = translations[lang].popups[`step${stepNo}Title`];
+    const m = translations[lang].popups[`step${stepNo}Msg`];
+    const r = translations[lang].rules[ruleIdx];
+    showPop(p, m, r, color);
 }
 
-// Tahtayı ilk haline döndüren yardımcı fonksiyon
-function resetBoard() {
-    layout = [
-        'b-r','b-n','b-b','b-q','b-k','b-b','b-n','b-r',
-        'b-p','b-p','b-p','b-p','b-p','b-p','b-p','b-p',
-        '','','','','','','','',
-        '','','','','','','','',
-        '','','','','','','','',
-        '','','','','','','','',
-        'w-p','w-p','w-p','w-p','w-p','w-p','w-p','w-p',
-        'w-r','w-n','w-b','w-q','w-k','w-b','w-n','w-r'
-    ];
-}
+// ==========================================
+// 5. KONTROLLER
+// ==========================================
 
-// Butonların aktiflik durumunu kontrol et
-function updateButtonStates() {
-    const prevBtn = document.getElementById('prev-btn');
-    const nextBtn = document.getElementById('next-btn');
-    
-    prevBtn.disabled = (step === 0);
-    nextBtn.innerText = (step >= tutorialSteps.length) ? "Başa Dön" : (localStorage.getItem('gameLang') === 'en' ? "Next Move" : "Sonraki Hamle");
-}
-
-// Mevcut nextStep fonksiyonunu da güncelleyelim (Başa dönme özelliği için)
 function nextStep() {
     if (step < tutorialSteps.length) {
         tutorialSteps[step].run();
@@ -249,60 +195,60 @@ function nextStep() {
         step++;
         draw();
     } else {
-        // Eğitim bittiyse tıklandığında başa sar
-        step = 0;
         resetBoard();
         const lang = localStorage.getItem('gameLang') || 'tr';
         statusElement.innerText = translations[lang].status;
-        vurgula(0);
         draw();
     }
     updateButtonStates();
-}// ==========================================
-// 6. POP-UP VE YARDIMCI FONKSİYONLAR
-// ==========================================
+}
+
+function prevStep() {
+    if (step > 0) {
+        step--;
+        resetBoard();
+        const currentStep = step; // Hedef adımı sakla
+        for (let i = 0; i < currentStep; i++) {
+            tutorialSteps[i].run();
+        }
+        step = currentStep; // Adımı geri yükle
+        statusElement.innerText = step === 0 ? translations[localStorage.getItem('gameLang') || 'tr'].status : tutorialSteps[step - 1].msg;
+        draw();
+        updateButtonStates();
+    }
+}
+
+function updateButtonStates() {
+    const lang = localStorage.getItem('gameLang') || 'tr';
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+
+    if(prevBtn) {
+        prevBtn.innerText = translations[lang].backBtn;
+        prevBtn.disabled = (step === 0);
+    }
+    if(nextBtn) {
+        nextBtn.innerText = (step >= tutorialSteps.length) ? translations[lang].resetBtn : translations[lang].nextBtn;
+    }
+}
 
 function showPop(title, msg, rule, color) {
     const popup = document.getElementById('betrayal-popup');
-    const popupContent = document.querySelector('.popup-content');
-    
-    // HTML içindeki alanları doldur
+    if(!popup) return;
     document.querySelector('.alert-title').innerText = title;
     document.getElementById('popup-msg').innerText = msg;
     document.getElementById('popup-rule').innerText = rule;
-    
-    // Kenarlık rengini kurala göre ayarla
-    popupContent.style.borderColor = color;
-    
-    // Görünür yap
+    document.querySelector('.popup-content').style.borderColor = color;
     popup.style.display = 'flex';
 }
 
 function closePopup() {
-    const popup = document.getElementById('betrayal-popup');
-    popup.style.display = 'none';
+    document.getElementById('betrayal-popup').style.display = 'none';
 }
 
-// applyLanguage fonksiyonunu butonları da kapsayacak şekilde güncelleyelim
-// Mevcut applyLanguage fonksiyonunun yerini bu alabilir:
-function applyLanguage(lang) {
-    const t = translations[lang];
-    statusElement.innerText = t.status;
-    
-    // Buton metinlerini güncelle
-    const prevBtn = document.getElementById('prev-btn');
-    const nextBtn = document.getElementById('next-btn');
-    if(prevBtn) prevBtn.innerText = (lang === 'en' ? "Back" : "Geri");
-    if(nextBtn) nextBtn.innerText = t.nextBtn;
-    
-    document.querySelector('.full-rules-panel h3').innerText = t.rulesTitle;
-    
-    const rulesList = document.getElementById('rules-list');
-    rulesList.innerHTML = ""; 
-    t.rules.forEach((rule, index) => {
-        const li = document.createElement('li');
-        li.id = `rule-${index + 1}`;
-        li.innerText = rule;
-        rulesList.appendChild(li);
-    });
-}
+// BAŞLAT
+document.addEventListener("DOMContentLoaded", () => {
+    resetBoard();
+    applyLanguage(localStorage.getItem('gameLang') || 'tr');
+    draw();
+});
