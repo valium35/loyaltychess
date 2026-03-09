@@ -14,23 +14,25 @@ const translations = {
             "3. SON GÖREV: İhanet eden taş şah çekemez. Hamle sonrası tahtadan sonsuza dek silinir."
         ],
         popups: {
+           popups: {
             step4Title: "🛡️ AKTİF FEDA",
-            step4Msg: "Siyah At'ı bilerek feda ettin. Bu bir 'Aktif Feda'dır, taşın İHANET EDEMEZ.",
+            step4Msg: "Siyah At'ı f2-f4 piyonunun menziline (c6) kendin getirdin. Bu bir feda hamlesidir, İHANET tetiklenmez.",
             step5Title: "⚠️ TAZE TEHDİT",
-            step5Msg: "Beyaz Fil, Atı tehdit etti! Atı korumazsan ihanet tetiklenecek.",
-            step6Title: "🔥 İHANET",
-            step6Msg: "At terk edildi ve saf değiştirdi!",
-            step7Title: "💨 SİLİNME",
-            step7Msg: "İhanet hamlesi bitti. Hain At görevini tamamladı ve tahtadan çıktı."
+            step5Msg: "Beyaz Fil b5'e gelerek At'ı doğrudan tehdit etti! At şu an korumasız.",
+            step6Title: "🔥 İHANET!",
+            step6Msg: "At korumasız bırakıldı! Rakip Fil b4'teki At'ı vurmak yerine, c6'daki At'ı İHANET ettiriyor!",
+            step7Title: "⚔️ İNTİKAM",
+            step7Msg: "Hain At, b4'teki kendi Filini aldı! Görev bitti ve At tahtadan silindi."
+        },
         },
         tutorialMsgs: [
-            "1. Oyun başlıyor: Beyaz e4, Siyah e5.",
-            "2. Beyaz At f3, Siyah At c6. Standart açılış.",
-            "3. Beyaz Fil b5 (Ruy Lopez). Siyah At tehdit altında değil, feda hazırlığı.",
-            "4. AKTİF FEDA: Siyah At'ı d4'e sürdün. Rakip menzilinde ama ihanet yok (Kural 1).",
-            "5. TAZE TEHDİT: Beyaz c3 sürerek Atı taze bir hamleyle tehdit etti! At tehlikede.",
-            "6. İHANET: Atı korumadın! At taraf değiştirdi ve Siyah Veziri hedef aldı.",
-            "7. SON: Hain At, Veziri aldı ve yasalar gereği tahtadan silindi."
+           "1. Beyaz e4, Siyah e5. Merkez mücadelesi başlıyor.",
+            "2. Beyaz f4 (Şah Gambiti tarzı), Siyah d6 ile karşılık veriyor.",
+            "3. Beyaz At f3'e çıkıyor, Siyah At c6 ile gelişiyor.",
+            "4. Beyaz g3 sürerken, Siyah b6 ile fil yolu açıyor. (At c6'da güvende).",
+            "5. TAZE TEHDİT: Beyaz Fil b5'e geldi! At c6'da doğrudan saldırı altında!",
+            "6. İHANET SEÇİMİ: Siyah, Atı korumak yerine başka bir hamle yaptı. At artık rakibin kontrolünde!",
+            "7. SON HAMLE: Hain At, b4'teki Siyah Fil'i aldı ve her iki taş da tahtadan çıktı."
         ]
     },
     en: {
@@ -141,40 +143,59 @@ function vurgula(kuralNo) {
 // 4. YENİ EĞİTİM ADIMLARI (SCENARIO)
 // ==========================================
 const tutorialSteps = [
-    { run: () => { layout[52]=''; layout[36]='w-p'; layout[12]=''; layout[28]='b-p'; vurgula(0); } }, // 1. e4 e5
-    { run: () => { layout[62]=''; layout[45]='w-n'; layout[1]=''; layout[18]='b-n'; vurgula(0); } },  // 2. Nf3 Nc6
-    { run: () => { layout[61]=''; layout[25]='w-b'; vurgula(1); } },                                 // 3. Bb5 (Hazırlık)
+    // 1. e2-e4 / e7-e5
+    { run: () => { layout[52]=''; layout[36]='w-p'; layout[12]=''; layout[28]='b-p'; vurgula(0); } },
+    
+    // 2. f2-f4 / d7-d6
+    { run: () => { layout[53]=''; layout[37]='w-p'; layout[11]=''; layout[19]='b-p'; vurgula(0); } },
+    
+    // 3. Nf3 / Nc6 (AKTİF FEDA NOKTASI: At f4'teki piyonun menzilinde ama kendi geldiği için ihanet yok)
     { 
         run: () => { 
-            layout[18]=''; layout[27]='b-n'; // Siyah At d4'e zıplar (Aktif Feda)
+            layout[62]=''; layout[45]='w-n'; layout[1]=''; layout[18]='b-n'; 
             vurgula(1);
-            pop(4, 0, "#3498db"); // Mavi - Bilgi/Feda
+            pop(4, 0, "#3498db"); // Mavi: Aktif Feda bilgilendirmesi
         } 
     },
+    
+    // 4. g2-g3 / b7-b6 (Siyah Fil b7 yerine b4'e gidecek hazırlık için b6 sürüyor)
+    { run: () => { layout[54]=''; layout[46]='w-p'; layout[9]=''; layout[17]='b-p'; vurgula(0); } },
+    
+    // 5. Fb5 (TAZE TEHDİT: Beyaz Fil Atı tehdit eder)
     { 
         run: () => { 
-            layout[50]=''; layout[42]='w-p'; // Beyaz c3 sürer (Taze Tehdit)
+            layout[61]=''; layout[25]='w-b'; // Beyaz Fil b5'e
             vurgula(1);
-            pop(5, 0, "#f1c40f"); // Sarı - Uyarı
+            pop(5, 0, "#f1c40f"); // Sarı: Taze Tehdit uyarısı
         } 
     },
+    
+    // 6. Siyah Fil b4'e gelir (Atı korumadı, başka hamle yaptı) -> İHANET TETİKLENİR
     { 
         run: () => { 
+            layout[5]=''; layout[26]='b-b'; // Siyah Fil b4'e (Atı korumasız bıraktı)
             vurgula(2);
-            pop(6, 1, "#ff3333"); // Kırmızı - İHANET
+            pop(6, 1, "#ff3333"); // Kırmızı: İHANET!
         } 
     },
+    
+    // 7. Hain At (c6'daki), b4'teki Fil'i alır ve silinir.
     { 
         run: () => { 
-            layout[27]=''; layout[3]='w-n'; draw(); // At Veziri alır (d8)
-            const capturedPiece = boardElement.children[3].querySelector('.piece');
+            layout[18]=''; // Hain At c6'dan kalkar
+            layout[26]='w-n'; // At b4'teki fili vurur (geçici olarak beyaz görünür)
+            draw();
+            
+            // Patlama efekti için b4 karesini hedef alıyoruz (26. index)
+            const capturedPiece = boardElement.children[26].querySelector('.piece');
             if (capturedPiece) capturedPiece.classList.add('piece-capture');
+            
             vurgula(3);
-            pop(7, 2, "#ffffff");
-            const tId = setTimeout(() => { layout[3]=''; draw(); }, 1500);
+            pop(7, 2, "#ffffff"); // Beyaz: Silinme kuralı
+            
+            const tId = setTimeout(() => { layout[26]=''; draw(); }, 1500);
             timeouts.push(tId);
-        } 
-    }
+        }
 ];
 
 function pop(stepNo, ruleIdx, color) {
