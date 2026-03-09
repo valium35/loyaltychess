@@ -14,9 +14,8 @@ const translations = {
             "3. SON GÖREV: İhanet eden taş şah çekemez. Hamle sonrası tahtadan sonsuza dek silinir."
         ],
         popups: {
-           popups: {
-            step4Title: "🛡️ AKTİF FEDA",
-            step4Msg: "Siyah At'ı f2-f4 piyonunun menziline (c6) kendin getirdin. Bu bir feda hamlesidir, İHANET tetiklenmez.",
+            step3Title: "🛡️ AKTİF FEDA",
+            step3Msg: "Siyah At'ı f4 piyonunun menziline (c6) kendin getirdin. Bu bir feda hamlesidir, İHANET tetiklenmez.",
             step5Title: "⚠️ TAZE TEHDİT",
             step5Msg: "Beyaz Fil b5'e gelerek At'ı doğrudan tehdit etti! At şu an korumasız.",
             step6Title: "🔥 İHANET!",
@@ -24,14 +23,13 @@ const translations = {
             step7Title: "⚔️ İNTİKAM",
             step7Msg: "Hain At, b4'teki kendi Filini aldı! Görev bitti ve At tahtadan silindi."
         },
-        },
         tutorialMsgs: [
-           "1. Beyaz e4, Siyah e5. Merkez mücadelesi başlıyor.",
+            "1. Beyaz e4, Siyah e5. Merkez mücadelesi başlıyor.",
             "2. Beyaz f4 (Şah Gambiti tarzı), Siyah d6 ile karşılık veriyor.",
-            "3. Beyaz At f3'e çıkıyor, Siyah At c6 ile gelişiyor.",
-            "4. Beyaz g3 sürerken, Siyah b6 ile fil yolu açıyor. (At c6'da güvende).",
+            "3. Beyaz At f3, Siyah At c6. (At f4 piyonu menzilinde ama Aktif Feda olduğu için güvende).",
+            "4. Beyaz g3 sürerken, Siyah b6 ile fil yolu açıyor.",
             "5. TAZE TEHDİT: Beyaz Fil b5'e geldi! At c6'da doğrudan saldırı altında!",
-            "6. İHANET SEÇİMİ: Siyah, Atı korumak yerine başka bir hamle yaptı. At artık rakibin kontrolünde!",
+            "6. İHANET SEÇİMİ: Siyah, Atı korumak yerine Fil b4 yaptı. At artık rakibin kontrolünde!",
             "7. SON HAMLE: Hain At, b4'teki Siyah Fil'i aldı ve her iki taş da tahtadan çıktı."
         ]
     },
@@ -47,23 +45,23 @@ const translations = {
             "3. FINAL MISSION: Traitors cannot check. They are removed from the board after the move."
         ],
         popups: {
-            step4Title: "🛡️ ACTIVE SACRIFICE",
-            step4Msg: "You sacrificed the Knight. This is an 'Active Sacrifice', it CANNOT betray.",
+            step3Title: "🛡️ ACTIVE SACRIFICE",
+            step3Msg: "You moved the Knight to c6 yourself. This is a sacrifice, NOT a betrayal.",
             step5Title: "⚠️ FRESH THREAT",
-            step5Msg: "White Bishop threatens the Knight! Protect it or it will betray you.",
+            step5Msg: "White Bishop moved to b5! The Knight is now under threat.",
             step6Title: "🔥 BETRAYAL",
-            step6Msg: "The Knight was abandoned and switched sides!",
+            step6Msg: "The Knight was abandoned! Opponent is using your Knight to betray you.",
             step7Title: "💨 REMOVAL",
-            step7Msg: "Mission complete. The traitor has been removed from the board."
+            step7Msg: "The traitor took the Bishop and both are removed from the board."
         },
         tutorialMsgs: [
-            "1. Game Starts: White e4, Black e5.",
-            "2. White Nf3, Black Nc6. Standard opening.",
-            "3. White Bb5. The Knight is safe for now, preparing a sacrifice.",
-            "4. ACTIVE SAC: You moved the Knight to d4. It's in range but won't betray (Law 1).",
-            "5. FRESH THREAT: White plays c3, threatening the Knight! Danger is real.",
-            "6. BETRAYAL: You didn't protect the Knight! It switched sides to attack the Queen.",
-            "7. END: The traitor took the Queen and was removed per the laws."
+            "1. White e4, Black e5.",
+            "2. White f4, Black d6.",
+            "3. White Nf3, Black Nc6. (Active Sacrifice, no betrayal).",
+            "4. White g3, Black b6.",
+            "5. FRESH THREAT: White Bishop to b5!",
+            "6. BETRAYAL: Black played Bishop b4, leaving the Knight unprotected.",
+            "7. FINAL: The traitor Knight took the Bishop on b4 and vanished."
         ]
     }
 };
@@ -102,7 +100,6 @@ function applyLanguage(lang) {
     statusElement.innerText = t.status;
     document.querySelector('.full-rules-panel h3').innerText = t.rulesTitle;
     
-    // Paneldeki 3 Yasa Açıklamalarını Güncelle
     document.getElementById('rule-1-desc').innerText = t.rules[0];
     document.getElementById('rule-2-desc').innerText = t.rules[1];
     document.getElementById('rule-3-desc').innerText = t.rules[2];
@@ -122,8 +119,8 @@ function draw() {
         if (layout[i]) {
             const piece = document.createElement('div');
             piece.className = `piece ${layout[i]}`;
-            // İhanet anında parlatma efekti
-            if (step === 6 && i === 27) piece.classList.add('betrayal');
+            // İhanet anında (adım 6) c6 karesindeki (indeks 18) atı parlat
+            if (step === 6 && i === 18) piece.classList.add('betrayal');
             square.appendChild(piece);
         }
         boardElement.appendChild(square);
@@ -131,71 +128,55 @@ function draw() {
 }
 
 function vurgula(kuralNo) {
-    // Görsel paneli daha sade yaptığımız için burada sadece aktif maddeyi parlatıyoruz
     const items = document.querySelectorAll('.law-item');
     items.forEach((item, idx) => {
-        item.style.opacity = (idx + 1 === kuralNo) ? "1" : "0.5";
-        item.style.borderLeft = (idx + 1 === kuralNo) ? "3px solid #f1c40f" : "none";
+        if (kuralNo === 0) {
+            item.style.opacity = "1";
+            item.classList.remove('active-law');
+        } else {
+            item.style.opacity = (idx + 1 === kuralNo) ? "1" : "0.3";
+            if (idx + 1 === kuralNo) item.classList.add('active-law');
+            else item.classList.remove('active-law');
+        }
     });
 }
 
 // ==========================================
-// 4. YENİ EĞİTİM ADIMLARI (SCENARIO)
+// 4. EĞİTİM ADIMLARI (SENARYO)
 // ==========================================
 const tutorialSteps = [
-    // 1. e2-e4 / e7-e5
+    // 1. e4 e5
     { run: () => { layout[52]=''; layout[36]='w-p'; layout[12]=''; layout[28]='b-p'; vurgula(0); } },
-    
-    // 2. f2-f4 / d7-d6
+    // 2. f4 d6
     { run: () => { layout[53]=''; layout[37]='w-p'; layout[11]=''; layout[19]='b-p'; vurgula(0); } },
-    
-    // 3. Nf3 / Nc6 (AKTİF FEDA NOKTASI: At f4'teki piyonun menzilinde ama kendi geldiği için ihanet yok)
-    { 
-        run: () => { 
-            layout[62]=''; layout[45]='w-n'; layout[1]=''; layout[18]='b-n'; 
-            vurgula(1);
-            pop(4, 0, "#3498db"); // Mavi: Aktif Feda bilgilendirmesi
-        } 
-    },
-    
-    // 4. g2-g3 / b7-b6 (Siyah Fil b7 yerine b4'e gidecek hazırlık için b6 sürüyor)
+    // 3. Nf3 Nc6 (Aktif Feda Bilgisi)
+    { run: () => { 
+        layout[62]=''; layout[45]='w-n'; layout[1]=''; layout[18]='b-n'; 
+        vurgula(1); pop(3, 0, "#3498db"); 
+    } },
+    // 4. g3 b6
     { run: () => { layout[54]=''; layout[46]='w-p'; layout[9]=''; layout[17]='b-p'; vurgula(0); } },
-    
-    // 5. Fb5 (TAZE TEHDİT: Beyaz Fil Atı tehdit eder)
-    { 
-        run: () => { 
-            layout[61]=''; layout[25]='w-b'; // Beyaz Fil b5'e
-            vurgula(1);
-            pop(5, 0, "#f1c40f"); // Sarı: Taze Tehdit uyarısı
-        } 
-    },
-    
-    // 6. Siyah Fil b4'e gelir (Atı korumadı, başka hamle yaptı) -> İHANET TETİKLENİR
-    { 
-        run: () => { 
-            layout[5]=''; layout[26]='b-b'; // Siyah Fil b4'e (Atı korumasız bıraktı)
-            vurgula(2);
-            pop(6, 1, "#ff3333"); // Kırmızı: İHANET!
-        } 
-    },
-    
-    // 7. Hain At (c6'daki), b4'teki Fil'i alır ve silinir.
-    { 
-        run: () => { 
-            layout[18]=''; // Hain At c6'dan kalkar
-            layout[26]='w-n'; // At b4'teki fili vurur (geçici olarak beyaz görünür)
-            draw();
-            
-            // Patlama efekti için b4 karesini hedef alıyoruz (26. index)
-            const capturedPiece = boardElement.children[26].querySelector('.piece');
-            if (capturedPiece) capturedPiece.classList.add('piece-capture');
-            
-            vurgula(3);
-            pop(7, 2, "#ffffff"); // Beyaz: Silinme kuralı
-            
-            const tId = setTimeout(() => { layout[26]=''; draw(); }, 1500);
-            timeouts.push(tId);
-        }
+    // 5. Fb5 (Taze Tehdit)
+    { run: () => { 
+        layout[61]=''; layout[25]='w-b'; 
+        vurgula(1); pop(5, 0, "#f1c40f"); 
+    } },
+    // 6. Fil b4 (İHANET TETİKLENİR)
+    { run: () => { 
+        layout[5]=''; layout[26]='b-b'; 
+        vurgula(2); pop(6, 1, "#ff3333"); 
+    } },
+    // 7. Hain At Fil'i alır ve silinir
+    { run: () => { 
+        layout[18]=''; // c6'daki at gider
+        layout[26]='w-n'; // b4'te at görünür (geçici)
+        draw();
+        const capturedPiece = boardElement.children[26].querySelector('.piece');
+        if (capturedPiece) capturedPiece.classList.add('piece-capture');
+        vurgula(3); pop(7, 2, "#ffffff");
+        const tId = setTimeout(() => { layout[26]=''; draw(); }, 1500);
+        timeouts.push(tId);
+    } }
 ];
 
 function pop(stepNo, ruleIdx, color) {
@@ -233,43 +214,4 @@ function prevStep() {
         for (let i = 0; i < targetStep; i++) {
             tutorialSteps[i].run();
         }
-        step = targetStep; 
-        statusElement.innerText = (step === 0) ? translations[lang].status : translations[lang].tutorialMsgs[step - 1];
-        draw();
-        updateButtonStates();
-    }
-}
-
-function updateButtonStates() {
-    const lang = localStorage.getItem('gameLang') || 'tr';
-    const prevBtn = document.getElementById('prev-btn');
-    const nextBtn = document.getElementById('next-btn');
-    if(prevBtn) {
-        prevBtn.innerText = (lang === 'tr' ? 'Geri' : 'Back');
-        prevBtn.disabled = (step === 0);
-    }
-    if(nextBtn) {
-        nextBtn.innerText = (step >= tutorialSteps.length) ? translations[lang].resetBtn : translations[lang].nextBtn;
-    }
-}
-
-function showPop(title, msg, rule, color) {
-    const popup = document.getElementById('betrayal-popup');
-    if(!popup) return;
-    document.querySelector('.alert-title').innerText = title;
-    document.getElementById('popup-msg').innerText = msg;
-    document.getElementById('popup-rule').innerText = rule;
-    document.querySelector('.popup-content').style.borderColor = color;
-    popup.style.display = 'flex';
-}
-
-function closePopup() {
-    document.getElementById('betrayal-popup').style.display = 'none';
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    resetBoard();
-    const currentLang = localStorage.getItem('gameLang') || 'tr';
-    applyLanguage(currentLang);
-    draw();
-});
+        step = targetStep
