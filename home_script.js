@@ -1,17 +1,18 @@
-// Dil Sözlüğü
 const translations = {
     tr: {
         status: "Başlamak için butona basın.",
         nextBtn: "Sonraki Hamle",
         rulesTitle: "📜 İhanet Yasaları",
         rules: [
-            "1. Tehdit edilen taş kaçılmalı veya korunmalıdır.",
-            "2. Korumasız bırakılan taş ihanet eder.",
-            "3. Rakip, hain taşı hemen kendi taşı gibi kullanır.",
-            "4. İhanet hamlesiyle şah/mat yapılamaz.",
-            "5. Şah hariç her rakip taş alınabilir.",
-            "6. Hamle sonrası hain taş oyundan çıkar.",
-            "7. İhanet hamlesi, ek bir hamle sayılır."
+            "1. Tehdit edilen taş ya korunmalı ya da yer değiştirmelidir.",
+            "2. Aksi halde rakip oyuncu, devam eden ilk hamlede bu taşı kullanabilir. Bu taş ihanet etmiştir.",
+            "3. İhanet eden taş kendi taşlarından alabilir ama şah çekemez veya mat edemez.",
+            "4. Hamle sonunda taş oyundan çıkarılır.",
+            "5. İhanet rakibin inisiyatifindedir; zorunlu değil, isteğe bağlıdır.",
+            "6. İhanet gerçekleşmezse, taş oyuna kendi pozisyonunda devam eder.",
+            "7. Rakip oyuncu ihanet gerçekleştirip taş almasa dahi, ihanet taşı oyundan çıkarılır. (Şah çekilmişse, ihanet taşı taş alarak şahı engelleyebilir ama araya girerek engelleyemez; çünkü hamle sonrası silinir.)",
+            "8. Şah çekilen çatal (fork) durumlarında ihanet kuralı geçersizdir; önce şah korunmalıdır.",
+            "9. Bu kurallar Kale, Fil ve At için geçerlidir. Vezir ve Piyon ihanet etmez."
         ],
         alertTitle: "⚠️ BİLDİRİM",
         alertBtn: "ANLADIM"
@@ -21,19 +22,20 @@ const translations = {
         nextBtn: "Next Move",
         rulesTitle: "📜 Betrayal Laws",
         rules: [
-            "1. Threatened pieces must be moved or protected.",
-            "2. Unprotected pieces will betray you.",
-            "3. Opponent uses the traitor piece immediately.",
-            "4. Betrayal moves cannot result in check/mate.",
-            "5. Any piece except the King can be captured.",
-            "6. Traitor pieces are removed after the move.",
-            "7. Betrayal move counts as an extra turn."
+            "1. A threatened piece must either be protected or moved.",
+            "2. Otherwise, the opponent may use this piece in their very next move. This piece has committed betrayal.",
+            "3. A traitor piece can capture its original allies but cannot deliver a check or checkmate.",
+            "4. At the end of the move, the traitor piece is removed from the board.",
+            "5. Betrayal is at the opponent's discretion; it is optional, not mandatory.",
+            "6. If betrayal is not exercised, the piece continues the game in its original position.",
+            "7. Even if the opponent performs a betrayal move without capturing a piece, the traitor piece is removed. (If in check, a traitor can block it by capturing, but not by simply moving in between, as it disappears after the move.)",
+            "8. In the event of a check involving a fork, betrayal rules do not apply; the King must be protected first.",
+            "9. These rules apply only to Rooks, Bishops, and Knights. Queens and Pawns never betray."
         ],
         alertTitle: "⚠️ NOTIFICATION",
         alertBtn: "I UNDERSTAND"
     }
 };
-
 // Sayfa yüklendiğinde dili uygula
 document.addEventListener("DOMContentLoaded", () => {
     const lang = localStorage.getItem('gameLang') || 'tr'; // Seçim yoksa varsayılan TR
