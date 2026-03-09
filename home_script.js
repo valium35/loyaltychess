@@ -156,21 +156,31 @@ const tutorialSteps = [
         } 
     },
     
-    // 7. ADIM: Hain At (c6), b4'teki (43) Fil'i alır
+    // 7. ADIM: Hain At (c6 - 18), b4'teki (33) Fil'i alır ve silinir
     { 
         run: () => { 
-            layout[18]=''; // At c6'dan (index 18) kalkar
-            layout[33]='w-n'; // b4'teki (index 33) Fil'i vurur
-            draw();
+            // 1. Önce At c6'dan kalkar, b4'teki Fil'i vurur
+            layout[18] = ''; 
+            layout[33] = 'w-n'; // At oraya yerleşir (geçici beyaz at görünümü)
+            draw(); // Hamleyi ekrana çiz
             
-            // Vurulan karede (38) patlama efekti
-            const capturedPiece = boardElement.children[41].querySelector('.piece');
-            if (capturedPiece) capturedPiece.classList.add('piece-capture');
+            // 2. Patlama efektini b4 karesine (33) uygula
+            const square = boardElement.children[33];
+            const piece = square.querySelector('.piece');
+            if (piece) {
+                piece.classList.add('piece-capture'); // CSS'te bu class varsa sarsılır/parlar
+            }
             
-            vurgula(3); 
-            pop(7, 2, "#ffffff"); // Silinme kuralı mesajı
+            vurgula(3); // 3. Yasayı vurgula (Silinme kuralı)
+            pop(7, 2, "#ffffff"); // Son pop-up
             
-            const tId = setTimeout(() => { layout[33]=''; draw(); }, 1500);
+            // 3. KRİTİK NOKTA: 1.5 saniye sonra taşı tamamen sil ve TEKRAR ÇİZ
+            const tId = setTimeout(() => { 
+                layout[33] = ''; // b4 karesini boşalt
+                draw(); // Tahtayı son haliyle (boş b4 ile) tekrar çiz
+                console.log("Hain taş görevini tamamladı ve silindi.");
+            }, 1500);
+            
             timeouts.push(tId);
         } 
     }
