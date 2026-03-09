@@ -126,35 +126,54 @@ function vurgula(kuralNo) {
 // 3. SENARYO ADIMLARI
 // ==========================================
 const tutorialSteps = [
-    // 1. e4 e5
+    // 1. Beyaz e4 / Siyah e5
     { run: () => { layout[52]=''; layout[36]='w-p'; layout[12]=''; layout[28]='b-p'; vurgula(0); } },
-    // 2. f4 d5 (Yeni hamle)
+    
+    // 2. Beyaz f4 / Siyah d5
     { run: () => { layout[53]=''; layout[37]='w-p'; layout[11]=''; layout[27]='b-p'; vurgula(0); } },
-    // 3. Nf3 Nc6 (Pop-up silindi, sadece hamle)
+    
+    // 3. Beyaz Af3 / Siyah Ac6
     { run: () => { layout[62]=''; layout[45]='w-n'; layout[1]=''; layout[18]='b-n'; vurgula(0); } },
-    // 4. g3 b6
+    
+    // 4. Beyaz g3 / Siyah b6
     { run: () => { layout[54]=''; layout[46]='w-p'; layout[9]=''; layout[17]='b-p'; vurgula(0); } },
-    // 5. Bb5 (Fresh Threat)
-    { run: () => { 
-        layout[61]=''; layout[25]='w-b'; 
-        vurgula(1); pop(5, 0, "#f1c40f"); 
-    } },
-    // 6. Bb4 (Betrayal Trigger)
-    { run: () => { 
-        layout[5]=''; layout[26]='b-b'; 
-        vurgula(2); pop(6, 1, "#ff3333"); 
-    } },
-    // 7. Take & Remove
-    { run: () => { 
-        layout[18]=''; 
-        layout[26]='w-n'; 
-        draw();
-        const capturedPiece = boardElement.children[26].querySelector('.piece');
-        if (capturedPiece) capturedPiece.classList.add('piece-capture');
-        vurgula(3); pop(7, 2, "#ffffff");
-        const tId = setTimeout(() => { layout[26]=''; draw(); }, 1500);
-        timeouts.push(tId);
-    } }
+    
+    // 5. TAZE TEHDİT: Beyaz Fil b5'e gelerek At'ı ister!
+    { 
+        run: () => { 
+            layout[61]=''; layout[25]='w-b'; 
+            vurgula(1); 
+            pop(5, 0, "#f1c40f"); 
+        } 
+    },
+    
+    // 6. İHANET ANI: Siyah Fil b4 karesine (index 26) geliyor! 
+    // Atı korumak yerine yanına geldi, At artık kontrolümüzde.
+    { 
+        run: () => { 
+            layout[5]=''; layout[26]='b-b'; // Siyah Fil b4'e (index 26)
+            vurgula(2); 
+            pop(6, 1, "#ff3333"); 
+        } 
+    },
+    
+    // 7. SON GÖREV: Hain At, b4'teki Siyah Fil'i alır ve ikisi de yok olur.
+    { 
+        run: () => { 
+            layout[18]=''; // Hain At c6'dan kalkar
+            layout[26]='w-n'; // At b4'teki (index 26) Siyah Fil'i vurur
+            draw();
+            
+            const capturedPiece = boardElement.children[26].querySelector('.piece');
+            if (capturedPiece) capturedPiece.classList.add('piece-capture');
+            
+            vurgula(3); 
+            pop(7, 2, "#ffffff"); 
+            
+            const tId = setTimeout(() => { layout[26]=''; draw(); }, 1500);
+            timeouts.push(tId);
+        } 
+    }
 ];
 
 function pop(stepNo, ruleIdx, color) {
