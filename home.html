@@ -5,6 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LoyaltyChess - Oyun</title>
     <link rel="stylesheet" href="home_style.css">
+    <style>
+        /* Butonların yan yana durması için küçük bir ekleme */
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .controls button {
+            flex: 1;
+            padding: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 5px;
+            border: 1px solid #f1c40f;
+            background: #222;
+            color: #f1c40f;
+            transition: 0.3s;
+        }
+        .controls button:hover:not(:disabled) {
+            background: #f1c40f;
+            color: #222;
+        }
+        .controls button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            border-color: #555;
+            color: #555;
+        }
+    </style>
 </head>
 <body>
 
@@ -14,19 +43,15 @@
         <div class="side-panel">
             <div id="status" class="msg-box">Başlamak için butona basın.</div>
             
-            <button onclick="nextStep()">Sonraki Hamle</button>
+            <div class="controls">
+                <button onclick="prevStep()" id="prev-btn" disabled>Geri</button>
+                <button onclick="nextStep()" id="next-btn">Sonraki Hamle</button>
+            </div>
             
             <div class="full-rules-panel">
                 <h3>📜 İhanet Yasaları</h3>
                 <ul id="rules-list">
-                    <li id="rule-1">1. Tehdit edilen taş kaçılmalı veya korunmalıdır.</li>
-                    <li id="rule-2">2. Korumasız bırakılan taş ihanet eder.</li>
-                    <li id="rule-3">3. Rakip, hain taşı hemen kendi taşı gibi kullanır.</li>
-                    <li id="rule-4">4. İhanet hamlesiyle şah/mat yapılamaz.</li>
-                    <li id="rule-5">5. Şah hariç her rakip taş alınabilir.</li>
-                    <li id="rule-6">6. Hamle sonrası hain taş oyundan çıkar.</li>
-                    <li id="rule-7">7. İhanet hamlesi, ek bir hamle sayılır.</li>
-                </ul>
+                    </ul>
             </div>
         </div> 
     </div>
