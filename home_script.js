@@ -1,3 +1,6 @@
+// ==========================================
+// 1. DİL SÖZLÜĞÜ VE YAPILANDIRMA
+// ==========================================
 const translations = {
     tr: {
         status: "Başlamak için butona basın.",
@@ -10,12 +13,18 @@ const translations = {
             "4. Hamle sonunda taş oyundan çıkarılır.",
             "5. İhanet rakibin inisiyatifindedir; zorunlu değil, isteğe bağlıdır.",
             "6. İhanet gerçekleşmezse, taş oyuna kendi pozisyonunda devam eder.",
-            "7. Rakip oyuncu ihanet gerçekleştirip taş almasa dahi, ihanet taşı oyundan çıkarılır. (Şah çekilmişse, ihanet taşı taş alarak şahı engelleyebilir ama araya girerek engelleyemez; çünkü hamle sonrası silinir.)",
-            "8. Şah çekilen çatal (fork) durumlarında ihanet kuralı geçersizdir; önce şah korunmalıdır.",
+            "7. Rakip oyuncu ihanet gerçekleştirip taş almasa dahi, ihanet taşı oyundan çıkarılır.",
+            "8. Şah çekilen çatal (fork) durumlarında ihanet kuralı geçersizdir.",
             "9. Bu kurallar Kale, Fil ve At için geçerlidir. Vezir ve Piyon ihanet etmez."
         ],
-        alertTitle: "⚠️ BİLDİRİM",
-        alertBtn: "ANLADIM"
+        popups: {
+            step5Title: "⚠️ DİKKAT",
+            step5Msg: "Siyah At korumasız kaldı! İhanet riski var.",
+            step6Title: "🔥 İHANET",
+            step6Msg: "Siyah At taraf değiştirdi!",
+            step7Title: "⚖️ CEZALANDIRILDI",
+            step7Msg: "Görev tamamlandı! Hain At ve kurbanı Vezir oyundan çıkarıldı."
+        }
     },
     en: {
         status: "Press the button to start.",
@@ -23,78 +32,30 @@ const translations = {
         rulesTitle: "📜 Betrayal Laws",
         rules: [
             "1. A threatened piece must either be protected or moved.",
-            "2. Otherwise, the opponent may use this piece in their very next move. This piece has committed betrayal.",
-            "3. A traitor piece can capture its original allies but cannot deliver a check or checkmate.",
+            "2. Otherwise, the opponent may use this piece in their next move.",
+            "3. A traitor piece can capture its original allies but cannot deliver a check/mate.",
             "4. At the end of the move, the traitor piece is removed from the board.",
-            "5. Betrayal is at the opponent's discretion; it is optional, not mandatory.",
-            "6. If betrayal is not exercised, the piece continues the game in its original position.",
-            "7. Even if the opponent performs a betrayal move without capturing a piece, the traitor piece is removed. (If in check, a traitor can block it by capturing, but not by simply moving in between, as it disappears after the move.)",
-            "8. In the event of a check involving a fork, betrayal rules do not apply; the King must be protected first.",
-            "9. These rules apply only to Rooks, Bishops, and Knights. Queens and Pawns never betray."
+            "5. Betrayal is at the opponent's discretion; it is optional.",
+            "6. If betrayal is not exercised, the piece continues in its original position.",
+            "7. Even if no piece is captured, the traitor piece is still removed.",
+            "8. Betrayal rules do not apply in check/fork situations.",
+            "9. Only Rooks, Bishops, and Knights can betray. Queens/Pawns never do."
         ],
-        alertTitle: "⚠️ NOTIFICATION",
-        alertBtn: "I UNDERSTAND"
-    }const translations = {
-    tr: {
-        // ... (diğer kısımlar aynı kalsın)
-        alertTitle: "⚠️ İHANET BİLDİRİMİ",
-        alertBtn: "ANLADIM",
-        messages: {
-            betrayalAction: "Bir taş ihanet etti!",
-            knightBetrayal: "At saf değiştirdi!",
-            bishopBetrayal: "Fil taraf değiştirdi!",
-            rookBetrayal: "Kale ihanet etti!",
-            invalidMove: "Geçersiz hamle! Önce şahı korumalısın.",
-            pieceRemoved: "İhanet eden taş görevini tamamladı ve oyundan çıktı."
-        }
-    },
-    en: {
-        // ... (diğer kısımlar aynı kalsın)
-        alertTitle: "⚠️ BETRAYAL NOTICE",
-        alertBtn: "I UNDERSTAND",
-        messages: {
-            betrayalAction: "A piece has committed betrayal!",
-            knightBetrayal: "A Knight has switched sides!",
-            bishopBetrayal: "A Bishop has switched sides!",
-            rookBetrayal: "A Rook has committed betrayal!",
-            invalidMove: "Invalid move! Protect your King first.",
-            pieceRemoved: "The traitor piece has completed its task and left the board."
+        popups: {
+            step5Title: "⚠️ WARNING",
+            step5Msg: "The Black Knight is unprotected! Risk of betrayal.",
+            step6Title: "🔥 BETRAYAL",
+            step6Msg: "The Black Knight has switched sides!",
+            step7Title: "⚖️ PUNISHED",
+            step7Msg: "Mission complete! The traitor Knight and the Queen are removed."
         }
     }
-}
 };
-// Sayfa yüklendiğinde dili uygula
-document.addEventListener("DOMContentLoaded", () => {
-    const lang = localStorage.getItem('gameLang') || 'tr'; // Seçim yoksa varsayılan TR
-    applyLanguage(lang);
-});
 
-function applyLanguage(lang) {
-    const t = translations[lang];
-    
-    // Status kutusu
-    document.getElementById('status').innerText = t.status;
-    
-    // "Sonraki Hamle" butonu
-    document.querySelector('.side-panel button').innerText = t.nextBtn;
-    
-    // Kurallar başlığı
-    document.querySelector('.full-rules-panel h3').innerText = t.rulesTitle;
-    
-    // Kurallar listesi
-    const rulesList = document.getElementById('rules-list');
-    rulesList.innerHTML = ""; // Eski listeyi temizle
-    t.rules.forEach((rule, index) => {
-        const li = document.createElement('li');
-        li.id = `rule-${index + 1}`;
-        li.innerText = rule;
-        rulesList.appendChild(li);
-    });
-
-    // Pop-up buton ve başlık
-    document.querySelector('.alert-title').innerText = t.alertTitle;
-    document.querySelector('.popup-btn').innerText = t.alertBtn;
-}const boardElement = document.getElementById('chess-board');
+// ==========================================
+// 2. TAHTA VE OYUN MANTIĞI DEĞİŞKENLERİ
+// ==========================================
+const boardElement = document.getElementById('chess-board');
 const statusElement = document.getElementById('status');
 let step = 0;
 
@@ -109,6 +70,26 @@ let layout = [
     'w-r','w-n','w-b','w-q','w-k','w-b','w-n','w-r'
 ];
 
+// ==========================================
+// 3. FONKSİYONLAR
+// ==========================================
+
+function applyLanguage(lang) {
+    const t = translations[lang];
+    statusElement.innerText = t.status;
+    document.querySelector('.side-panel button').innerText = t.nextBtn;
+    document.querySelector('.full-rules-panel h3').innerText = t.rulesTitle;
+    
+    const rulesList = document.getElementById('rules-list');
+    rulesList.innerHTML = ""; 
+    t.rules.forEach((rule, index) => {
+        const li = document.createElement('li');
+        li.id = `rule-${index + 1}`;
+        li.innerText = rule;
+        rulesList.appendChild(li);
+    });
+}
+
 function draw() {
     boardElement.innerHTML = ''; 
     for (let i = 0; i < 64; i++) {
@@ -121,7 +102,6 @@ function draw() {
         if (layout[i]) {
             const piece = document.createElement('div');
             piece.className = `piece ${layout[i]}`;
-            // İhanet vurgusunu 6. adımda tetikle
             if (step === 6 && i === 18) piece.classList.add('betrayal');
             square.appendChild(piece);
         }
@@ -130,7 +110,7 @@ function draw() {
 }
 
 function vurgula(kuralNo) {
-    for (let i = 1; i <= 7; i++) {
+    for (let i = 1; i <= 9; i++) {
         const el = document.getElementById(`rule-${i}`);
         if (el) el.classList.remove('active-rule');
     }
@@ -138,14 +118,13 @@ function vurgula(kuralNo) {
     if (activeEl) activeEl.classList.add('active-rule');
 }
 
-// DİZİDEKİ TÜM ADIMLARI TEK TEK SIRALADIM
+// ==========================================
+// 4. EĞİTİM ADIMLARI (TUTORIAL STEPS)
+// ==========================================
 const tutorialSteps = [
     { 
         msg: "1. Beyaz e4, Siyah b6 ile b-piyonunu açar.", 
-        run: () => { 
-            layout[52]=''; layout[36]='w-p'; layout[9]=''; layout[17]='b-p'; 
-            vurgula(1); 
-        }
+        run: () => { layout[52]=''; layout[36]='w-p'; layout[9]=''; layout[17]='b-p'; vurgula(1); }
     },
     { 
         msg: "2. Beyaz d4, Siyah e6 ile e-piyonunu açar.", 
@@ -164,56 +143,42 @@ const tutorialSteps = [
         run: () => { 
             layout[61]=''; layout[25]='w-b'; 
             vurgula(1);
-            showPop("⚠️ DİKKAT", "Siyah At korumasız kaldı! İhanet riski var.", "Kural 1: Tehdit edilen taş korunmalıdır.", "#f1c40f");
+            const lang = localStorage.getItem('gameLang') || 'tr';
+            showPop(translations[lang].popups.step5Title, translations[lang].popups.step5Msg, translations[lang].rules[0], "#f1c40f");
         }
     },
     { 
         msg: "6. İHANET! Sahipsiz kalan At taraf değiştirir!", 
         run: () => { 
             vurgula(2);
-            showPop("🔥 İHANET", "Siyah At taraf değiştirdi!", "Kural 2 & 3: Korumasız taş rakibe geçer.", "#ff3333");
+            const lang = localStorage.getItem('gameLang') || 'tr';
+            showPop(translations[lang].popups.step6Title, translations[lang].popups.step6Msg, translations[lang].rules[1], "#ff3333");
         }
     },
     { 
         msg: "7. Hain At, Siyah Vezir'i (d8) alır ve çıkar!", 
         run: () => { 
-            // 1. AŞAMA: Hain Atı Vezirin Karesine Taşı (Görselleştirme)
-            layout[18]=''; // Atın eski yeri (c6) boşalır
-            layout[3]='w-n'; // At, Vezir'in (d8) üzerine oturur (Burada Atı geçici olarak Beyaz yapıyoruz ki hain olduğu anlaşılsın)
-            draw(); // Tahtayı çiz (At Vezir'in üstünde)
-
-            // 2. AŞAMA: Patlama Efektini Uygula
-            // d8 karesindeki (index 3) elementi bul ve efekti ekle
-            const capturedSquare = boardElement.children[3]; // d8 karesi
+            layout[18]=''; layout[3]='w-n'; draw();
+            const capturedSquare = boardElement.children[3];
             const capturedPiece = capturedSquare.querySelector('.piece');
-            
-            if (capturedPiece) {
-                capturedPiece.classList.add('piece-capture'); // CSS efektini başlat
-            }
+            if (capturedPiece) capturedPiece.classList.add('piece-capture');
 
-            // 3. AŞAMA: Sol Pop-up'ı Göster (Zamanlamayı senkronize et)
-            vurgula(6);
-            showPop("⚖️ CEZALANDIRILDI", "Görev tamamlandı! Hain At ve kurbanı Vezir oyundan çıkarıldı.", "Kural 6: İhanet hamlesi sonrası taş çıkarılır.", "#ffffff");
+            const lang = localStorage.getItem('gameLang') || 'tr';
+            vurgula(7);
+            showPop(translations[lang].popups.step7Title, translations[lang].popups.step7Msg, translations[lang].rules[6], "#ffffff");
 
-            // 4. AŞAMA: Gecikmeli Silme (0.6 saniye sonra)
             setTimeout(() => {
-                layout[3]=''; // d8 karesini (At ve Vezir) tamamen temizle
-                draw(); // Tahtayı son haliyle çiz
-                console.log("Taşlar başarıyla alındı ve temizlendi.");
-            }, 1200); // CSS animasyon süresiyle aynı olmalı (0.6s = 600ms)
+                layout[3]=''; draw();
+            }, 1200);
         }
     }
 ];
 
 function nextStep() {
     if (step < tutorialSteps.length) {
-        // ÖNCE işlemi yap
         tutorialSteps[step].run();
-        // SONRA mesajı güncelle
         statusElement.innerText = tutorialSteps[step].msg;
-        // ADIMI artır
         step++;
-        // TAHTAYI yeniden çiz
         draw();
     } else {
         statusElement.innerText = "Eğitim Tamamlandı!";
@@ -221,4 +186,8 @@ function nextStep() {
     }
 }
 
-draw();
+// ==========================================
+// 5. BAŞLATICI (INIT)
+// ==========================================
+document.addEventListener("DOMContentLoaded", () => {
+    const lang = localStorage.getItem('gameLang') || 'tr
