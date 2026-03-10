@@ -24,7 +24,7 @@ const translations = {
         tutorialMsgs: [
             "1. Beyaz e4, Siyah e5. Merkez mücadelesi başlıyor.",
             "2. Beyaz f4, Siyah d5 ile merkezi zorluyor.",
-            "3. Beyaz Af3, Siyah Ac6 gelişimi. (Ac6 Aktif Feda olduğu için güvende).",
+            "3. Beyaz Af3, Siyah Ac6 gelişimi. ",
             "4. Beyaz g3 hazırlığı, Siyah b6 sürüyor.",
             "5. TAZE TEHDİT: Beyaz Fil b5'e indi, At tehlikede!",
             "6. İHANET: Siyah Fil b4'e geldi! At korumasız kaldığı için taraf değiştirdi.",
@@ -53,7 +53,7 @@ const translations = {
         tutorialMsgs: [
             "1. White e4, Black e5. Center battle begins.",
             "2. White f4, Black d5 challenging the center.",
-            "3. White Nf3, Black Nc6 development. (Active sacrifice, so it's safe).",
+            "3. White Nf3, Black Nc6 development. ",
             "4. White g3 prep, Black plays b6.",
             "5. FRESH THREAT: White Bishop to b5, the Knight is in danger!",
             "6. BETRAYAL: Black played Bishop b4! The abandoned Knight switched sides.",
