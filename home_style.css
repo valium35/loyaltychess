@@ -95,3 +95,36 @@ body {
 .b-q { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg'); }
 .w-k { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg'); }
 .b-k { background-image: url('https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg'); }
+
+/* --- MOBİL UYUMLULUK (TELEFONLAR İÇİN) --- */
+@media screen and (max-width: 850px) {
+    .main-container {
+        flex-direction: column; /* Yan paneli tahtanın altına atar */
+        align-items: center;
+        padding: 10px;
+        gap: 20px;
+    }
+
+    #chess-board {
+        /* Kareleri telefona sığacak şekilde küçültüyoruz (60px -> 40px) */
+        grid-template-columns: repeat(8, 40px);
+        grid-template-rows: repeat(8, 40px);
+        border-width: 4px;
+    }
+
+    .square {
+        width: 40px;
+        height: 40px;
+    }
+
+    .side-panel {
+        width: 100%; /* Yan paneli ekran genişliğine yayar */
+        max-width: 400px;
+    }
+
+    .popup-overlay {
+        left: 50%; /* Pop-up'ı mobilde ortalar */
+        transform: translate(-50%, -50%);
+        width: 90%;
+    }
+}
