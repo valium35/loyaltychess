@@ -268,12 +268,27 @@ function closePopup() {
 function applyLanguage(lang) {
     const t = translations[lang];
     statusElement.innerText = t.status;
-    const title = document.querySelector('.full-rules-panel h3');
-    if(title) title.innerText = t.rulesTitle;
     
+    // Yasalar Başlığı
+    const rulesTitle = document.querySelector('.full-rules-panel h3');
+    if(rulesTitle) rulesTitle.innerText = t.rulesTitle;
+    
+    // 3 Yasa Açıklamaları
     document.getElementById('rule-1-desc').innerText = t.rules[0];
     document.getElementById('rule-2-desc').innerText = t.rules[1];
     document.getElementById('rule-3-desc').innerText = t.rules[2];
+
+    // --- YENİ: Kısıtlamalar Bölümü ---
+    const restrictionSection = document.getElementById('restrictions-list');
+    if (restrictionSection) {
+        restrictionSection.innerHTML = `<h4>${t.restrictionsTitle}</h4>`;
+        t.restrictions.forEach(res => {
+            const p = document.createElement('p');
+            p.className = 'restriction-item';
+            p.innerText = res;
+            restrictionSection.appendChild(p);
+        });
+    }
     
     updateButtonStates();
 }
