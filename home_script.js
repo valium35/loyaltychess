@@ -1,5 +1,5 @@
 // ==========================================
-// 1. DİL SÖZLÜĞÜ (Kısıtlamalar Eklendi)
+// 1. DİL SÖZLÜĞÜ
 // ==========================================
 const translations = {
     tr: {
@@ -71,7 +71,7 @@ const translations = {
 };
 
 // ==========================================
-// 2. TEMEL DEĞİŞKENLER VE TAHTA MANTIĞI
+// 2. TEMEL DEĞİŞKENLER VE TAHTA
 // ==========================================
 const boardElement = document.getElementById('chess-board');
 const statusElement = document.getElementById('status');
@@ -108,7 +108,6 @@ function draw() {
         if (layout[i]) {
             const piece = document.createElement('div');
             piece.className = `piece ${layout[i]}`;
-            // Adım 6'da c6'daki atı (index 18) parlatıyoruz
             if (step === 6 && i === 18) piece.classList.add('betrayal');
             square.appendChild(piece);
         }
@@ -121,7 +120,111 @@ function vurgula(kuralNo) {
     items.forEach((item, idx) => {
         if (kuralNo === 0) {
             item.style.opacity = "1";
-            item.classList.remove('active-law');
         } else {
             item.style.opacity = (idx + 1 === kuralNo) ? "1" : "0.3";
-            if (idx
+        }
+    });
+}
+
+// ==========================================
+// 3. SENARYO ADIMLARI
+// ==========================================
+const tutorialSteps = [
+    { run: () => { layout[52]=''; layout[36]='w-p'; layout[12]=''; layout[28]='b-p'; vurgula(0); } },
+    { run: () => { layout[53]=''; layout[37]='w-p'; layout[11]=''; layout[27]='b-p'; vurgula(0); } },
+    { run: () => { layout[62]=''; layout[45]='w-n'; layout[1]=''; layout[18]='b-n'; vurgula(0); } },
+    { run: () => { layout[54]=''; layout[46]='w-p'; layout[9]=''; layout[17]='b-p'; vurgula(0); } },
+    { run: () => { layout[61]=''; layout[25]='w-b'; vurgula(1); pop(5, 0, "#f1c40f"); } },
+    { run: () => { layout[5]=''; layout[33]='b-b'; vurgula(2); pop(6, 1, "#ff3333"); } },
+    { 
+        run: () => { 
+            layout[18] = ''; layout[33] = 'w-n'; draw(); 
+            vurgula(3); pop(7, 2, "#ffffff"); 
+            const tId = setTimeout(() => { layout[33] = ''; draw(); }, 1500);
+            timeouts.push(tId);
+        } 
+    }
+];
+
+// ==========================================
+// 4. KONTROLLER
+// ==========================================
+function pop(stepNo, ruleIdx, color) {
+    const lang = localStorage.getItem('gameLang') || 'tr';
+    const p = translations[lang].popups[`step${stepNo}Title`];
+    const m = translations[lang].popups[`step${stepNo}Msg`];
+    const r = translations[lang].rules[ruleIdx];
+    showPop(p, m, r, color);
+}
+
+function showPop(title, msg, rule, color) {
+    const popup = document.getElementById('betrayal-popup');
+    document.querySelector('.alert-title').innerText = title;
+    document.getElementById('popup-msg').innerText = msg;
+    document.getElementById('popup-rule').innerText = rule;
+    document.querySelector('.alert-title').style.color = color;
+    popup.style.display = 'flex';
+}
+
+function closePopup() { document.getElementById('betrayal-popup').style.display = 'none'; }
+
+function nextStep() {
+    const lang = localStorage.getItem('gameLang') || 'tr';
+    if (step < tutorialSteps.length) {
+        tutorialSteps[step].run();
+        statusElement.innerText = translations[lang].tutorialMsgs[step];
+        step++;
+    } else {
+        resetBoard();
+        statusElement.innerText = translations[lang].status;
+    }
+    draw();
+    updateButtonStates();
+}
+
+function prevStep() {
+    const lang = localStorage.getItem('gameLang') || 'tr';
+    if (step > 0) {
+        step--;
+        const target = step;
+        resetBoard();
+        for (let i = 0; i < target; i++) tutorialSteps[i].run();
+        step = target;
+        statusElement.innerText = (step === 0) ? translations[lang].status : translations[lang].tutorialMsgs[step - 1];
+        draw();
+        updateButtonStates();
+    }
+}
+
+function updateButtonStates() {
+    const lang = localStorage.getItem('gameLang') || 'tr';
+    document.getElementById('prev-btn').disabled = (step === 0);
+    document.getElementById('next-btn').innerText = (step >= tutorialSteps.length) ? translations[lang].resetBtn : translations[lang].nextBtn;
+}
+
+function applyLanguage(lang) {
+    const t = translations[lang];
+    localStorage.setItem('gameLang', lang);
+    document.getElementById('panel-title').innerText = t.rulesTitle;
+    document.getElementById('rule-1-desc').innerText = t.rules[0];
+    document.getElementById('rule-2-desc').innerText = t.rules[1];
+    document.getElementById('rule-3-desc').innerText = t.rules[2];
+    
+    const resBox = document.getElementById('restrictions-list');
+    resBox.innerHTML = `<h4>${t.restrictionsTitle}</h4>`;
+    t.restrictions.forEach(r => {
+        const d = document.createElement('div');
+        d.className = 'restriction-item';
+        d.innerText = r;
+        resBox.appendChild(d);
+    });
+    
+    statusElement.innerText = (step === 0) ? t.status : t.tutorialMsgs[step-1];
+    updateButtonStates();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    resetBoard();
+    applyLanguage(localStorage.getItem('gameLang') || 'tr');
+    draw();
+});
