@@ -42,7 +42,7 @@
             border-radius: 12px;
             padding: 15px;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            max-height: 400px;
+            max-height: 500px; /* Kısıtlamalar için biraz yükselttik */
             overflow-y: auto;
         }
         .full-rules-panel h3 {
@@ -56,7 +56,7 @@
         .law-item {
             margin-bottom: 15px;
             padding-bottom: 10px;
-            border-bottom: 1px border rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
         .law-item:last-child { border-bottom: none; }
         .law-item strong {
@@ -71,8 +71,37 @@
             font-size: 0.8rem;
             line-height: 1.4;
         }
-        <div id="restrictions-list" class="restrictions-box">
-        </div>
+
+        /* Kısıtlamalar Kutusu Tasarımı */
+        .restrictions-box {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(231, 76, 60, 0.08); 
+            border: 1px dashed rgba(231, 76, 60, 0.4);
+            border-radius: 8px;
+        }
+        .restrictions-box h4 {
+            color: #e74c3c;
+            font-size: 0.85rem;
+            margin: 0 0 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+        .restriction-item {
+            color: #eee;
+            font-size: 0.75rem;
+            line-height: 1.4;
+            margin-bottom: 5px;
+            padding-left: 10px;
+            position: relative;
+        }
+        .restriction-item::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #e74c3c;
+        }
 
         /* Pop-up Güzelleştirme */
         .popup-content {
@@ -100,16 +129,19 @@
                 <div id="rules-content">
                     <div class="law-item">
                         <strong>⚡ 1. ACTIVE THREAT</strong>
-                        <span id="rule-1-desc">İhanet sadece taze tehditlerde tetiklenir. Feda edilen taşlar bağışıktır. / Betrayal only triggers on fresh threats. Self-sacrifices are immune.</span>
+                        <span id="rule-1-desc">İhanet sadece taze tehditlerde tetiklenir. Feda edilen taşlar bağışıktır.</span>
                     </div>
                     <div class="law-item">
                         <strong>🔄 2. THE CHOICE</strong>
-                        <span id="rule-2-desc">At, Kale ve Fil ihanet edebilir. Vezir ve Piyonlar sadıktır. / Knights, Rooks, and Bishops can betray. Queens and Pawns are loyal.</span>
+                        <span id="rule-2-desc">At, Kale ve Fil ihanet edebilir. Vezir ve Piyonlar sadıktır.</span>
                     </div>
                     <div class="law-item">
                         <strong>💨 3. FINAL MISSION</strong>
-                        <span id="rule-3-desc">İhanet eden taş şah çekemez. Hamle sonrası tahtadan silinir. / Traitors cannot check. Removed after move.</span>
+                        <span id="rule-3-desc">İhanet eden taş şah çekemez. Hamle sonrası tahtadan silinir.</span>
                     </div>
+
+                    <div id="restrictions-list" class="restrictions-box">
+                        </div>
                 </div>
             </div>
         </div> 
