@@ -1,5 +1,5 @@
 // ==========================================
-// 1. DİL SÖZLÜĞÜ (TR/EN GÜNCEL)
+// 1. DİL SÖZLÜĞÜ (Kısıtlamalar Eklendi)
 // ==========================================
 const translations = {
     tr: {
@@ -28,7 +28,7 @@ const translations = {
         tutorialMsgs: [
             "1. Beyaz e4, Siyah e5. Merkez mücadelesi başlıyor.",
             "2. Beyaz f4, Siyah d5 ile merkezi zorluyor.",
-            "3. Beyaz Af3, Siyah Ac6 gelişimi. ",
+            "3. Beyaz Af3, Siyah Ac6 gelişimi.",
             "4. Beyaz g3 hazırlığı, Siyah b6 sürüyor.",
             "5. TAZE TEHDİT: Beyaz Fil b5'e indi, At tehlikede!",
             "6. İHANET: Siyah Fil b4'e geldi! At korumasız kaldığı için taraf değiştirdi.",
@@ -61,7 +61,7 @@ const translations = {
         tutorialMsgs: [
             "1. White e4, Black e5. Center battle begins.",
             "2. White f4, Black d5 challenging the center.",
-            "3. White Nf3, Black Nc6 development. ",
+            "3. White Nf3, Black Nc6 development.",
             "4. White g3 prep, Black plays b6.",
             "5. FRESH THREAT: White Bishop to b5, the Knight is in danger!",
             "6. BETRAYAL: Black played Bishop b4! The abandoned Knight switched sides.",
@@ -71,7 +71,7 @@ const translations = {
 };
 
 // ==========================================
-// 2. TEMEL DEĞİŞKENLER VE TAHTA
+// 2. TEMEL DEĞİŞKENLER VE TAHTA MANTIĞI
 // ==========================================
 const boardElement = document.getElementById('chess-board');
 const statusElement = document.getElementById('status');
@@ -108,7 +108,7 @@ function draw() {
         if (layout[i]) {
             const piece = document.createElement('div');
             piece.className = `piece ${layout[i]}`;
-            // Adım 6'da c6'daki atı (index 18) parlat
+            // Adım 6'da c6'daki atı (index 18) parlatıyoruz
             if (step === 6 && i === 18) piece.classList.add('betrayal');
             square.appendChild(piece);
         }
@@ -124,178 +124,4 @@ function vurgula(kuralNo) {
             item.classList.remove('active-law');
         } else {
             item.style.opacity = (idx + 1 === kuralNo) ? "1" : "0.3";
-            if (idx + 1 === kuralNo) item.classList.add('active-law');
-            else item.classList.remove('active-law');
-        }
-    });
-}
-
-// ==========================================
-// 3. SENARYO ADIMLARI
-// ==========================================
-const tutorialSteps = [
-    // 1. Beyaz e4 / Siyah e5
-    { run: () => { layout[52]=''; layout[36]='w-p'; layout[12]=''; layout[28]='b-p'; vurgula(0); } },
-    
-    // 2. Beyaz f4 / Siyah d5
-    { run: () => { layout[53]=''; layout[37]='w-p'; layout[11]=''; layout[27]='b-p'; vurgula(0); } },
-    
-    // 3. Beyaz Af3 / Siyah Ac6
-    { run: () => { layout[62]=''; layout[45]='w-n'; layout[1]=''; layout[18]='b-n'; vurgula(0); } },
-    
-    // 4. Beyaz g3 / Siyah b6
-    { run: () => { layout[54]=''; layout[46]='w-p'; layout[9]=''; layout[17]='b-p'; vurgula(0); } },
-    
-    // 5. TAZE TEHDİT: Beyaz Fil b5'e gelerek At'ı ister!
-    { 
-        run: () => { 
-            layout[61]=''; layout[25]='w-b'; 
-            vurgula(1); 
-            pop(5, 0, "#f1c40f"); 
-        } 
-    },
-    // 6. ADIM: Siyah Fil b4'e (index 33) gelir
-    { 
-        run: () => { 
-            layout[5]=''; // f8'deki (filin başlangıcı) fili kaldır
-            layout[33]='b-b'; // b4 karesine (index 33) koy
-            vurgula(2); 
-            pop(6, 1, "#ff3333"); // İhanet mesajı
-        } 
-    },
-    
-    // 7. ADIM: Hain At (c6 - 18), b4'teki (33) Fil'i alır ve silinir
-    { 
-        run: () => { 
-            // 1. Önce At c6'dan kalkar, b4'teki Fil'i vurur
-            layout[18] = ''; 
-            layout[33] = 'w-n'; // At oraya yerleşir (geçici beyaz at görünümü)
-            draw(); // Hamleyi ekrana çiz
-            
-            // 2. Patlama efektini b4 karesine (33) uygula
-            const square = boardElement.children[33];
-            const piece = square.querySelector('.piece');
-            if (piece) {
-                piece.classList.add('piece-capture'); // CSS'te bu class varsa sarsılır/parlar
-            }
-            
-            vurgula(3); // 3. Yasayı vurgula (Silinme kuralı)
-            pop(7, 2, "#ffffff"); // Son pop-up
-            
-            // 3. KRİTİK NOKTA: 1.5 saniye sonra taşı tamamen sil ve TEKRAR ÇİZ
-            const tId = setTimeout(() => { 
-                layout[33] = ''; // b4 karesini boşalt
-                draw(); // Tahtayı son haliyle (boş b4 ile) tekrar çiz
-                console.log("Hain taş görevini tamamladı ve silindi.");
-            }, 1500);
-            
-            timeouts.push(tId);
-        } 
-    }
-];
-
-function pop(stepNo, ruleIdx, color) {
-    const lang = localStorage.getItem('gameLang') || 'tr';
-    const p = translations[lang].popups[`step${stepNo}Title`];
-    const m = translations[lang].popups[`step${stepNo}Msg`];
-    const r = translations[lang].rules[ruleIdx];
-    showPop(p, m, r, color);
-}
-
-// ==========================================
-// 4. KONTROLLER
-// ==========================================
-function nextStep() {
-    const lang = localStorage.getItem('gameLang') || 'tr';
-    if (step < tutorialSteps.length) {
-        tutorialSteps[step].run();
-        statusElement.innerText = translations[lang].tutorialMsgs[step];
-        step++;
-        draw();
-    } else {
-        resetBoard();
-        statusElement.innerText = translations[lang].status;
-        draw();
-    }
-    updateButtonStates();
-}
-
-function prevStep() {
-    const lang = localStorage.getItem('gameLang') || 'tr';
-    if (step > 0) {
-        step--;
-        const targetStep = step; 
-        resetBoard(); 
-        for (let i = 0; i < targetStep; i++) {
-            tutorialSteps[i].run();
-        }
-        step = targetStep; 
-        statusElement.innerText = (step === 0) ? translations[lang].status : translations[lang].tutorialMsgs[step - 1];
-        draw();
-        updateButtonStates();
-    }
-}
-
-function updateButtonStates() {
-    const lang = localStorage.getItem('gameLang') || 'tr';
-    const prevBtn = document.getElementById('prev-btn');
-    const nextBtn = document.getElementById('next-btn');
-    if(prevBtn) {
-        prevBtn.innerText = (lang === 'tr' ? 'Geri' : 'Back');
-        prevBtn.disabled = (step === 0);
-    }
-    if(nextBtn) {
-        nextBtn.innerText = (step >= tutorialSteps.length) ? translations[lang].resetBtn : translations[lang].nextBtn;
-    }
-}
-
-function showPop(title, msg, rule, color) {
-    const popup = document.getElementById('betrayal-popup');
-    if(!popup) return;
-    document.querySelector('.alert-title').innerText = title;
-    document.getElementById('popup-msg').innerText = msg;
-    document.getElementById('popup-rule').innerText = rule;
-    const content = document.querySelector('.popup-content');
-    if(content) content.style.borderLeftColor = color;
-    document.querySelector('.alert-title').style.color = color;
-    popup.style.display = 'flex';
-}
-
-function closePopup() {
-    document.getElementById('betrayal-popup').style.display = 'none';
-}
-
-function applyLanguage(lang) {
-    const t = translations[lang];
-    statusElement.innerText = t.status;
-    
-    // Yasalar Başlığı
-    const rulesTitle = document.querySelector('.full-rules-panel h3');
-    if(rulesTitle) rulesTitle.innerText = t.rulesTitle;
-    
-    // 3 Yasa Açıklamaları
-    document.getElementById('rule-1-desc').innerText = t.rules[0];
-    document.getElementById('rule-2-desc').innerText = t.rules[1];
-    document.getElementById('rule-3-desc').innerText = t.rules[2];
-
-    // --- YENİ: Kısıtlamalar Bölümü ---
-    const restrictionSection = document.getElementById('restrictions-list');
-    if (restrictionSection) {
-        restrictionSection.innerHTML = `<h4>${t.restrictionsTitle}</h4>`;
-        t.restrictions.forEach(res => {
-            const p = document.createElement('p');
-            p.className = 'restriction-item';
-            p.innerText = res;
-            restrictionSection.appendChild(p);
-        });
-    }
-    
-    updateButtonStates();
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    resetBoard();
-    const currentLang = localStorage.getItem('gameLang') || 'tr';
-    applyLanguage(currentLang);
-    draw();
-});
+            if (idx
