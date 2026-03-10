@@ -37,4 +37,47 @@
             border: 1px dashed rgba(231, 76, 60, 0.4); border-radius: 8px;
         }
         .restrictions-box h4 { color: #e74c3c; font-size: 0.85rem; margin: 0 0 8px 0; text-transform: uppercase; text-align: center; }
-        .restriction-item { color: #eee; font
+        .restriction-item { color: #eee; font-size: 0.75rem; line-height: 1.4; margin-bottom: 5px; }
+
+        .popup-content { background: #1a1a1a; border: 2px solid #f1c40f; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div id="chess-board"></div>
+        <div class="side-panel">
+            
+            <div id="status" class="msg-box">Yükleniyor...</div>
+            
+            <div class="controls">
+                <button onclick="prevStep()" id="prev-btn" disabled>Geri</button>
+                <button onclick="nextStep()" id="next-btn">Sıradaki</button>
+            </div>
+
+            <div class="full-rules-panel">
+                <h3 id="panel-title">📜 THE 3 LAWS</h3>
+                <div id="rules-content">
+                    <div class="law-item"><strong>⚡ 1. ACTIVE THREAT</strong><span id="rule-1-desc">...</span></div>
+                    <div class="law-item"><strong>🔄 2. THE CHOICE</strong><span id="rule-2-desc">...</span></div>
+                    <div class="law-item"><strong>💨 3. FINAL MISSION</strong><span id="rule-3-desc">...</span></div>
+                    <div id="restrictions-list" class="restrictions-box"></div>
+                </div>
+            </div>
+        </div> 
+    </div>
+
+    <div id="betrayal-popup" class="popup-overlay" style="display: none;">
+        <div class="popup-content">
+            <h2 class="alert-title">⚠️ ALERT</h2>
+            <p id="popup-msg">...</p>
+            <div class="popup-rule-box">
+                <strong id="popup-law-label">LAW:</strong> <span id="popup-rule">...</span>
+            </div>
+            <button onclick="closePopup()" class="popup-btn">Tamam</button>
+        </div>
+    </div>
+
+    <script src="logic_alerts.js"></script>
+    <script src="home_script.js"></script>
+</body>
+</html>
