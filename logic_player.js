@@ -217,6 +217,45 @@ function getCoords(index) {
             }
         });
     }
+    let hasMoved = { 'w-k': false, 'b-k': false, 'w-r-0': false, 'w-r-7': false, 'b-r-0': false, 'b-r-7': false };
+
+function canCastle(color, side) {
+    if (hasMoved[`${color}-k`]) return false;
+    const row = color === 'w' ? 7 : 0;
+    const rookCol = side === 'king' ? 7 : 0;
+    if (hasMoved[`${color}-r-${rookCol}`]) return false;
+
+    const gap = side === 'king' ? [5, 6] : [1, 2, 3];
+    for (let col of gap) {
+        if (layout[getIndex(row, col)]) return false; // Arada taş var mı?
+        if (isSquareAttacked(getIndex(row, col), color === 'w' ? 'b' : 'w')) return false; // Şah tehdit altından geçemez
+    }
+    return true;
+}
+    let enPassantTarget = null; // Son hamlede 2 kare çıkan piyonun arkasındaki kare
+
+// executeMove içinde piyon 2 kare çıkarsa:
+// enPassantTarget = getIndex(row + direction, col);
+    function isCheckmate(color) {
+    const opponent = color === 'w' ? 'b' : 'w';
+    const kingPos = findKing(color);
+    
+    // 1. Şah çekilmemişse mat olamaz (pat olabilir, o ayrı)
+    if (!isSquareAttacked(kingPos, opponent)) return false;
+
+    // 2. Oyuncunun HERHANGİ bir taşıyla yapabileceği LEGAL bir hamle var mı?
+    for (let i = 0; i < 64; i++) {
+        if (layout[i] && layout[i].startsWith(color)) {
+            const moves = getValidMoves(i);
+            for (let move of moves) {
+                // Hayali hamle yap, hala şah altında mı bak (Simülasyon)
+                if (testMoveForSafety(i, move, color)) return false; 
+            }
+        }
+    }
+    return true; // Hiçbir kurtuluş hamlesi yok!
+}
+    
 
     return moves;
 }function handleSquareClick(i) {
