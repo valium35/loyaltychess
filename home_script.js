@@ -8,10 +8,14 @@ const translations = {
         backBtn: "Geri",
         resetBtn: "Başa Dön",
         rulesTitle: "📜 İhanet Yasaları (The 3 Laws)",
+        restrictionsTitle: "🚫 Kısıtlamalar (Restrictions)",
         rules: [
             "1. AKTİF TEHDİT: İhanet sadece taze tehditlerde tetiklenir. Kendi hamlenle yaptığın fedalar ihanet içermez.",
             "2. SEÇİM HAKKI: At, Kale ve Fil ihanet edebilir. Vezir ve Piyonlar her zaman sadıktır.",
             "3. SON GÖREV: İhanet eden taş şah çekemez. Hamle sonrası tahtadan sonsuza dek silinir."
+        ],
+        restrictions: [
+            "1. ŞAH ÇATALI: Eğer bir taş aynı anda Şah'ı ve başka bir taşı tehdit ediyorsa (çatal), o taş İHANET EDEMEZ."
         ],
         popups: {
             step5Title: "⚠️ TAZE TEHDİT",
@@ -37,10 +41,14 @@ const translations = {
         backBtn: "Back",
         resetBtn: "Reset",
         rulesTitle: "📜 The 3 Laws of Betrayal",
+        restrictionsTitle: "🚫 Restrictions",
         rules: [
             "1. ACTIVE THREAT: Betrayal only triggers on fresh threats. Active sacrifices are immune.",
             "2. THE CHOICE: Knights, Rooks, and Bishops can betray. Queens and Pawns are always loyal.",
             "3. FINAL MISSION: Traitors cannot check. They are removed from the board after the move."
+        ],
+        restrictions: [
+            "1. ROYAL FORK: If a piece threatens the King and another piece simultaneously (fork), it CANNOT betray."
         ],
         popups: {
             step5Title: "⚠️ FRESH THREAT",
