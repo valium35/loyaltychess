@@ -1,85 +1,101 @@
-// --- OYUN DURUMU ---
-let layout = Array(64).fill(''); // Tahta dizilimi
-let turn = 'w'; // Sıra kimde? 'w' = Beyaz, 'b' = Siyah
-let selectedSquare = null; // Seçili olan karenin indeksi
-
+// --- 1. TAHTA AYARLARI VE BAŞLANGIÇ DİZİLİMİ ---
+let layout = Array(64).fill('');
 const boardElement = document.getElementById('chess-board');
 const statusElement = document.getElementById('status');
 
-// --- BAŞLANGIÇ DİZİLİMİ ---
+// Standart Dizilim (Senin home_script'teki taş isimlerinle aynı)
+const initialSetup = {
+    0: 'b-r', 1: 'b-n', 2: 'b-b', 3: 'b-q', 4: 'b-k', 5: 'b-b', 6: 'b-n', 7: 'b-r',
+    8: 'b-p', 9: 'b-p', 10: 'b-p', 11: 'b-p', 12: 'b-p', 13: 'b-p', 14: 'b-p', 15: 'b-p',
+    48: 'w-p', 49: 'w-p', 50: 'w-p', 51: 'w-p', 52: 'w-p', 53: 'w-p', 54: 'w-p', 55: 'w-p',
+    56: 'w-r', 57: 'w-n', 58: 'w-b', 59: 'w-q', 60: 'w-k', 61: 'w-b', 62: 'w-n', 63: 'w-r'
+};
+
+// --- 2. OYUN DURUMU (STATE) ---
+let turn = 'w'; // 'w' = Beyaz, 'b' = Siyah
+let selectedSquare = null;
+
+// --- 3. TAHTAYI OLUŞTUR VE ÇİZ ---
 function initGame() {
-    // Standart dizilim (Test için sadeleştirilmiş veya tam dizilim koyabilirsin)
-    layout[60] = 'w-k'; layout[4] = 'b-k'; // Şahlar
-    layout[56] = 'w-r'; layout[63] = 'w-r'; // Kaleler
-    layout[0] = 'b-r'; layout[7] = 'b-r';
-    // ... diğer taşları buraya ekleyebilirsin ...
-    
+    // Dizilimi yerleştir
+    Object.keys(initialSetup).forEach(index => {
+        layout[index] = initialSetup[index];
+    });
     updateStatus();
     draw();
 }
 
-// --- TAHTAYI ÇİZZ ---
 function draw() {
     boardElement.innerHTML = '';
     for (let i = 0; i < 64; i++) {
         const square = document.createElement('div');
-        square.className = `square ${(Math.floor(i / 8) + (i % 8)) % 2 !== 0 ? 'black' : 'white'}`;
+        // Kare renklerini senin CSS'ine göre ayarlar (white/black sınıfları)
+        const row = Math.floor(i / 8);
+        const col = i % 8;
+        square.className = `square ${(row + col) % 2 !== 0 ? 'black' : 'white'}`;
         
-        // Seçili kareyi vurgula
-        if (selectedSquare === i) square.classList.add('active-law'); // Sarı vurgu için senin sınıfı kullandım
+        // Tıklama olayını bağla
+        square.onclick = () => handleSquareClick(i);
+
+        // Seçili kareye senin "active-law" vurgunu ekleyelim
+        if (selectedSquare === i) square.classList.add('active-law');
 
         if (layout[i]) {
             const piece = document.createElement('div');
             piece.className = `piece ${layout[i]}`;
             square.appendChild(piece);
         }
-
-        square.onclick = () => handleSquareClick(i);
         boardElement.appendChild(square);
     }
 }
 
-// --- TIKLAMA MANTIĞI ---
+// --- 4. HAREKET VE TIKLAMA MANTIĞI ---
 function handleSquareClick(i) {
     const piece = layout[i];
 
-    // 1. Durum: Henüz taş seçilmediyse
+    // Henüz seçim yapılmadıysa
     if (selectedSquare === null) {
         if (piece && piece.startsWith(turn)) {
             selectedSquare = i;
             draw();
         }
     } 
-    // 2. Durum: Taş zaten seçiliyse
+    // Taş zaten seçiliyse (Hedef kareye tıklanıyor)
     else {
-        // Eğer kendi taşına tekrar tıklarsa seçimi iptal et
+        // Eğer aynı renkten başka bir taşa tıklarsa seçimi değiştir
         if (piece && piece.startsWith(turn)) {
             selectedSquare = i;
+            draw();
         } else {
-            // HAMLEYİ YAP
-            movePiece(selectedSquare, i);
+            // HAMLEYİ GERÇEKLEŞTİR
+            executeMove(selectedSquare, i);
             selectedSquare = null;
-            // SIRA DEĞİŞTİR
+            
+            // Sırayı değiştir
             turn = (turn === 'w') ? 'b' : 'w';
+            updateStatus();
+            draw();
         }
-        updateStatus();
-        draw();
     }
 }
 
-function movePiece(from, to) {
+function executeMove(from, to) {
+    // Eğer hedefte rakip taş varsa, onu "al" (Capture)
     layout[to] = layout[from];
     layout[from] = '';
     
-    // BURASI ÖNEMLİ: Hamle sonrası İhanet Yasası kontrolü buraya gelecek!
-    // checkBetrayalRules(to); 
+    // TODO: Buraya İhanet Yasası Kontrolü gelecek!
+    // checkLoyaltyRules(to);
 }
 
 function updateStatus() {
-    statusElement.innerText = `SIRA: ${turn === 'w' ? 'BEYAZDA' : 'SİYAHTA'}`;
-    statusElement.style.background = turn === 'w' ? '#f1c40f' : '#333';
+    const playerText = turn === 'w' ? 'BEYAZ' : 'SİYAH';
+    statusElement.innerText = `SIRA: ${playerText} OYUNCUDA`;
+    
+    // Senin yeşil kutuyu sıraya göre renklendirelim
+    statusElement.style.background = turn === 'w' ? '#f1c40f' : '#2c3e50';
     statusElement.style.color = turn === 'w' ? '#000' : '#fff';
 }
 
-// Oyunu başlat
+// Başlat!
 initGame();
