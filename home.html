@@ -6,6 +6,7 @@
     <title>LoyaltyChess - Oyun</title>
     <link rel="stylesheet" href="home_style.css">
     <style>
+        /* Mevcut Stil Kodların */
         .controls { display: flex; gap: 10px; margin-bottom: 20px; }
         .controls button {
             flex: 1; padding: 12px; cursor: pointer; font-weight: bold;
@@ -15,6 +16,32 @@
         }
         .controls button:hover:not(:disabled) { background: #f1c40f; color: #121212; }
         .controls button:disabled { opacity: 0.2; cursor: not-allowed; color: #555; border-color: #555; }
+
+        /* YENİ: Oyun Modu Butonları Stili */
+        .mode-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .mode-btn-link {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 0.75rem;
+            border-radius: 8px;
+            border: 2px solid #f1c40f;
+            background: rgba(241, 196, 15, 0.1);
+            color: #f1c40f;
+            transition: 0.3s ease;
+            text-transform: uppercase;
+        }
+        .mode-btn-link:hover {
+            background: #f1c40f;
+            color: #121212;
+            box-shadow: 0 0 15px rgba(241, 196, 15, 0.4);
+        }
 
         .full-rules-panel {
             background: rgba(255, 255, 255, 0.03); border-radius: 12px;
@@ -45,11 +72,19 @@
     <div class="main-container">
         <div id="chess-board"></div>
         <div class="side-panel">
+            
+            <div class="mode-container">
+                <a href="vs_bot.html" class="mode-btn-link">🤖 VS BOT</a>
+                <a href="vs_player.html" class="mode-btn-link">⚔️ 2 OYUNCU</a>
+            </div>
+
             <div id="status" class="msg-box">Yükleniyor...</div>
+            
             <div class="controls">
                 <button onclick="prevStep()" id="prev-btn" disabled>Geri</button>
                 <button onclick="nextStep()" id="next-btn">Sıradaki</button>
             </div>
+
             <div class="full-rules-panel">
                 <h3 id="panel-title">📜 THE 3 LAWS</h3>
                 <div id="rules-content">
