@@ -2,7 +2,8 @@
 let layout = Array(64).fill('');
 let turn = 'w';
 let selectedSquare = null;
-let enPassantTarget = null; // Geçerken alış karesi
+let enPassantTarget = null; // Geçerken alış karesilet betrayalTarget = null; // İhanet edecek taşın indeksi
+let isBetrayalMoveMode = false; // Şu an ihanet hamlesi mi yapılıyor?
 let hasMoved = { 'w-k': false, 'b-k': false, 'w-r-56': false, 'w-r-63': false, 'b-r-0': false, 'b-r-7': false };
 
 const boardElement = document.getElementById('chess-board');
@@ -63,8 +64,30 @@ function testMoveForSafety(from, to, color) {
 
 // Sadece yasal (Şahı tehlikeye atmayan) hamleleri getir
 function getLegalMoves(i) {
-    const rawMoves = getRawMoves(i);
     const color = layout[i][0];
+    const opponent = color === 'w' ? 'b' : 'w';
+    let rawMoves = getRawMoves(i);
+
+    // --- 2. MADDE KISITLAMALARI ---
+    if (isBetrayalMoveMode && i === betrayalTarget) {
+        return rawMoves.filter(toIndex => {
+            // 1. Şah çekemez (Hayali hamlede rakip şah saldırı altında mı?)
+            const originalTo = layout[toIndex];
+            layout[toIndex] = layout[i];
+            layout[i] = '';
+            
+            const opponentKing = findKing(opponent);
+            const isChecking = isSquareAttacked(opponentKing, color); // İhanet eden şah çekiyor mu?
+            
+            // Geri al
+            layout[i] = layout[toIndex];
+            layout[toIndex] = originalTo;
+
+            return !isChecking; // Şah çekmiyorsa bu hamle yasaldır
+        });
+    }
+
+    // Normal hamleler için şah güvenliği kontrolü (mevcut kodun)
     return rawMoves.filter(move => testMoveForSafety(i, move, color));
 }
 
@@ -212,8 +235,7 @@ function executeMove(from, to) {
     layout[to] = layout[from];
     layout[from] = '';
 }
-let betrayalTarget = null; // İhanet edecek taşın indeksi
-let isBetrayalMoveMode = false; // Şu an ihanet hamlesi mi yapılıyor?
+
 
 function isCheckmate(color) {
     const opponent = color === 'w' ? 'b' : 'w';
@@ -228,11 +250,20 @@ function isCheckmate(color) {
     return true;
 }
 
-function draw() {
+function draw(highlightMoves = []) {
     boardElement.innerHTML = '';
     for (let i = 0; i < 64; i++) {
         const square = document.createElement('div');
-        square.className = `square ${(Math.floor(i/8)+(i%8))%2!==0?'black':'white'} ${selectedSquare===i?'active-law':''}`;
+        const isBlack = (Math.floor(i / 8) + (i % 8)) % 2 !== 0;
+        
+        // TEMEL SINIFLAR
+        square.className = `square ${isBlack ? 'black' : 'white'}`;
+
+        // GÖRSEL AYDINLATMA (Karanlığı dağıtan kısım)
+        if (selectedSquare === i) square.classList.add('active-law'); // Seçili kare
+        if (highlightMoves.includes(i)) square.classList.add('possible-move'); // Gidilebilecek yerler
+        if (isBetrayalMoveMode && betrayalTarget === i) square.classList.add('betrayal-glow'); // İhanet eden taş parlasın
+
         if (layout[i]) {
             const p = document.createElement('div');
             p.className = `piece ${layout[i]}`;
@@ -293,5 +324,22 @@ function completeTurn() {
     turn = turn === 'w' ? 'b' : 'w';
     if (isCheckmate(turn)) alert("ŞAH MAT!");
     updateStatus();
+}function updateStatus(customMessage = "") {
+    const statusElement = document.getElementById('status'); // Eğer yukarıda tanımlamadıysan
+    
+    if (isBetrayalMoveMode) {
+        // İhanet modu aktifse mor renk ve özel mesaj
+        statusElement.innerText = "⚠️ İHANET MODU: Taşın görevini tamamla!";
+        statusElement.style.background = "#8e44ad"; // Mor (İhanet Rengi)
+        statusElement.style.color = "#fff";
+    } else {
+        // Normal oyun sırası
+        const playerText = turn === 'w' ? 'BEYAZ' : 'SİYAH';
+        statusElement.innerText = customMessage || `SIRA: ${playerText} OYUNCUDA`;
+        
+        // Renkleri senin temana göre ayarlayalım
+        statusElement.style.background = turn === 'w' ? '#f1c40f' : '#2c3e50';
+        statusElement.style.color = turn === 'w' ? '#000' : '#fff';
+    }
 }
 initGame();
