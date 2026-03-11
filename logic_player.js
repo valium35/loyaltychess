@@ -222,3 +222,64 @@ function executeMove(from, to) {
         const rFrom = (to%8 === 6) ? getIndex(rRow, 7) : getIndex(rRow, 0);
         const rTo = (to%8 === 6) ? getIndex(rRow, 5) : getIndex(rRow, 3);
         layout[rTo] = layout[rFrom]; layout[rFrom] = '';
+    }
+    if (type === 'k') hasMoved[turn + '-k'] = true;
+    if (type === 'r') hasMoved[turn + '-r-' + from] = true;
+    enPassantTarget = (type === 'p' && Math.abs(Math.floor(from/8) - Math.floor(to/8)) === 2) 
+                      ? getIndex((Math.floor(from/8) + Math.floor(to/8)) / 2, from%8) : null;
+    layout[to] = layout[from];
+    layout[from] = '';
+}
+
+function completeTurn() {
+    betrayalTarget = null;
+    isBetrayalMoveMode = false;
+    turn = turn === 'w' ? 'b' : 'w';
+    if (isCheckmate(turn)) alert("ŞAH MAT! " + (turn === 'w' ? "SİYAH" : "BEYAZ") + " KAZANDI.");
+    updateStatus();
+    draw();
+}
+
+function isCheckmate(color) {
+    const kingPos = findKing(color);
+    if (!isSquareAttacked(kingPos, color === 'w' ? 'b' : 'w')) return false;
+    for (let i = 0; i < 64; i++) {
+        if (layout[i] && layout[i].startsWith(color)) {
+            if (getLegalMoves(i).length > 0) return false;
+        }
+    }
+    return true;
+}
+
+function updateStatus(customMessage = "") {
+    if (isBetrayalMoveMode) {
+        statusElement.innerText = "⚠️ İHANET MODU: Taşın görevini tamamla!";
+        statusElement.style.background = "#8e44ad";
+        statusElement.style.color = "#fff";
+    } else {
+        statusElement.innerText = customMessage || `SIRA: ${turn === 'w' ? 'BEYAZ' : 'SİYAH'} OYUNCUDA`;
+        statusElement.style.background = turn === 'w' ? '#f1c40f' : '#2c3e50';
+        statusElement.style.color = turn === 'w' ? '#000' : '#fff';
+    }
+}
+
+function draw(highlightMoves = []) {
+    boardElement.innerHTML = '';
+    for (let i = 0; i < 64; i++) {
+        const square = document.createElement('div');
+        const isBlack = (Math.floor(i / 8) + (i % 8)) % 2 !== 0;
+        square.className = `square ${isBlack ? 'black' : 'white'}`;
+        if (selectedSquare === i) square.classList.add('active-law');
+        if (highlightMoves.includes(i)) square.classList.add('possible-move');
+        if (isBetrayalMoveMode && betrayalTarget === i) square.classList.add('betrayal-glow');
+        if (layout[i]) {
+            const p = document.createElement('div');
+            p.className = `piece ${layout[i]}`;
+            square.appendChild(p);
+        }
+        square.onclick = () => handleSquareClick(i);
+        boardElement.appendChild(square);
+    }
+}
+
+initGame();
