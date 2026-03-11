@@ -278,29 +278,47 @@ function getRawMoves(i) {
 // --- 4. OYUN DÖNGÜSÜ ---
 
 function handleSquareClick(i) {
-
     const piece = layout[i];
 
-    if (selectedSquare === null) {
-
-        if (piece && piece.startsWith(turn)) { selectedSquare = i; draw(); }
-
-    } else {
-
-        const legalMoves = getLegalMoves(selectedSquare);
-
-        if (legalMoves.includes(i)) {
-
-            executeMove(selectedSquare, i);
-
-            selectedSquare = null;
-
-          const potentialBetrayal = checkBetrayalOpportunity();
-    if (potentialBetrayal !== null) {
-        handleBetrayal(potentialBetrayal);
-    } else {
-        completeTurn();
+    // --- İHANET MODU KONTROLÜ ---
+    if (isBetrayalMoveMode) {
+        // Sadece ihanet eden taşın yasal hamlelerine izin ver
+        const moves = getLegalMoves(betrayalTarget);
+        if (moves.includes(i)) {
+            executeMove(betrayalTarget, i);
+            layout[i] = ''; // KURAL: İhanet hamlesi bitince taş görevini tamamlar ve silinir.
+            completeTurn();
+        } else {
+            alert("Önce ihanet eden taşı hareket ettirmelisin!");
+        }
+        return; // İhanet modundayken normal seçimleri engelle
     }
+
+    // --- NORMAL OYUN MANTIĞI ---
+    if (selectedSquare === null) {
+        if (piece && piece.startsWith(turn)) { 
+            selectedSquare = i; 
+            draw(); 
+        }
+    } else {
+        const legalMoves = getLegalMoves(selectedSquare);
+        if (legalMoves.includes(i)) {
+            executeMove(selectedSquare, i);
+            selectedSquare = null;
+            
+            // Hamle bitti, ihanet fırsatı var mı kontrol et
+            const potentialBetrayal = checkBetrayalOpportunity();
+            if (potentialBetrayal !== null) {
+                handleBetrayal(potentialBetrayal);
+            } else {
+                completeTurn();
+            }
+        } else { 
+            selectedSquare = piece && piece.startsWith(turn) ? i : null; 
+            draw();
+        }
+    }
+}
         draw();
 
         updateStatus();
@@ -479,53 +497,13 @@ function handleBetrayal(targetIndex) {
         completeTurn(); // Sıra rakibe geçer
     }
     draw();
-}
 
-function handleBetrayal(targetIndex) {
-    const pType = layout[targetIndex][2];
-    const name = pType === 'r' ? 'Kale' : pType === 'n' ? 'At' : 'Fil';
-    
-    const choice = confirm(`${name} korunmasız kaldı! \n\nTAMAM: İhanet etsin (Rakip adına hamle yapar). \nİPTAL: Feda edilsin (Tahta dışına çıkar).`);
-    
-    if (choice) {
-        // İHANET: Taşın rengini hemen değiştiriyoruz
-        const oldPiece = layout[targetIndex];
-        const newColor = oldPiece[0] === 'w' ? 'b' : 'w';
-        layout[targetIndex] = newColor + oldPiece.substring(1);
-        
-        isBetrayalMoveMode = true;
-        betrayalTarget = targetIndex;
-        alert("İHANET! Şimdi bu taşı rakip adına bir kez hareket ettir.");
-    } else {
-        // FEDA: Taş sessizce tahtadan kalkar
-        layout[targetIndex] = '';
-        completeTurn(); // Sıra rakibe geçer
-    }
-    draw();
-}
 
-function handleBetrayal(targetIndex) {
-    const pType = layout[targetIndex][2];
-    const name = pType === 'r' ? 'Kale' : pType === 'n' ? 'At' : 'Fil';
-    
-    const choice = confirm(`${name} korunmasız kaldı! \n\nTAMAM: İhanet etsin (Rakip adına hamle yapar). \nİPTAL: Feda edilsin (Tahta dışına çıkar).`);
-    
-    if (choice) {
-        // İHANET: Taşın rengini hemen değiştiriyoruz
-        const oldPiece = layout[targetIndex];
-        const newColor = oldPiece[0] === 'w' ? 'b' : 'w';
-        layout[targetIndex] = newColor + oldPiece.substring(1);
-        
-        isBetrayalMoveMode = true;
-        betrayalTarget = targetIndex;
-        alert("İHANET! Şimdi bu taşı rakip adına bir kez hareket ettir.");
-    } else {
-        // FEDA: Taş sessizce tahtadan kalkar
-        layout[targetIndex] = '';
-        completeTurn(); // Sıra rakibe geçer
-    }
-    draw();
-}
+
+
+
+   
+
 
 // Bu yardımcı fonksiyonu da ekleyelim, turn değişimini temiz yapar
 function completeTurn() {
