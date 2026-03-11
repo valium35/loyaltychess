@@ -105,15 +105,31 @@ function getRawMoves(i) {
             if (!hasMoved[color+'-r-'+getIndex(r,0)] && !layout[getIndex(r,1)] && !layout[getIndex(r,2)] && !layout[getIndex(r,3)]) moves.push(getIndex(r,2));
         }
     }
+  // --- PİYON (DÜZELTİLMİŞ) ---
     if (type === 'p') {
         const dir = color === 'w' ? -1 : 1;
-        const forward = getIndex(r+dir, c);
+        const forward = getIndex(r + dir, c);
+        
+        // 1. İlerleme Hamleleri (Bunlar koruma sağlamaz)
         if (forward !== null && !layout[forward]) {
             moves.push(forward);
-            if (r === (color === 'w' ? 6 : 1) && !layout[getIndex(r+2*dir, c)]) moves.push(getIndex(r+2*dir, c));
+            const startRow = (color === 'w' ? 6 : 1);
+            const doubleForward = getIndex(r + 2 * dir, c);
+            if (r === startRow && !layout[doubleForward]) moves.push(doubleForward);
         }
-        [getIndex(r+dir, c-1), getIndex(r+dir, c+1)].forEach(diag => {
-            if (diag !== null && ((layout[diag] && layout[diag][0] !== color) || diag === enPassantTarget)) moves.push(diag);
+
+        // 2. Çapraz Kontrol/Alma (Asıl korumayı sağlayan yer burası)
+        [getIndex(r + dir, c - 1), getIndex(r + dir, c + 1)].forEach(diag => {
+            if (diag !== null) {
+                const targetPiece = layout[diag];
+                const columnDiff = Math.abs((diag % 8) - c);
+                
+                // Sadece yan sütunlardaysa (tahta kenarından taşma kontrolü)
+                if (columnDiff === 1) {
+                    // KURAL: Piyon, çaprazındaki karede taş olsa da olmasa da orayı KORUR/TEHDİT EDER.
+                    moves.push(diag); 
+                }
+            }
         });
     }
     return moves;
