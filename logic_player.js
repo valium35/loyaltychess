@@ -36,7 +36,8 @@ function findKing(color) {
 function isSquareAttacked(targetIndex, attackerColor) {
     for (let i = 0; i < 64; i++) {
         if (layout[i] && layout[i].startsWith(attackerColor)) {
-            const moves = getRawMoves(i);
+            // Sonsuz döngü engeli: isSquareAttacked içindeki getRawMoves normal modda çalışmalı
+            const moves = getRawMoves(i, false); 
             if (moves.includes(targetIndex)) return true;
         }
     }
@@ -57,11 +58,15 @@ function testMoveForSafety(from, to, color) {
 }
 
 function getLegalMoves(i) {
+    if (i === null || !layout[i]) return [];
     const color = layout[i][0];
     const opponent = color === 'w' ? 'b' : 'w';
-    let rawMoves = getRawMoves(i);
+    
+    // İhanet modundaysak yetkili hamleleri al
+    const isBetrayal = isBetrayalMoveMode && i === betrayalTarget;
+    let rawMoves = getRawMoves(i, isBetrayal);
 
-    if (isBetrayalMoveMode && i === betrayalTarget) {
+    if (isBetrayal) {
         return rawMoves.filter(toIndex => {
             const originalTo = layout[toIndex];
             layout[toIndex] = layout[i];
@@ -70,13 +75,13 @@ function getLegalMoves(i) {
             const isChecking = isSquareAttacked(opponentKing, color);
             layout[i] = layout[toIndex];
             layout[toIndex] = originalTo;
-            return !isChecking;
+            return !isChecking; // Şah çekemez kuralı (Madde 2)
         });
     }
     return rawMoves.filter(move => testMoveForSafety(i, move, color));
 }
 
-function getRawMoves(i) {
+function getRawMoves(i, isBetrayal = false) {
     const piece = layout[i];
     if (!piece) return [];
     const color = piece[0];
@@ -84,13 +89,20 @@ function getRawMoves(i) {
     const { r, c } = getCoords(i);
     let moves = [];
 
+    const canMoveTo = (targetIdx) => {
+        if (targetIdx === null) return false;
+        if (!layout[targetIdx]) return true;
+        if (isBetrayal) return layout[targetIdx][2] !== 'k'; // İhanette her şeyi alabilir ama şahı alamaz
+        return layout[targetIdx][0] !== color; // Normalde sadece rakibi alabilir
+    };
+
     if (type === 'r' || type === 'q') {
         [[1,0],[-1,0],[0,1],[0,-1]].forEach(d => {
             for(let j=1; j<8; j++) {
                 const tr = r + d[0]*j, tc = c + d[1]*j, target = getIndex(tr, tc);
                 if (target === null) break;
                 if (!layout[target]) moves.push(target);
-                else { if (layout[target][0] !== color) moves.push(target); break; }
+                else { if (canMoveTo(target)) moves.push(target); break; }
             }
         });
     }
@@ -100,38 +112,38 @@ function getRawMoves(i) {
                 const tr = r + d[0]*j, tc = c + d[1]*j, target = getIndex(tr, tc);
                 if (target === null) break;
                 if (!layout[target]) moves.push(target);
-                else { if (layout[target][0] !== color) moves.push(target); break; }
+                else { if (canMoveTo(target)) moves.push(target); break; }
             }
         });
     }
     if (type === 'n') {
         [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]].forEach(d => {
             const target = getIndex(r+d[0], c+d[1]);
-            if (target !== null && (!layout[target] || layout[target][0] !== color)) moves.push(target);
+            if (canMoveTo(target)) moves.push(target);
         });
     }
     if (type === 'k') {
         [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]].forEach(d => {
             const target = getIndex(r+d[0], c+d[1]);
-            if (target !== null && (!layout[target] || layout[target][0] !== color)) moves.push(target);
+            if (canMoveTo(target)) moves.push(target);
         });
-        if (!hasMoved[color+'-k'] && !isSquareAttacked(i, color === 'w' ? 'b' : 'w')) {
+        if (!isBetrayal && !hasMoved[color+'-k'] && !isSquareAttacked(i, color === 'w' ? 'b' : 'w')) {
             if (!hasMoved[color+'-r-'+getIndex(r,7)] && !layout[getIndex(r,5)] && !layout[getIndex(r,6)]) moves.push(getIndex(r,6));
             if (!hasMoved[color+'-r-'+getIndex(r,0)] && !layout[getIndex(r,1)] && !layout[getIndex(r,2)] && !layout[getIndex(r,3)]) moves.push(getIndex(r,2));
         }
     }
     if (type === 'p') {
         const dir = color === 'w' ? -1 : 1;
-        const start = color === 'w' ? 6 : 1;
         const forward = getIndex(r+dir, c);
         if (forward !== null && !layout[forward]) {
             moves.push(forward);
             const double = getIndex(r+2*dir, c);
-            if (r === start && !layout[double]) moves.push(double);
+            if (r === (color === 'w' ? 6 : 1) && !layout[double]) moves.push(double);
         }
         [getIndex(r+dir, c-1), getIndex(r+dir, c+1)].forEach(diag => {
-            if (diag !== null && ((layout[diag] && layout[diag][0] !== color) || diag === enPassantTarget)) {
-                if (Math.abs((diag%8) - c) === 1) moves.push(diag);
+            if (diag !== null) {
+                if (layout[diag] && canMoveTo(diag)) moves.push(diag);
+                else if (diag === enPassantTarget) moves.push(diag);
             }
         });
     }
@@ -142,25 +154,20 @@ function getRawMoves(i) {
 function checkBetrayalOpportunity() {
     const opponentColor = turn === 'w' ? 'b' : 'w';
     const kingPos = findKing(turn);
-
-    // 3. MADDE: Şah çekilmişse ihanet gerçekleşmez
-    if (isSquareAttacked(kingPos, opponentColor)) return null;
+    if (isSquareAttacked(kingPos, opponentColor)) return null; // Madde 3
 
     for (let i = 0; i < 64; i++) {
         const piece = layout[i];
         if (piece && piece.startsWith(turn) && ['n', 'b', 'r'].includes(piece[2])) {
-            if (isSquareAttacked(i, opponentColor) && !isSquareAttacked(i, turn)) {
-                return i; 
-            }
+            if (isSquareAttacked(i, opponentColor) && !isSquareAttacked(i, turn)) return i; 
         }
     }
     return null;
 }
 
 function showBetrayalPopup(targetIndex) {
-    const pieceType = layout[targetIndex][2];
-    const name = pieceType === 'r' ? 'Kale' : pieceType === 'n' ? 'At' : 'Fil';
-    
+    const pType = layout[targetIndex][2];
+    const name = pType === 'r' ? 'Kale' : pType === 'n' ? 'At' : 'Fil';
     const choice = confirm(`${name} korunmasız! İhanet mi etsin (Tamam), feda mı edilsin (İptal)?`);
     
     if (choice) {
@@ -168,29 +175,27 @@ function showBetrayalPopup(targetIndex) {
         layout[targetIndex] = (oldPiece[0] === 'w' ? 'b' : 'w') + oldPiece.substring(1);
         isBetrayalMoveMode = true; 
         betrayalTarget = targetIndex;
-        updateStatus();
-        draw();
     } else {
         layout[targetIndex] = '';
         completeTurn();
-        draw();
     }
+    draw();
+    updateStatus();
 }
 
-// --- 5. OYUN DÖNGÜSÜ VE GÖRSELLEŞTİRME ---
+// --- 5. OYUN DÖNGÜSÜ ---
 function handleSquareClick(i) {
-    const piece = layout[i];
-
     if (isBetrayalMoveMode) {
-        const legalMoves = getLegalMoves(betrayalTarget);
-        if (legalMoves.includes(i) || i === betrayalTarget) {
+        const moves = getLegalMoves(betrayalTarget);
+        if (i === betrayalTarget || moves.includes(i)) {
             executeMove(betrayalTarget, i);
-            layout[i] = ''; // Görev bitti, taş silinir
+            layout[i] = ''; // Madde 5
             completeTurn();
-        } else { alert("Geçersiz ihanet hamlesi!"); }
+        }
         return;
     }
 
+    const piece = layout[i];
     if (selectedSquare === null) {
         if (piece && piece.startsWith(turn)) {
             selectedSquare = i;
@@ -201,8 +206,8 @@ function handleSquareClick(i) {
         if (legalMoves.includes(i)) {
             executeMove(selectedSquare, i);
             selectedSquare = null;
-            const potentialBetrayal = checkBetrayalOpportunity();
-            if (potentialBetrayal !== null) showBetrayalPopup(potentialBetrayal);
+            const pBetrayal = checkBetrayalOpportunity();
+            if (pBetrayal !== null) showBetrayalPopup(pBetrayal);
             else completeTurn();
         } else {
             selectedSquare = (piece && piece.startsWith(turn)) ? i : null;
@@ -232,32 +237,31 @@ function executeMove(from, to) {
 }
 
 function completeTurn() {
+    selectedSquare = null;
     betrayalTarget = null;
     isBetrayalMoveMode = false;
     turn = turn === 'w' ? 'b' : 'w';
-    if (isCheckmate(turn)) alert("ŞAH MAT! " + (turn === 'w' ? "SİYAH" : "BEYAZ") + " KAZANDI.");
+    if (isCheckmate(turn)) alert("OYUN BİTTİ!");
     updateStatus();
     draw();
 }
 
 function isCheckmate(color) {
-    const kingPos = findKing(color);
-    if (!isSquareAttacked(kingPos, color === 'w' ? 'b' : 'w')) return false;
+    const kPos = findKing(color);
+    if (!isSquareAttacked(kPos, color === 'w' ? 'b' : 'w')) return false;
     for (let i = 0; i < 64; i++) {
-        if (layout[i] && layout[i].startsWith(color)) {
-            if (getLegalMoves(i).length > 0) return false;
-        }
+        if (layout[i] && layout[i].startsWith(color) && getLegalMoves(i).length > 0) return false;
     }
     return true;
 }
 
-function updateStatus(customMessage = "") {
+function updateStatus() {
     if (isBetrayalMoveMode) {
-        statusElement.innerText = "⚠️ İHANET MODU: Taşın görevini tamamla!";
+        statusElement.innerText = "⚠️ İHANET MODU!";
         statusElement.style.background = "#8e44ad";
         statusElement.style.color = "#fff";
     } else {
-        statusElement.innerText = customMessage || `SIRA: ${turn === 'w' ? 'BEYAZ' : 'SİYAH'} OYUNCUDA`;
+        statusElement.innerText = `SIRA: ${turn === 'w' ? 'BEYAZ' : 'SİYAH'}`;
         statusElement.style.background = turn === 'w' ? '#f1c40f' : '#2c3e50';
         statusElement.style.color = turn === 'w' ? '#000' : '#fff';
     }
@@ -271,7 +275,7 @@ function draw(highlightMoves = []) {
         square.className = `square ${isBlack ? 'black' : 'white'}`;
         if (selectedSquare === i) square.classList.add('active-law');
         if (highlightMoves.includes(i)) square.classList.add('possible-move');
-        if (isBetrayalMoveMode && betrayalTarget === i) square.classList.add('betrayal-glow');
+        if (isBetrayalMoveMode && i === betrayalTarget) square.classList.add('betrayal-glow');
         if (layout[i]) {
             const p = document.createElement('div');
             p.className = `piece ${layout[i]}`;
