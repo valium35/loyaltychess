@@ -9,7 +9,8 @@ let selectedSquare = null;
 let enPassantTarget = null; // Geçerken alış karesi
 
 let hasMoved = { 'w-k': false, 'b-k': false, 'w-r-56': false, 'w-r-63': false, 'b-r-0': false, 'b-r-7': false };
-
+let isBetrayalMoveMode = false; // İhanet hamlesi mi yapılıyor?
+let betrayalTarget = null;     // İhanet eden taş hangisi?
 
 
 const boardElement = document.getElementById('chess-board');
@@ -294,12 +295,12 @@ function handleSquareClick(i) {
 
             selectedSquare = null;
 
-            turn = turn === 'w' ? 'b' : 'w';
-
-            if (isCheckmate(turn)) alert("ŞAH MAT! " + (turn === 'w' ? "SİYAH" : "BEYAZ") + " KAZANDI.");
-
-        } else { selectedSquare = piece && piece.startsWith(turn) ? i : null; }
-
+          const potentialBetrayal = checkBetrayalOpportunity();
+    if (potentialBetrayal !== null) {
+        handleBetrayal(potentialBetrayal);
+    } else {
+        completeTurn();
+    }
         draw();
 
         updateStatus();
@@ -432,6 +433,106 @@ function updateStatus() {
 
 }
 
+// --- İHANET TESPİT FONKSİYONU ---
+function checkBetrayalOpportunity() {
+    const opponentColor = turn === 'w' ? 'b' : 'w';
+    const kingPos = findKing(turn);
 
+    // KURAL: Eğer Şah çekilmişse ihanet gerçekleşmez. (Önce Şah kurtarılmalı)
+    if (isSquareAttacked(kingPos, opponentColor)) return null;
 
+    for (let i = 0; i < 64; i++) {
+        const piece = layout[i];
+        
+        // Sadece sırası gelen oyuncunun At (n), Fil (b) ve Kalesine (r) bakıyoruz.
+        // (Şah ve Piyonlar kuralların gereği ihanet etmezler)
+        if (piece && piece.startsWith(turn) && ['n', 'b', 'r'].includes(piece[2])) {
+            
+            const isTargeted = isSquareAttacked(i, opponentColor); // Rakip istiyor mu?
+            const isProtected = isSquareAttacked(i, turn);         // Kendi rengi koruyor mu?
+
+            if (isTargeted && !isProtected) {
+                return i; // Korunmasız taşın konumunu bulduk!
+            }
+        }
+    }
+    return null;
+}
+function handleBetrayal(targetIndex) {
+    const pType = layout[targetIndex][2];
+    const name = pType === 'r' ? 'Kale' : pType === 'n' ? 'At' : 'Fil';
+    
+    const choice = confirm(`${name} korunmasız kaldı! \n\nTAMAM: İhanet etsin (Rakip adına hamle yapar). \nİPTAL: Feda edilsin (Tahta dışına çıkar).`);
+    
+    if (choice) {
+        // İHANET: Taşın rengini hemen değiştiriyoruz
+        const oldPiece = layout[targetIndex];
+        const newColor = oldPiece[0] === 'w' ? 'b' : 'w';
+        layout[targetIndex] = newColor + oldPiece.substring(1);
+        
+        isBetrayalMoveMode = true;
+        betrayalTarget = targetIndex;
+        alert("İHANET! Şimdi bu taşı rakip adına bir kez hareket ettir.");
+    } else {
+        // FEDA: Taş sessizce tahtadan kalkar
+        layout[targetIndex] = '';
+        completeTurn(); // Sıra rakibe geçer
+    }
+    draw();
+}
+
+function handleBetrayal(targetIndex) {
+    const pType = layout[targetIndex][2];
+    const name = pType === 'r' ? 'Kale' : pType === 'n' ? 'At' : 'Fil';
+    
+    const choice = confirm(`${name} korunmasız kaldı! \n\nTAMAM: İhanet etsin (Rakip adına hamle yapar). \nİPTAL: Feda edilsin (Tahta dışına çıkar).`);
+    
+    if (choice) {
+        // İHANET: Taşın rengini hemen değiştiriyoruz
+        const oldPiece = layout[targetIndex];
+        const newColor = oldPiece[0] === 'w' ? 'b' : 'w';
+        layout[targetIndex] = newColor + oldPiece.substring(1);
+        
+        isBetrayalMoveMode = true;
+        betrayalTarget = targetIndex;
+        alert("İHANET! Şimdi bu taşı rakip adına bir kez hareket ettir.");
+    } else {
+        // FEDA: Taş sessizce tahtadan kalkar
+        layout[targetIndex] = '';
+        completeTurn(); // Sıra rakibe geçer
+    }
+    draw();
+}
+
+function handleBetrayal(targetIndex) {
+    const pType = layout[targetIndex][2];
+    const name = pType === 'r' ? 'Kale' : pType === 'n' ? 'At' : 'Fil';
+    
+    const choice = confirm(`${name} korunmasız kaldı! \n\nTAMAM: İhanet etsin (Rakip adına hamle yapar). \nİPTAL: Feda edilsin (Tahta dışına çıkar).`);
+    
+    if (choice) {
+        // İHANET: Taşın rengini hemen değiştiriyoruz
+        const oldPiece = layout[targetIndex];
+        const newColor = oldPiece[0] === 'w' ? 'b' : 'w';
+        layout[targetIndex] = newColor + oldPiece.substring(1);
+        
+        isBetrayalMoveMode = true;
+        betrayalTarget = targetIndex;
+        alert("İHANET! Şimdi bu taşı rakip adına bir kez hareket ettir.");
+    } else {
+        // FEDA: Taş sessizce tahtadan kalkar
+        layout[targetIndex] = '';
+        completeTurn(); // Sıra rakibe geçer
+    }
+    draw();
+}
+
+// Bu yardımcı fonksiyonu da ekleyelim, turn değişimini temiz yapar
+function completeTurn() {
+    isBetrayalMoveMode = false;
+    betrayalTarget = null;
+    turn = turn === 'w' ? 'b' : 'w';
+    updateStatus();
+    draw();
+}
 initGame(); 
