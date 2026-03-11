@@ -139,6 +139,28 @@ function getRawMoves(i) {
 // --- 4. OYUN DÖNGÜSÜ ---
 function handleSquareClick(i) {
     const piece = layout[i];
+
+    // İHANET HAMLESİ MODU
+    if (isBetrayalMoveMode) {
+        const legalMoves = getLegalMoves(betrayalTarget); // Şimdilik normal kurallar
+        if (legalMoves.includes(i) || i === betrayalTarget) {
+            if (i !== betrayalTarget) {
+                executeMove(betrayalTarget, i);
+                layout[i] = ''; // 5. MADDE: İhanet eden taş görevden sonra silinir
+                alert("İhanet tamamlandı, taş oyundan çıktı.");
+            } else {
+                alert("Taş olduğu yerde kaldı ve görevini tamamladı.");
+                layout[i] = ''; 
+            }
+            completeTurn();
+            draw();
+        } else {
+            alert("Geçersiz ihanet hamlesi!");
+        }
+        return;
+    }
+
+    // NORMAL HAMLE MODU
     if (selectedSquare === null) {
         if (piece && piece.startsWith(turn)) { selectedSquare = i; draw(); }
     } else {
@@ -146,11 +168,18 @@ function handleSquareClick(i) {
         if (legalMoves.includes(i)) {
             executeMove(selectedSquare, i);
             selectedSquare = null;
-            turn = turn === 'w' ? 'b' : 'w';
-            if (isCheckmate(turn)) alert("ŞAH MAT! " + (turn === 'w' ? "SİYAH" : "BEYAZ") + " KAZANDI.");
-        } else { selectedSquare = piece && piece.startsWith(turn) ? i : null; }
+
+            // HAMLE BİTTİ: İhanet var mı bak?
+            const potentialBetrayal = checkBetrayalOpportunity();
+            if (potentialBetrayal !== null) {
+                showBetrayalPopup(potentialBetrayal);
+            } else {
+                completeTurn();
+            }
+        } else {
+            selectedSquare = piece && piece.startsWith(turn) ? i : null;
+        }
         draw();
-        updateStatus();
     }
 }
 
@@ -183,6 +212,8 @@ function executeMove(from, to) {
     layout[to] = layout[from];
     layout[from] = '';
 }
+let betrayalTarget = null; // İhanet edecek taşın indeksi
+let isBetrayalMoveMode = false; // Şu an ihanet hamlesi mi yapılıyor?
 
 function isCheckmate(color) {
     const opponent = color === 'w' ? 'b' : 'w';
@@ -215,5 +246,52 @@ function draw() {
 function updateStatus() {
     statusElement.innerText = "SIRA: " + (turn === 'w' ? "BEYAZDA" : "SİYAHTA");
 }
+// İhanet fırsatı kontrolü (1. Madde Revize)
+function checkBetrayalOpportunity() {
+    const opponentColor = turn === 'w' ? 'b' : 'w';
+    for (let i = 0; i < 64; i++) {
+        const piece = layout[i];
+        // Sadece At (n), Fil (b) ve Kale (r) ihanet edebilir
+        if (piece && piece.startsWith(turn) && ['n', 'b', 'r'].includes(piece[2])) {
+            // Rakip saldırıyor mu VE ben korumuyor muyum?
+            if (isSquareAttacked(i, opponentColor) && !isSquareAttacked(i, turn)) {
+                return i; 
+            }
+        }
+    }
+    return null;
+}
 
+// Pop-up Tetikleyici
+function showBetrayalPopup(targetIndex) {
+    const pieceName = layout[targetIndex] === 'w-r' ? 'Beyaz Kale' : 
+                      layout[targetIndex] === 'b-r' ? 'Siyah Kale' : 'Taş'; // Basit isimleştirme
+    
+    // Tarayıcı onayı (İleride bunu senin şık pop-up tasarımınla değiştireceğiz)
+    const choice = confirm(`${pieceName} korunmasız kaldı! İhanet edip rakip adına hamle yapsın mı?\n\nTamam: İhanet Et\nİptal: Taşı Feda Et (Silinir)`);
+    
+    if (choice) {
+        // İhanet: Taşın rengini değiştir ve hamle moduna geç
+        const oldPiece = layout[targetIndex];
+        const newColor = oldPiece[0] === 'w' ? 'b' : 'w';
+        layout[targetIndex] = newColor + oldPiece.substring(1);
+        isBetrayalMoveMode = true; 
+        betrayalTarget = targetIndex;
+        alert("İHANET GERÇEKLEŞTİ! Şimdi bu taşı hareket ettir.");
+        draw();
+    } else {
+        // Feda: Taş silinir ve sıra geçer
+        layout[targetIndex] = '';
+        completeTurn();
+        draw();
+    }
+}
+
+function completeTurn() {
+    betrayalTarget = null;
+    isBetrayalMoveMode = false;
+    turn = turn === 'w' ? 'b' : 'w';
+    if (isCheckmate(turn)) alert("ŞAH MAT!");
+    updateStatus();
+}
 initGame();
