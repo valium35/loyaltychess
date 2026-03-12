@@ -192,4 +192,96 @@ function executeMove(from, to) {
     if (type === 'p') {
         const endRow = (color === 'w' ? 0 : 7);
         if (Math.floor(to / 8) === endRow) {
-            let choice =
+            let choice = prompt("Piyon terfi ediyor! (q: Vezir, r: Kale, b: Fil, n: At)", "q") || "q";
+            choice = choice.toLowerCase();
+            if(!['q','r','b','n'].includes(choice)) choice = 'q';
+            layout[to] = color + '-' + choice;
+        }
+    }
+}
+
+function completeTurn() {
+    const lastPlayer = turn;
+    const nextPlayer = (turn === 'w' ? 'b' : 'w');
+    
+    let currentAttacks = [];
+    for (let i = 0; i < 64; i++) {
+        if (layout[i] && layout[i].startsWith(lastPlayer)) {
+            getRawMoves(i, true).forEach(m => currentAttacks.push(m));
+        }
+    }
+
+    let betrayalCandidate = null;
+    for (let targetIndex of threatsFromLastTurn) {
+        const p = layout[targetIndex];
+        if (p && p.startsWith(nextPlayer) && ['n', 'r', 'b'].includes(p[2])) {
+            const isStillAttacked = currentAttacks.includes(targetIndex);
+            const isProtected = isSquareAttacked(targetIndex, nextPlayer);
+            if (isStillAttacked && !isProtected) {
+                betrayalCandidate = targetIndex;
+                break;
+            }
+        }
+    }
+
+    turn = nextPlayer;
+    threatsFromLastTurn = currentAttacks;
+    draw();
+    updateStatus();
+
+    if (isCheckmate(turn)) {
+        setTimeout(() => alert("ŞAH MAT! Oyun bitti."), 300);
+        return;
+    }
+
+    if (betrayalCandidate !== null) {
+        setTimeout(() => {
+            if (confirm("LoyaltyChess: Korumasız kalan subayın taraf değiştiriyor! İhanet hamlesi yapmak ister misin?")) {
+                layout[betrayalCandidate] = turn + layout[betrayalCandidate].substring(1);
+                isBetrayalMoveMode = true;
+                betrayalTarget = betrayalCandidate;
+                draw();
+                updateStatus();
+            }
+        }, 150);
+    }
+}
+
+function isCheckmate(color) {
+    const kingPos = findKing(color);
+    if (kingPos === -1) return false;
+    if (!isSquareAttacked(kingPos, color === 'w' ? 'b' : 'w')) return false;
+    for (let i = 0; i < 64; i++) {
+        if (layout[i] && layout[i].startsWith(color)) {
+            if (getLegalMoves(i).length > 0) return false;
+        }
+    }
+    return true;
+}
+
+function draw() {
+    boardElement.innerHTML = '';
+    for (let i = 0; i < 64; i++) {
+        const square = document.createElement('div');
+        const isBlack = (Math.floor(i / 8) + (i % 8)) % 2 !== 0;
+        square.className = `square ${isBlack ? 'black' : 'white'} ${selectedSquare === i ? 'active-law' : ''}`;
+        
+        if (isBetrayalMoveMode && betrayalTarget === i) {
+            square.style.backgroundColor = "rgba(255, 69, 0, 0.7)";
+        }
+
+        if (layout[i]) {
+            const p = document.createElement('div');
+            p.className = `piece ${layout[i]}`;
+            square.appendChild(p);
+        }
+        square.onclick = () => handleSquareClick(i);
+        boardElement.appendChild(square);
+    }
+}
+
+function updateStatus() {
+    statusElement.innerText = isBetrayalMoveMode ? "⚠️ İHANET HAMLESİ BEKLENİYOR" : "SIRA: " + (turn === 'w' ? "BEYAZDA" : "SİYAHTA");
+}
+
+initGame();
