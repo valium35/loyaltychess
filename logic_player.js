@@ -5,6 +5,9 @@ let selectedSquare = null;
 let isBetrayalMoveMode = false;
 let betrayalTarget = null;
 
+// KRİTİK DEĞİŞKEN: Bir önceki oyuncunun tehdit ettiği karelerin listesi
+let lastTurnThreats = []; 
+
 const boardElement = document.getElementById('chess-board');
 const statusElement = document.getElementById('status');
 
@@ -19,11 +22,12 @@ const initialSetup = {
 function initGame() {
     layout.fill('');
     Object.keys(initialSetup).forEach(i => layout[i] = initialSetup[i]);
+    lastTurnThreats = [];
     draw();
     updateStatus();
 }
 
-// --- 3. HAREKET MANTIĞI ---
+// --- 3. HAREKET VE TEHDİT ANALİZİ ---
 function getCoords(i) { return { r: Math.floor(i / 8), c: i % 8 }; }
 function getIndex(r, c) { return (r < 0 || r > 7 || c < 0 || c > 7) ? null : r * 8 + c; }
 
@@ -58,14 +62,9 @@ function getRawMoves(i) {
     } else if (type === 'p') {
         const dir = color === 'w' ? -1 : 1;
         const f1 = getIndex(r + dir, c);
-        if (f1 !== null && !layout[f1]) {
-            moves.push(f1);
-            const startRow = (color === 'w' ? 6 : 1);
-            const f2 = getIndex(r + 2*dir, c);
-            if (r === startRow && !layout[f2]) moves.push(f2);
-        }
+        if (f1 !== null && !layout[f1]) moves.push(f1);
         [getIndex(r + dir, c - 1), getIndex(r + dir, c + 1)].forEach(diag => {
-            if (diag !== null && layout[diag] && layout[diag][0] !== color) moves.push(diag);
+            if (diag !== null) moves.push(diag); // Tehdit analizi için piyon çaprazları hep listede olmalı
         });
     }
     return moves;
@@ -80,51 +79,58 @@ function isSquareAttacked(targetIndex, attackerColor) {
     return false;
 }
 
-// --- 4. TIKLAMA VE OYUN AKIŞI ---
+// --- 4. OYUN AKIŞI ---
 function handleSquareClick(i) {
-    // 1. İHANET HAMLESİ MODU
     if (isBetrayalMoveMode) {
-        const legalMoves = getRawMoves(betrayalTarget);
-        if (legalMoves.includes(i)) {
-            layout[i] = layout[betrayalTarget]; // Taşı yeni yere koy
-            layout[betrayalTarget] = '';       // Eski yeri boşalt
-            layout[i] = '';                    // KURAL: İhanet sonrası taş silinir
+        if (getRawMoves(betrayalTarget).includes(i)) {
+            layout[betrayalTarget] = ''; // Eski yer
+            layout[i] = ''; // İhanet eden taş görevini yaptı ve silindi
             isBetrayalMoveMode = false;
             betrayalTarget = null;
-            completeTurn(); 
-        } else {
-            alert("Bu taşla buraya gidemezsin!");
+            completeTurn();
         }
         return;
     }
 
-    // 2. NORMAL HAMLE MODU
     const piece = layout[i];
-
     if (selectedSquare === null) {
-        // Taş Seçme
-        if (piece && piece.startsWith(turn)) {
-            selectedSquare = i;
-            draw();
-        }
+        if (piece && piece.startsWith(turn)) { selectedSquare = i; draw(); }
     } else {
-        // Taş Taşıma
-        const legalMoves = getRawMoves(selectedSquare);
-        if (legalMoves.includes(i)) {
+        const moves = getRawMoves(selectedSquare);
+        if (moves.includes(i)) {
+            // Hamleyi yapmadan önce, bu hamlenin tehdit ettiği rakip taşları bul
+            const currentTurnThreats = getAttackedPieces(turn, selectedSquare, i);
+            
             executeMove(selectedSquare, i);
             selectedSquare = null;
-            completeTurn();
+            
+            // Sıra değişmeden önce bu turun tehditlerini bir sonraki tur için kaydet
+            completeTurn(currentTurnThreats);
         } else {
-            // Başka kendi taşına tıkladıysa seçimi değiştir
-            if (piece && piece.startsWith(turn)) {
-                selectedSquare = i;
-                draw();
-            } else {
-                selectedSquare = null;
-                draw();
-            }
+            selectedSquare = (piece && piece.startsWith(turn)) ? i : null;
+            draw();
         }
     }
+}
+
+// Sadece son yapılan hamleyle (from->to) tehdit edilen rakip taşları bulur
+function getAttackedPieces(attackerColor, from, to) {
+    const threats = [];
+    const oppColor = attackerColor === 'w' ? 'b' : 'w';
+    
+    // Geçici olarak tahtayı hamle yapılmış gibi simüle et
+    const originalFrom = layout[from], originalTo = layout[to];
+    layout[to] = originalFrom; layout[from] = '';
+    
+    // Sadece hamle yapan taşın yeni yerinden nereleri tehdit ettiğine bak
+    const moves = getRawMoves(to);
+    moves.forEach(m => {
+        if (layout[m] && layout[m].startsWith(oppColor)) threats.push(m);
+    });
+    
+    // Tahtayı eski haline getir
+    layout[from] = originalFrom; layout[to] = originalTo;
+    return threats;
 }
 
 function executeMove(from, to) {
@@ -132,40 +138,41 @@ function executeMove(from, to) {
     layout[from] = '';
 }
 
-function completeTurn() {
+function completeTurn(newThreats = []) {
+    const previousPlayer = turn;
     turn = (turn === 'w' ? 'b' : 'w');
     draw();
     updateStatus();
 
-    // SIRA DEĞİŞTİ: Yeni oyuncu için ihanet fırsatı var mı?
+    // ŞİMDİ: Sırası gelen oyuncu için ihanet kontrolü
+    // Koşul: Bir önceki turda bu oyuncu tarafından tehdit edilen taş hala korunmuyor mu?
     setTimeout(() => {
-        const betrayedIndex = checkBetrayalOpportunity();
-        if (betrayedIndex !== null) {
-            askForBetrayal(betrayedIndex);
+        let betrayalIndex = null;
+        for (let targetIndex of lastTurnThreats) {
+            // Taş hala orada mı? (Yenmemiş veya kaçmamış olması lazım)
+            if (layout[targetIndex] && layout[targetIndex].startsWith(turn)) {
+                // Hala tehdit altında mı VE artık korunmuyor mu?
+                if (isSquareAttacked(targetIndex, previousPlayer) && !isSquareAttacked(targetIndex, turn)) {
+                    betrayalIndex = targetIndex;
+                    break; 
+                }
+            }
+        }
+
+        // Bir sonraki tur için tehdit listesini güncelle
+        lastTurnThreats = newThreats;
+
+        if (betrayalIndex !== null) {
+            askForBetrayal(betrayalIndex);
         }
     }, 100);
 }
 
-function checkBetrayalOpportunity() {
-    const myColor = turn;
-    const oppColor = turn === 'w' ? 'b' : 'w';
-    
-    for (let i = 0; i < 64; i++) {
-        const p = layout[i];
-        // Rakibin kalesi, atı veya fili mi?
-        if (p && p.startsWith(oppColor) && ['n', 'r', 'b'].includes(p[2])) {
-            // Ben istiyor muyum ve o korumuyor mu?
-            if (isSquareAttacked(i, myColor) && !isSquareAttacked(i, oppColor)) return i;
-        }
-    }
-    return null;
-}
-
 function askForBetrayal(targetIndex) {
     const name = (turn === 'w' ? 'BEYAZ' : 'SİYAH');
-    if (confirm(`${name}! Rakibin bir taşını korumasız bıraktı. \n\nKendi hamlen yerine bu taşla İHANET hamlesi yapmak ister misin?`)) {
+    if (confirm(`${name}! Rakibin tehdit ettiğin taşı korumadı. \n\nİhanet hamlesi yapmak ister misin?`)) {
         const p = layout[targetIndex];
-        layout[targetIndex] = turn + p.substring(1); // Rengini geçici olarak değiştir
+        layout[targetIndex] = turn + p.substring(1);
         isBetrayalMoveMode = true;
         betrayalTarget = targetIndex;
         draw();
@@ -173,18 +180,12 @@ function askForBetrayal(targetIndex) {
     }
 }
 
-// --- 5. GÖRSELLEŞTİRME ---
 function draw() {
     boardElement.innerHTML = '';
     for (let i = 0; i < 64; i++) {
         const square = document.createElement('div');
         square.className = `square ${(Math.floor(i/8)+(i%8))%2!==0?'black':'white'}`;
-        
-        // Seçili kareyi vurgula
         if (selectedSquare === i) square.classList.add('active-law');
-        // İhanet hedefini vurgula
-        if (isBetrayalMoveMode && betrayalTarget === i) square.style.backgroundColor = "rgba(255, 0, 0, 0.5)";
-
         if (layout[i]) {
             const p = document.createElement('div');
             p.className = `piece ${layout[i]}`;
@@ -196,13 +197,7 @@ function draw() {
 }
 
 function updateStatus() {
-    if (isBetrayalMoveMode) {
-        statusElement.innerText = "⚠️ İHANET MODU: Hain taşı hareket ettir!";
-        statusElement.style.color = "red";
-    } else {
-        statusElement.innerText = "SIRA: " + (turn === 'w' ? "BEYAZDA" : "SİYAHTA");
-        statusElement.style.color = "black";
-    }
+    statusElement.innerText = isBetrayalMoveMode ? "⚠️ İHANET MODU" : "SIRA: " + (turn === 'w' ? "BEYAZDA" : "SİYAHTA");
 }
 
 initGame();
