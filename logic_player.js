@@ -34,9 +34,16 @@ function findKing(color) {
     return -1;
 }
 
+// DÜZELTME: İhanet eden taşın şah çekmesini engelleyen saldırı kontrolü
 function isSquareAttacked(targetIndex, attackerColor) {
     for (let i = 0; i < 64; i++) {
         if (layout[i] && layout[i].startsWith(attackerColor)) {
+            // KURAL: Eğer bu taş ihanet modundaki taysa, Şah'a (targetIndex) saldıramaz
+            if (isBetrayalMoveMode && i === betrayalTarget) {
+                const kingPos = findKing(attackerColor === 'w' ? 'b' : 'w');
+                if (targetIndex === kingPos) continue; 
+            }
+
             const moves = getRawMoves(i); 
             if (moves.includes(targetIndex)) return true;
         }
@@ -101,47 +108,36 @@ function getRawMoves(i) {
             if (target !== null && (!layout[target] || layout[target][0] !== color)) moves.push(target);
         });
         if (!hasMoved[color+'-k']) {
-            if (!hasMoved[color+'-r-'+getIndex(r,7)] && !layout[getIndex(r,5)] && !layout[getIndex(r,6)]) moves.push(getIndex(r,6));
-            if (!hasMoved[color+'-r-'+getIndex(r,0)] && !layout[getIndex(r,1)] && !layout[getIndex(r,2)] && !layout[getIndex(r,3)]) moves.push(getIndex(r,2));
+            const row = (color === 'w' ? 7 : 0);
+            if (!hasMoved[color+'-r-'+getIndex(row,7)] && !layout[getIndex(row,5)] && !layout[getIndex(row,6)]) moves.push(getIndex(row,6));
+            if (!hasMoved[color+'-r-'+getIndex(row,0)] && !layout[getIndex(row,1)] && !layout[getIndex(row,2)] && !layout[getIndex(row,3)]) moves.push(getIndex(row,2));
         }
     }
-  // --- PİYON (DÜZELTİLMİŞ) ---
     if (type === 'p') {
         const dir = color === 'w' ? -1 : 1;
-        const forward = getIndex(r + dir, c);
-        
-        // 1. İlerleme Hamleleri (Bunlar koruma sağlamaz)
+        const forward = getIndex(r+dir, c);
         if (forward !== null && !layout[forward]) {
             moves.push(forward);
-            const startRow = (color === 'w' ? 6 : 1);
-            const doubleForward = getIndex(r + 2 * dir, c);
-            if (r === startRow && !layout[doubleForward]) moves.push(doubleForward);
+            if (r === (color === 'w' ? 6 : 1) && !layout[getIndex(r+2*dir, c)]) moves.push(getIndex(r+2*dir, c));
         }
-
-        // 2. Çapraz Kontrol/Alma (Asıl korumayı sağlayan yer burası)
-        [getIndex(r + dir, c - 1), getIndex(r + dir, c + 1)].forEach(diag => {
+        // Piyon Koruma Düzeltmesi: Her zaman çaprazları tehdit eder/korur
+        [getIndex(r+dir, c-1), getIndex(r+dir, c+1)].forEach(diag => {
             if (diag !== null) {
-                const targetPiece = layout[diag];
                 const columnDiff = Math.abs((diag % 8) - c);
-                
-                // Sadece yan sütunlardaysa (tahta kenarından taşma kontrolü)
-                if (columnDiff === 1) {
-                    // KURAL: Piyon, çaprazındaki karede taş olsa da olmasa da orayı KORUR/TEHDİT EDER.
-                    moves.push(diag); 
-                }
+                if (columnDiff === 1) moves.push(diag);
             }
         });
     }
     return moves;
 }
 
-// --- 4. OYUN DÖNGÜSÜ VE İHANET MANTIĞI ---
+// --- 4. OYUN DÖNGÜSÜ ---
 function handleSquareClick(i) {
     if (isBetrayalMoveMode) {
         const moves = getLegalMoves(betrayalTarget);
         if (moves.includes(i)) {
             executeMove(betrayalTarget, i);
-            layout[i] = ''; // Hamle bitti, taş silinir
+            layout[i] = ''; // Hamle bitti silinir
             completeTurn();
         } else {
             alert("İhanet eden taşı hareket ettirmelisin!");
@@ -157,8 +153,9 @@ function handleSquareClick(i) {
         if (moves.includes(i)) {
             executeMove(selectedSquare, i);
             selectedSquare = null;
-            
-            // İhanet kontrolü (Gecikmeli çalıştırarak UI çakışmasını önlüyoruz)
+            draw(); // TAŞIN YERİNE GİTTİĞİNİ ÖNCE ÇİZ
+
+            // ZAMANLAMA DÜZELTMESİ: Taş yerine oturduktan sonra pop-up açılır
             setTimeout(() => {
                 const potentialBetrayal = checkBetrayalOpportunity();
                 if (potentialBetrayal !== null) {
@@ -166,7 +163,7 @@ function handleSquareClick(i) {
                 } else {
                     completeTurn();
                 }
-            }, 50);
+            }, 100); 
         } else {
             selectedSquare = piece && piece.startsWith(turn) ? i : null;
             draw();
@@ -188,26 +185,31 @@ function checkBetrayalOpportunity() {
 
 function handleBetrayal(targetIndex) {
     const name = layout[targetIndex][2] === 'r' ? 'Kale' : layout[targetIndex][2] === 'n' ? 'At' : 'Fil';
+    
+    // Görsel olarak sıranın değiştiğini hissettirmek için status güncelle
+    statusElement.innerText = "⚠️ KRİTİK KARAR BEKLENİYOR...";
+
     if (confirm(`${name} korunmasız! İhanet mi etsin (Tamam), feda mı edilsin (İptal)?`)) {
         const oldPiece = layout[targetIndex];
         layout[targetIndex] = (oldPiece[0] === 'w' ? 'b' : 'w') + oldPiece.substring(1);
         isBetrayalMoveMode = true;
         betrayalTarget = targetIndex;
-        alert("İHANET! Bu taşla rakip adına tek bir hamle yap.");
+        draw();
+        updateStatus();
+        alert("İHANET! Bu taşla rakip adına tek bir hamle yap (Şah çekemezsin).");
     } else {
         layout[targetIndex] = '';
         completeTurn();
     }
-    draw();
-    updateStatus();
 }
 
 function executeMove(from, to) {
     const piece = layout[from], type = piece[2];
     if (type === 'p' && to === enPassantTarget) layout[getIndex(Math.floor(from/8), to%8)] = '';
     if (type === 'k' && Math.abs((from%8)-(to%8)) === 2) {
-        const rFrom = (to%8 === 6) ? getIndex(Math.floor(to/8), 7) : getIndex(Math.floor(to/8), 0);
-        const rTo = (to%8 === 6) ? getIndex(Math.floor(to/8), 5) : getIndex(Math.floor(to/8), 3);
+        const r = Math.floor(from/8);
+        const rFrom = (to%8 === 6) ? getIndex(r, 7) : getIndex(r, 0);
+        const rTo = (to%8 === 6) ? getIndex(r, 5) : getIndex(r, 3);
         layout[rTo] = layout[rFrom]; layout[rFrom] = '';
     }
     if (type === 'k') hasMoved[piece[0]+'-k'] = true;
@@ -231,7 +233,7 @@ function completeTurn() {
     turn = turn === 'w' ? 'b' : 'w';
     draw();
     updateStatus();
-    if (isCheckmate(turn)) alert("ŞAH MAT! Oyun Bitti.");
+    if (isCheckmate(turn)) alert("ŞAH MAT!");
 }
 
 function draw() {
