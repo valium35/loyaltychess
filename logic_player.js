@@ -4,8 +4,7 @@ let turn = 'w';
 let selectedSquare = null;
 let isBetrayalMoveMode = false;
 let betrayalTarget = null;
-// YENİ: Bir önceki oyuncunun hamle bittiğinde oluşturduğu tehdit listesi
-let lastTurnThreats = [];
+let lastTurnThreats = []; // Bir önceki oyuncunun hamle bittiğinde oluşturduğu tehdit listesi
 
 const boardElement = document.getElementById('chess-board');
 const statusElement = document.getElementById('status');
@@ -21,6 +20,8 @@ const initialSetup = {
 function initGame() {
     layout.fill('');
     Object.keys(initialSetup).forEach(i => layout[i] = initialSetup[i]);
+    lastTurnThreats = [];
+    turn = 'w';
     draw();
     updateStatus();
 }
@@ -84,40 +85,32 @@ function isSquareAttacked(targetIndex, attackerColor) {
 
 // --- 4. TIKLAMA VE OYUN AKIŞI ---
 function handleSquareClick(i) {
-    // 1. İHANET HAMLESİ MODU
     if (isBetrayalMoveMode) {
         const legalMoves = getRawMoves(betrayalTarget);
         if (legalMoves.includes(i)) {
-            layout[i] = layout[betrayalTarget]; // Taşı yeni yere koy
-            layout[betrayalTarget] = '';       // Eski yeri boşalt
-            layout[i] = '';                    // KURAL: İhanet sonrası taş silinir
+            layout[i] = ''; // İhanet hamlesi sonrası taş tahtadan silinir
+            layout[betrayalTarget] = ''; 
             isBetrayalMoveMode = false;
             betrayalTarget = null;
             completeTurn(); 
-        } else {
-            alert("Bu taşla buraya gidemezsin!");
         }
         return;
     }
 
-    // 2. NORMAL HAMLE MODU
     const piece = layout[i];
 
     if (selectedSquare === null) {
-        // Taş Seçme
         if (piece && piece.startsWith(turn)) {
             selectedSquare = i;
             draw();
         }
     } else {
-        // Taş Taşıma
         const legalMoves = getRawMoves(selectedSquare);
         if (legalMoves.includes(i)) {
             executeMove(selectedSquare, i);
             selectedSquare = null;
             completeTurn();
         } else {
-            // Başka kendi taşına tıkladıysa seçimi değiştir
             if (piece && piece.startsWith(turn)) {
                 selectedSquare = i;
                 draw();
@@ -135,30 +128,30 @@ function executeMove(from, to) {
 }
 
 function completeTurn() {
-    const lastPlayer = turn; // Hamleyi az önce bitiren
-    // 1. ÖNCE: Şu anki oyuncu hamlesini bitirdi, nereleri tehdit ediyor? Kaydet.
+    const lastPlayer = turn; 
     const currentThreats = [];
+    
+    // 1. ADIM: Şu anki hamle bitti, yeni tehditleri topla
     for (let i = 0; i < 64; i++) {
         if (layout[i] && layout[i].startsWith(lastPlayer)) {
             getRawMoves(i).forEach(m => currentThreats.push(m));
         }
     }
 
-    // 2. SONRA: Sırayı değiştir
+    // 2. ADIM: Sırayı değiştir
     turn = (turn === 'w' ? 'b' : 'w');
     draw();
     updateStatus();
 
-    // 3. İHANET KONTROLÜ: 
-    // Sadece 'lastTurnThreats' (bir önceki oyuncunun tehdit ettikleri) üzerinden kontrol yap.
+    // 3. ADIM: İhanet kontrolü (Gecikmeli)
     setTimeout(() => {
-        const betrayedIndex = checkBetrayalOpportunity(lastTurnThreats);
+        const betrayalIndex = checkBetrayalOpportunity(lastTurnThreats);
         
-        // ÖNEMLİ: Bir sonraki tur için hafızayı güncelle
+        // Bir sonraki tura yeni tehditleri aktar
         lastTurnThreats = currentThreats;
 
         if (betrayalIndex !== null) {
-            askForBetrayal(betrayedIndex);
+            askForBetrayal(betrayalIndex);
         }
     }, 100);
 }
@@ -167,12 +160,10 @@ function checkBetrayalOpportunity(threatsToFollow) {
     const myColor = turn;
     const oppColor = turn === 'w' ? 'b' : 'w';
     
-    // Artık 64 kareyi değil, sadece bize gelen 'tehdit altındaki' kareleri kontrol ediyoruz
     for (let i of threatsToFollow) {
         const p = layout[i];
-        // Taş rakibin mi ve hala orada mı?
-        if (p && p.startsWith(oppColor) && ['n', 'r', 'b', 'p'].includes(p[2])) {
-            // Aktif tehdit var (rakip istiyor) VE koruma yok (ben korumuyorum)
+        if (p && p.startsWith(oppColor)) {
+            // Aktif tehdit altında mı VE rakip (yeni sıra sahibi) burayı koruyor mu?
             if (isSquareAttacked(i, myColor) && !isSquareAttacked(i, oppColor)) {
                 return i;
             }
@@ -181,12 +172,11 @@ function checkBetrayalOpportunity(threatsToFollow) {
     return null;
 }
 
-
 function askForBetrayal(targetIndex) {
     const name = (turn === 'w' ? 'BEYAZ' : 'SİYAH');
     if (confirm(`${name}! Rakibin bir taşını korumasız bıraktı. \n\nKendi hamlen yerine bu taşla İHANET hamlesi yapmak ister misin?`)) {
         const p = layout[targetIndex];
-        layout[targetIndex] = turn + p.substring(1); // Rengini geçici olarak değiştir
+        layout[targetIndex] = turn + p.substring(1); 
         isBetrayalMoveMode = true;
         betrayalTarget = targetIndex;
         draw();
@@ -201,9 +191,7 @@ function draw() {
         const square = document.createElement('div');
         square.className = `square ${(Math.floor(i/8)+(i%8))%2!==0?'black':'white'}`;
         
-        // Seçili kareyi vurgula
         if (selectedSquare === i) square.classList.add('active-law');
-        // İhanet hedefini vurgula
         if (isBetrayalMoveMode && betrayalTarget === i) square.style.backgroundColor = "rgba(255, 0, 0, 0.5)";
 
         if (layout[i]) {
