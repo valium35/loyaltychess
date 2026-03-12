@@ -125,7 +125,7 @@ function getRawMoves(i, onlyAttacks = false) {
             if (diag !== null) {
                 const targetPiece = layout[diag];
                 if (onlyAttacks || (targetPiece && targetPiece[0] !== color) || diag === enPassantTarget) {
-                    if (Math.abs((diag % 8) - c) === 1) moves.push(diag);
+                    moves.push(diag);
                 }
             }
         });
@@ -168,10 +168,12 @@ function handleSquareClick(i) {
 function executeMove(from, to) {
     const piece = layout[from], type = piece[2], color = piece[0];
     
+    // Geçerken Alış (En Passant)
     if (type === 'p' && to === enPassantTarget) {
         layout[getIndex(Math.floor(from/8), to % 8)] = '';
     }
     
+    // Rok (Castling)
     if (type === 'k' && Math.abs((from % 8) - (to % 8)) === 2) {
         const rFrom = (to % 8 === 6) ? getIndex(Math.floor(to/8), 7) : getIndex(Math.floor(to/8), 0);
         const rTo = (to % 8 === 6) ? getIndex(Math.floor(to/8), 5) : getIndex(Math.floor(to/8), 3);
@@ -179,20 +181,27 @@ function executeMove(from, to) {
         layout[rFrom] = '';
     }
 
+    // Rok Haklarının Kaydı
     if (type === 'k') hasMoved[color + '-k'] = true;
     if (type === 'r') hasMoved[color + '-r-' + from] = true;
 
+    // Geçerken Alış Hedefi Belirleme (Çift sürüşte)
     enPassantTarget = (type === 'p' && Math.abs(Math.floor(from/8) - Math.floor(to/8)) === 2) ? 
                       getIndex((Math.floor(from/8) + Math.floor(to/8)) / 2, from % 8) : null;
 
+    // TAŞI TAŞI
     layout[to] = layout[from];
     layout[from] = '';
 
-    // --- TERFİ KONTROLÜ (YENİ) ---
+    // --- TERFİ KONTROLÜ (GÜNCELLENDİ) ---
     if (type === 'p') {
         const endRow = (color === 'w' ? 0 : 7);
         if (Math.floor(to / 8) === endRow) {
-            layout[to] = color + '-q'; // Piyonu Vezire dönüştür
+            let choice = "";
+            while (!['q', 'r', 'b', 'n'].includes(choice)) {
+                choice = prompt("Piyon terfi ediyor! Seçiniz: (q: Vezir, r: Kale, b: Fil, n: At)", "q").toLowerCase();
+            }
+            layout[to] = color + '-' + choice;
         }
     }
 }
