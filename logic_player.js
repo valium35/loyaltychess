@@ -4,7 +4,7 @@ let turn = 'w';
 let selectedSquare = null;
 let isBetrayalMoveMode = false;
 let betrayalTarget = null;
-let lastTurnThreats = []; // Bir önceki oyuncunun hamle bittiğinde oluşturduğu tehdit listesi
+let lastTurnThreats = []; 
 
 const boardElement = document.getElementById('chess-board');
 const statusElement = document.getElementById('status');
@@ -88,7 +88,7 @@ function handleSquareClick(i) {
     if (isBetrayalMoveMode) {
         const legalMoves = getRawMoves(betrayalTarget);
         if (legalMoves.includes(i)) {
-            layout[i] = ''; // İhanet hamlesi sonrası taş tahtadan silinir
+            layout[i] = ''; // İhanet eden taş hedefe gider ama kural gereği silinir
             layout[betrayalTarget] = ''; 
             isBetrayalMoveMode = false;
             betrayalTarget = null;
@@ -131,23 +131,18 @@ function completeTurn() {
     const lastPlayer = turn; 
     const currentThreats = [];
     
-    // 1. ADIM: Şu anki hamle bitti, yeni tehditleri topla
     for (let i = 0; i < 64; i++) {
         if (layout[i] && layout[i].startsWith(lastPlayer)) {
             getRawMoves(i).forEach(m => currentThreats.push(m));
         }
     }
 
-    // 2. ADIM: Sırayı değiştir
     turn = (turn === 'w' ? 'b' : 'w');
     draw();
     updateStatus();
 
-    // 3. ADIM: İhanet kontrolü (Gecikmeli)
     setTimeout(() => {
         const betrayalIndex = checkBetrayalOpportunity(lastTurnThreats);
-        
-        // Bir sonraki tura yeni tehditleri aktar
         lastTurnThreats = currentThreats;
 
         if (betrayalIndex !== null) {
@@ -156,14 +151,16 @@ function completeTurn() {
     }, 100);
 }
 
+// GÜNCEL: Sadece At, Kale ve Fil kontrol ediliyor
 function checkBetrayalOpportunity(threatsToFollow) {
     const myColor = turn;
     const oppColor = turn === 'w' ? 'b' : 'w';
     
     for (let i of threatsToFollow) {
         const p = layout[i];
-        if (p && p.startsWith(oppColor)) {
-            // Aktif tehdit altında mı VE rakip (yeni sıra sahibi) burayı koruyor mu?
+        // Sadece Rakibin Atı (n), Kalesi (r) veya Fili (b) mi?
+        if (p && p.startsWith(oppColor) && ['n', 'r', 'b'].includes(p[2])) {
+            // Aktif tehdit altında mı VE rakip (yeni sıra sahibi) burayı korumuyor mu?
             if (isSquareAttacked(i, myColor) && !isSquareAttacked(i, oppColor)) {
                 return i;
             }
@@ -174,7 +171,10 @@ function checkBetrayalOpportunity(threatsToFollow) {
 
 function askForBetrayal(targetIndex) {
     const name = (turn === 'w' ? 'BEYAZ' : 'SİYAH');
-    if (confirm(`${name}! Rakibin bir taşını korumasız bıraktı. \n\nKendi hamlen yerine bu taşla İHANET hamlesi yapmak ister misin?`)) {
+    const pieceNames = { 'n': 'ATI', 'r': 'KALESİ', 'b': 'FİLİ' };
+    const pType = layout[targetIndex][2];
+    
+    if (confirm(`${name}! Rakibin ${pieceNames[pType]} korumasız bıraktı. \n\nKendi hamlen yerine bu taşla İHANET hamlesi yapmak ister misin?`)) {
         const p = layout[targetIndex];
         layout[targetIndex] = turn + p.substring(1); 
         isBetrayalMoveMode = true;
