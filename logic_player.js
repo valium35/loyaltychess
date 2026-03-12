@@ -3,9 +3,8 @@ let layout = Array(64).fill('');
 let turn = 'w';
 let selectedSquare = null;
 let enPassantTarget = null;
-let hasMoved = { 'w-k': false, 'b-k': false }; // Dinamik anahtarlar aşağıda eklenecek
+let hasMoved = {}; 
 
-// İhanet Mekaniği Değişkenleri
 let isBetrayalMoveMode = false;
 let betrayalTarget = null;
 let threatsFromLastTurn = [];
@@ -24,8 +23,12 @@ const initialSetup = {
 function initGame() {
     layout.fill('');
     Object.keys(initialSetup).forEach(i => layout[i] = initialSetup[i]);
-    // Rok takibi için kale konumlarını sıfırla
+    // Rok takibi için durumları sıfırla
     hasMoved = { 'w-k': false, 'b-k': false, 'w-r-56': false, 'w-r-63': false, 'b-r-0': false, 'b-r-7': false };
+    isBetrayalMoveMode = false;
+    betrayalTarget = null;
+    threatsFromLastTurn = [];
+    turn = 'w';
     draw();
     updateStatus();
 }
@@ -42,7 +45,7 @@ function findKing(color) {
 function isSquareAttacked(targetIndex, attackerColor) {
     for (let i = 0; i < 64; i++) {
         if (layout[i] && layout[i].startsWith(attackerColor)) {
-            // Tehdit kontrolünde piyonların sadece çaprazlarına bakmak için true gönderiyoruz
+            // true: piyonların sadece çapraz saldırılarını al
             if (getRawMoves(i, true).includes(targetIndex)) return true;
         }
     }
@@ -64,8 +67,8 @@ function testMoveForSafety(from, to, color) {
 function getLegalMoves(i) {
     const piece = layout[i];
     if (!piece) return [];
-    const rawMoves = getRawMoves(i);
     const color = piece[0];
+    const rawMoves = getRawMoves(i);
     return rawMoves.filter(move => testMoveForSafety(i, move, color));
 }
 
@@ -98,13 +101,21 @@ function getRawMoves(i, onlyAttacks = false) {
             if (target !== null && (onlyAttacks || !layout[target] || layout[target][0] !== color)) moves.push(target);
         });
         
-        // ROK KONTROLÜ (Düzeltildi)
-        if (type === 'k' && !onlyAttacks && !hasMoved[color+'-k'] && !isSquareAttacked(i, color==='w'?'b':'w')) {
-            const r7 = getIndex(r, 7), r0 = getIndex(r, 0);
-            // Kısa Rok
-            if (!hasMoved[color+'-r-'+r7] && !layout[getIndex(r,5)] && !layout[getIndex(r,6)] && !isSquareAttacked(getIndex(r,5), color==='w'?'b':'w')) moves.push(getIndex(r,6));
-            // Uzun Rok
-            if (!hasMoved[color+'-r-'+r0] && !layout[getIndex(r,1)] && !layout[getIndex(r,2)] && !layout[getIndex(r,3)] && !isSquareAttacked(getIndex(r,3), color==='w'?'b':'w')) moves.push(getIndex(r,2));
+        // --- GELİŞMİŞ ROK KONTROLÜ ---
+        if (type === 'k' && !onlyAttacks && !hasMoved[color+'-k']) {
+            const opponent = color === 'w' ? 'b' : 'w';
+            if (!isSquareAttacked(i, opponent)) { // Şah altındayken rok olmaz
+                // Kısa Rok
+                const r7 = getIndex(r, 7), f1 = getIndex(r, 5), g1 = getIndex(r, 6);
+                if (!hasMoved[color+'-r-'+r7] && !layout[f1] && !layout[g1]) {
+                    if (!isSquareAttacked(f1, opponent) && !isSquareAttacked(g1, opponent)) moves.push(g1);
+                }
+                // Uzun Rok
+                const r0 = getIndex(r, 0), d1 = getIndex(r, 3), c1 = getIndex(r, 2), b1 = getIndex(r, 1);
+                if (!hasMoved[color+'-r-'+r0] && !layout[d1] && !layout[c1] && !layout[b1]) {
+                    if (!isSquareAttacked(d1, opponent) && !isSquareAttacked(c1, opponent)) moves.push(c1);
+                }
+            }
         }
     } else if (type === 'p') {
         const dir = color === 'w' ? -1 : 1;
@@ -116,7 +127,12 @@ function getRawMoves(i, onlyAttacks = false) {
             }
         }
         [getIndex(r + dir, c - 1), getIndex(r + dir, c + 1)].forEach(diag => {
-            if (diag !== null && (onlyAttacks || (layout[diag] && layout[diag][0] !== color) || diag === enPassantTarget)) moves.push(diag);
+            if (diag !== null) {
+                const targetPiece = layout[diag];
+                if (onlyAttacks || (targetPiece && targetPiece[0] !== color) || diag === enPassantTarget) {
+                    if (Math.abs((diag % 8) - c) === 1) moves.push(diag);
+                }
+            }
         });
     }
     return moves;
@@ -125,10 +141,12 @@ function getRawMoves(i, onlyAttacks = false) {
 // --- 4. OYUN DÖNGÜSÜ ---
 function handleSquareClick(i) {
     if (isBetrayalMoveMode) {
-        // İhanet eden taş yasal hamle yapmalı ama şah çekemez kontrolü buraya eklenebilir
         if (getRawMoves(betrayalTarget).includes(i)) {
-            layout[i] = ''; layout[betrayalTarget] = ''; 
-            isBetrayalMoveMode = false; betrayalTarget = null;
+            // İhanet eden taş görevini tamamlar ve tahtadan çıkar
+            layout[i] = ''; 
+            layout[betrayalTarget] = ''; 
+            isBetrayalMoveMode = false;
+            betrayalTarget = null;
             completeTurn();
         }
         return;
@@ -136,7 +154,10 @@ function handleSquareClick(i) {
 
     const piece = layout[i];
     if (selectedSquare === null) {
-        if (piece && piece.startsWith(turn)) { selectedSquare = i; draw(); }
+        if (piece && piece.startsWith(turn)) {
+            selectedSquare = i;
+            draw();
+        }
     } else {
         const legalMoves = getLegalMoves(selectedSquare);
         if (legalMoves.includes(i)) {
@@ -153,23 +174,26 @@ function handleSquareClick(i) {
 function executeMove(from, to) {
     const piece = layout[from], type = piece[2], color = piece[0];
     
-    // Geçerken Alış
-    if (type === 'p' && to === enPassantTarget) layout[getIndex(Math.floor(from/8), to%8)] = '';
+    // Geçerken Alış (Piyon silme)
+    if (type === 'p' && to === enPassantTarget) {
+        layout[getIndex(Math.floor(from/8), to % 8)] = '';
+    }
     
-    // Rok Kaleyi Taşı
-    if (type === 'k' && Math.abs((from%8) - (to%8)) === 2) {
-        const rFrom = (to%8 === 6) ? getIndex(Math.floor(to/8), 7) : getIndex(Math.floor(to/8), 0);
-        const rTo = (to%8 === 6) ? getIndex(Math.floor(to/8), 5) : getIndex(Math.floor(to/8), 3);
-        layout[rTo] = layout[rFrom]; layout[rFrom] = '';
+    // Rok (Kaleyi taşıma)
+    if (type === 'k' && Math.abs((from % 8) - (to % 8)) === 2) {
+        const rFrom = (to % 8 === 6) ? getIndex(Math.floor(to/8), 7) : getIndex(Math.floor(to/8), 0);
+        const rTo = (to % 8 === 6) ? getIndex(Math.floor(to/8), 5) : getIndex(Math.floor(to/8), 3);
+        layout[rTo] = layout[rFrom];
+        layout[rFrom] = '';
     }
 
-    // Hareket Kayıtları (Rok için)
+    // Hareket Kaydı
     if (type === 'k') hasMoved[color + '-k'] = true;
     if (type === 'r') hasMoved[color + '-r-' + from] = true;
 
-    // En Passant Hedefi
+    // En Passant Hedefi Belirle
     enPassantTarget = (type === 'p' && Math.abs(Math.floor(from/8) - Math.floor(to/8)) === 2) ? 
-                      getIndex((Math.floor(from/8) + Math.floor(to/8)) / 2, from%8) : null;
+                      getIndex((Math.floor(from/8) + Math.floor(to/8)) / 2, from % 8) : null;
 
     layout[to] = layout[from];
     layout[from] = '';
@@ -179,7 +203,7 @@ function completeTurn() {
     const lastPlayer = turn;
     const nextPlayer = (turn === 'w' ? 'b' : 'w');
     
-    // Tehdit Taraması
+    // Geçen turdaki saldırıları topla (İhanet kontrolü için)
     let currentAttacks = [];
     for (let i = 0; i < 64; i++) {
         if (layout[i] && layout[i].startsWith(lastPlayer)) {
@@ -187,14 +211,17 @@ function completeTurn() {
         }
     }
 
-    // İhanet Kontrolü (At, Kale, Fil için)
+    // İhanet Kontrolü: Subay (n, r, b) tehdit altındaydı ve korunmadı mı?
     let betrayalCandidate = null;
     for (let targetIndex of threatsFromLastTurn) {
         const p = layout[targetIndex];
         if (p && p.startsWith(nextPlayer) && ['n', 'r', 'b'].includes(p[2])) {
-            const stillAttacked = currentAttacks.includes(targetIndex);
+            const isStillAttacked = currentAttacks.includes(targetIndex);
             const isProtected = isSquareAttacked(targetIndex, nextPlayer);
-            if (stillAttacked && !isProtected) { betrayalCandidate = targetIndex; break; }
+            if (isStillAttacked && !isProtected) {
+                betrayalCandidate = targetIndex;
+                break;
+            }
         }
     }
 
@@ -203,19 +230,19 @@ function completeTurn() {
     draw();
     updateStatus();
 
-    // Şah Mat Kontrolü
-    if (isCheckmate(turn)) { 
-        setTimeout(() => alert("ŞAH MAT! Kazanan: " + (turn === 'w' ? "SİYAH" : "BEYAZ")), 200);
-        return; 
+    if (isCheckmate(turn)) {
+        setTimeout(() => alert("ŞAH MAT! Oyun bitti."), 300);
+        return;
     }
 
-    // İhanet Sorusu
     if (betrayalCandidate !== null) {
         setTimeout(() => {
-            if (confirm(`${turn === 'w' ? 'BEYAZ' : 'SİYAH'}! Rakibin bir subayını korumasız bıraktı. Onu ayartıp (ihanet ettirip) kendi hamlen yerine kullanmak ister misin?`)) {
+            if (confirm("LoyaltyChess: Korumasız kalan subayın taraf değiştiriyor! İhanet hamlesi yapmak ister misin?")) {
                 layout[betrayalCandidate] = turn + layout[betrayalCandidate].substring(1);
-                isBetrayalMoveMode = true; betrayalTarget = betrayalCandidate;
-                draw(); updateStatus();
+                isBetrayalMoveMode = true;
+                betrayalTarget = betrayalCandidate;
+                draw();
+                updateStatus();
             }
         }, 150);
     }
@@ -225,7 +252,9 @@ function isCheckmate(color) {
     const kingPos = findKing(color);
     if (!isSquareAttacked(kingPos, color === 'w' ? 'b' : 'w')) return false;
     for (let i = 0; i < 64; i++) {
-        if (layout[i] && layout[i].startsWith(color) && getLegalMoves(i).length > 0) return false;
+        if (layout[i] && layout[i].startsWith(color)) {
+            if (getLegalMoves(i).length > 0) return false;
+        }
     }
     return true;
 }
@@ -234,8 +263,13 @@ function draw() {
     boardElement.innerHTML = '';
     for (let i = 0; i < 64; i++) {
         const square = document.createElement('div');
-        square.className = `square ${(Math.floor(i/8)+(i%8))%2!==0?'black':'white'} ${selectedSquare===i?'active-law':''}`;
-        if (isBetrayalMoveMode && betrayalTarget === i) square.style.backgroundColor = "rgba(255, 0, 0, 0.6)";
+        const isBlack = (Math.floor(i / 8) + (i % 8)) % 2 !== 0;
+        square.className = `square ${isBlack ? 'black' : 'white'} ${selectedSquare === i ? 'active-law' : ''}`;
+        
+        if (isBetrayalMoveMode && betrayalTarget === i) {
+            square.style.backgroundColor = "rgba(255, 69, 0, 0.7)"; // Hain taşı vurgula
+        }
+
         if (layout[i]) {
             const p = document.createElement('div');
             p.className = `piece ${layout[i]}`;
@@ -247,7 +281,7 @@ function draw() {
 }
 
 function updateStatus() {
-    statusElement.innerText = isBetrayalMoveMode ? "⚠️ İHANET MODU: Hain taşı oynat!" : "SIRA: " + (turn === 'w' ? "BEYAZDA" : "SİYAHTA");
+    statusElement.innerText = isBetrayalMoveMode ? "⚠️ İHANET HAMLESİ BEKLENİYOR" : "SIRA: " + (turn === 'w' ? "BEYAZDA" : "SİYAHTA");
 }
 
 initGame();
