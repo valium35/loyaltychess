@@ -23,7 +23,6 @@ const initialSetup = {
 function initGame() {
     layout.fill('');
     Object.keys(initialSetup).forEach(i => layout[i] = initialSetup[i]);
-    // Rok takibi için durumları sıfırla
     hasMoved = { 'w-k': false, 'b-k': false, 'w-r-56': false, 'w-r-63': false, 'b-r-0': false, 'b-r-7': false };
     isBetrayalMoveMode = false;
     betrayalTarget = null;
@@ -45,7 +44,6 @@ function findKing(color) {
 function isSquareAttacked(targetIndex, attackerColor) {
     for (let i = 0; i < 64; i++) {
         if (layout[i] && layout[i].startsWith(attackerColor)) {
-            // true: piyonların sadece çapraz saldırılarını al
             if (getRawMoves(i, true).includes(targetIndex)) return true;
         }
     }
@@ -101,16 +99,13 @@ function getRawMoves(i, onlyAttacks = false) {
             if (target !== null && (onlyAttacks || !layout[target] || layout[target][0] !== color)) moves.push(target);
         });
         
-        // --- GELİŞMİŞ ROK KONTROLÜ ---
         if (type === 'k' && !onlyAttacks && !hasMoved[color+'-k']) {
             const opponent = color === 'w' ? 'b' : 'w';
-            if (!isSquareAttacked(i, opponent)) { // Şah altındayken rok olmaz
-                // Kısa Rok
+            if (!isSquareAttacked(i, opponent)) {
                 const r7 = getIndex(r, 7), f1 = getIndex(r, 5), g1 = getIndex(r, 6);
                 if (!hasMoved[color+'-r-'+r7] && !layout[f1] && !layout[g1]) {
                     if (!isSquareAttacked(f1, opponent) && !isSquareAttacked(g1, opponent)) moves.push(g1);
                 }
-                // Uzun Rok
                 const r0 = getIndex(r, 0), d1 = getIndex(r, 3), c1 = getIndex(r, 2), b1 = getIndex(r, 1);
                 if (!hasMoved[color+'-r-'+r0] && !layout[d1] && !layout[c1] && !layout[b1]) {
                     if (!isSquareAttacked(d1, opponent) && !isSquareAttacked(c1, opponent)) moves.push(c1);
@@ -142,7 +137,6 @@ function getRawMoves(i, onlyAttacks = false) {
 function handleSquareClick(i) {
     if (isBetrayalMoveMode) {
         if (getRawMoves(betrayalTarget).includes(i)) {
-            // İhanet eden taş görevini tamamlar ve tahtadan çıkar
             layout[i] = ''; 
             layout[betrayalTarget] = ''; 
             isBetrayalMoveMode = false;
@@ -174,12 +168,10 @@ function handleSquareClick(i) {
 function executeMove(from, to) {
     const piece = layout[from], type = piece[2], color = piece[0];
     
-    // Geçerken Alış (Piyon silme)
     if (type === 'p' && to === enPassantTarget) {
         layout[getIndex(Math.floor(from/8), to % 8)] = '';
     }
     
-    // Rok (Kaleyi taşıma)
     if (type === 'k' && Math.abs((from % 8) - (to % 8)) === 2) {
         const rFrom = (to % 8 === 6) ? getIndex(Math.floor(to/8), 7) : getIndex(Math.floor(to/8), 0);
         const rTo = (to % 8 === 6) ? getIndex(Math.floor(to/8), 5) : getIndex(Math.floor(to/8), 3);
@@ -187,23 +179,28 @@ function executeMove(from, to) {
         layout[rFrom] = '';
     }
 
-    // Hareket Kaydı
     if (type === 'k') hasMoved[color + '-k'] = true;
     if (type === 'r') hasMoved[color + '-r-' + from] = true;
 
-    // En Passant Hedefi Belirle
     enPassantTarget = (type === 'p' && Math.abs(Math.floor(from/8) - Math.floor(to/8)) === 2) ? 
                       getIndex((Math.floor(from/8) + Math.floor(to/8)) / 2, from % 8) : null;
 
     layout[to] = layout[from];
     layout[from] = '';
+
+    // --- TERFİ KONTROLÜ (YENİ) ---
+    if (type === 'p') {
+        const endRow = (color === 'w' ? 0 : 7);
+        if (Math.floor(to / 8) === endRow) {
+            layout[to] = color + '-q'; // Piyonu Vezire dönüştür
+        }
+    }
 }
 
 function completeTurn() {
     const lastPlayer = turn;
     const nextPlayer = (turn === 'w' ? 'b' : 'w');
     
-    // Geçen turdaki saldırıları topla (İhanet kontrolü için)
     let currentAttacks = [];
     for (let i = 0; i < 64; i++) {
         if (layout[i] && layout[i].startsWith(lastPlayer)) {
@@ -211,7 +208,6 @@ function completeTurn() {
         }
     }
 
-    // İhanet Kontrolü: Subay (n, r, b) tehdit altındaydı ve korunmadı mı?
     let betrayalCandidate = null;
     for (let targetIndex of threatsFromLastTurn) {
         const p = layout[targetIndex];
@@ -267,7 +263,7 @@ function draw() {
         square.className = `square ${isBlack ? 'black' : 'white'} ${selectedSquare === i ? 'active-law' : ''}`;
         
         if (isBetrayalMoveMode && betrayalTarget === i) {
-            square.style.backgroundColor = "rgba(255, 69, 0, 0.7)"; // Hain taşı vurgula
+            square.style.backgroundColor = "rgba(255, 69, 0, 0.7)";
         }
 
         if (layout[i]) {
