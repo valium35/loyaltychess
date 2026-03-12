@@ -1,10 +1,10 @@
-// --- 1. DEĞİŞKENLER ---
+// --- 1. DEĞİŞKENLER VE DURUM ---
 let layout = Array(64).fill('');
 let turn = 'w';
 let selectedSquare = null;
 let isBetrayalMoveMode = false;
 let betrayalTarget = null;
-let currentThreatsToOpponent = []; // Bu tur hamle bittikten sonra oluşan tehditler
+let activeThreatsToCurrentPlayer = []; // Sırası gelen oyuncunun hangi kareleri tehdit altında?
 
 const boardElement = document.getElementById('chess-board');
 const statusElement = document.getElementById('status');
@@ -19,13 +19,13 @@ const initialSetup = {
 function initGame() {
     layout.fill('');
     Object.keys(initialSetup).forEach(i => layout[i] = initialSetup[i]);
-    currentThreatsToOpponent = [];
+    activeThreatsToCurrentPlayer = [];
     turn = 'w';
     draw();
     updateStatus();
 }
 
-// --- 2. HAREKET VE TEHDİT ANALİZİ ---
+// --- 2. HAKEM MANTIĞI (HAREKET VE TEHDİT) ---
 function getCoords(i) { return { r: Math.floor(i / 8), c: i % 8 }; }
 function getIndex(r, c) { return (r < 0 || r > 7 || c < 0 || c > 7) ? null : r * 8 + c; }
 
@@ -59,7 +59,7 @@ function getRawMoves(i, checkThreatOnly = false) {
         });
     } else if (type === 'p') {
         const dir = color === 'w' ? -1 : 1;
-        if (checkThreatOnly) { // Tehdit için sadece çaprazlar
+        if (checkThreatOnly) { // Tehdit analizi: Piyon sadece çaprazını tehdit eder
             [getIndex(r + dir, c - 1), getIndex(r + dir, c + 1)].forEach(diag => {
                 if (diag !== null) moves.push(diag);
             });
@@ -80,29 +80,15 @@ function getRawMoves(i, checkThreatOnly = false) {
     return moves;
 }
 
-// Belirli bir rengin (attackerColor) tahtada tehdit ettiği TÜM rakip kareleri bulur
-function getAllThreatsByColor(attackerColor) {
-    let threats = [];
+// Belirli bir oyuncunun tahtadaki tüm taşlarının koruduğu/tehdit ettiği kareleri bulur
+function getControlMap(color, checkThreatOnly = true) {
+    let map = new Set();
     for (let i = 0; i < 64; i++) {
-        if (layout[i] && layout[i].startsWith(attackerColor)) {
-            const moves = getRawMoves(i, true);
-            moves.forEach(m => {
-                if (layout[m] && !layout[m].startsWith(attackerColor)) {
-                    threats.push(m);
-                }
-            });
+        if (layout[i] && layout[i].startsWith(color)) {
+            getRawMoves(i, checkThreatOnly).forEach(m => map.add(m));
         }
     }
-    return [...new Set(threats)]; // Tekrar edenleri temizle
-}
-
-function isSquareAttacked(targetIndex, attackerColor) {
-    for (let i = 0; i < 64; i++) {
-        if (layout[i] && layout[i].startsWith(attackerColor)) {
-            if (getRawMoves(i, true).includes(targetIndex)) return true;
-        }
-    }
-    return false;
+    return map;
 }
 
 // --- 3. OYUN DÖNGÜSÜ ---
@@ -110,7 +96,7 @@ function handleSquareClick(i) {
     if (isBetrayalMoveMode) {
         if (getRawMoves(betrayalTarget).includes(i)) {
             layout[betrayalTarget] = ''; 
-            layout[i] = ''; 
+            layout[i] = ''; // İhanet sonrası taş tahtadan silinir
             isBetrayalMoveMode = false;
             betrayalTarget = null;
             completeTurn();
@@ -140,39 +126,50 @@ function executeMove(from, to) {
 }
 
 function completeTurn() {
-    const lastPlayer = turn;
-    // 1. ADIM: Sıra değişmeden ÖNCE, şu anki oyuncunun yaptığı tehditleri kaydet
-    const threatsMadeThisTurn = getAllThreatsByColor(lastPlayer);
+    const currentPlayerColor = turn;
+    const opponentColor = (turn === 'w' ? 'b' : 'w');
+
+    // 1. ADIM: Şu anki oyuncu (hamlesini yeni bitiren) rakibin hangi karelerini tehdit ediyor?
+    const threatsToOpponent = getControlMap(currentPlayerColor, true);
 
     // 2. ADIM: Sırayı değiştir
-    turn = (turn === 'w' ? 'b' : 'w');
+    turn = opponentColor;
 
-    // 3. ADIM: İhanet kontrolü (Bir önceki turda tehdit edilenler arasından şu an korunmayan var mı?)
-    let betrayalFound = null;
-    for (let targetIndex of currentThreatsToOpponent) {
-        if (layout[targetIndex] && layout[targetIndex].startsWith(turn)) {
-            // Hala düşman (lastPlayer) tarafından isteniyor mu? VE artık kendi rengince korunmuyor mu?
-            if (isSquareAttacked(targetIndex, lastPlayer) && !isSquareAttacked(targetIndex, turn)) {
-                betrayalFound = targetIndex;
+    // 3. ADIM: İHANET KONTROLÜ
+    // "Bir önceki turda tehdit edilen" (activeThreatsToCurrentPlayer) taşlar 
+    // hala tehdit altındaysa VE şu an korunmuyorlarsa ihanet tetiklenir.
+    let betrayalTargetIndex = null;
+    const myProtections = getControlMap(turn, true); // Kendi taşlarımın birbirini koruma haritası
+
+    for (let index of activeThreatsToCurrentPlayer) {
+        const p = layout[index];
+        if (p && p.startsWith(turn)) { // Taş hala orada mı?
+            // Kural: Rakip (currentPlayerColor) hala burayı tehdit ediyor mu?
+            // VE Ben (turn) burayı koruyor muyum?
+            const isStillAttacked = getControlMap(currentPlayerColor, true).has(index);
+            const isProtected = myProtections.has(index);
+
+            if (isStillAttacked && !isProtected) {
+                betrayalTargetIndex = index;
                 break;
             }
         }
     }
 
-    // 4. ADIM: Gelecek tur için tehdit listesini güncelle
-    currentThreatsToOpponent = threatsMadeThisTurn;
+    // 4. ADIM: Bir sonraki tur için "aktif tehditleri" devret
+    activeThreatsToCurrentPlayer = Array.from(threatsToOpponent);
 
     draw();
     updateStatus();
 
-    if (betrayalFound !== null) {
-        setTimeout(() => askForBetrayal(betrayalFound), 150);
+    if (betrayalTargetIndex !== null) {
+        setTimeout(() => askForBetrayal(betrayalTargetIndex), 100);
     }
 }
 
 function askForBetrayal(targetIndex) {
     const name = (turn === 'w' ? 'BEYAZ' : 'SİYAH');
-    if (confirm(`${name}! Tehdit edilen taşını korumadın. Hainle oynamak ister misin?`)) {
+    if (confirm(`${name}! Tehdit edilen taşını korumadın. Hainle oynamak ister mi?`)) {
         const p = layout[targetIndex];
         layout[targetIndex] = turn + p.substring(1); 
         isBetrayalMoveMode = true;
