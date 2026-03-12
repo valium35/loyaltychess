@@ -34,16 +34,14 @@ function findKing(color) {
     return -1;
 }
 
-// DÜZELTME: İhanet eden taşın şah çekmesini engelleyen saldırı kontrolü
 function isSquareAttacked(targetIndex, attackerColor) {
     for (let i = 0; i < 64; i++) {
         if (layout[i] && layout[i].startsWith(attackerColor)) {
-            // KURAL: Eğer bu taş ihanet modundaki taysa, Şah'a (targetIndex) saldıramaz
+            // İhanet eden taşın Şah'a saldırmasını engelle
             if (isBetrayalMoveMode && i === betrayalTarget) {
                 const kingPos = findKing(attackerColor === 'w' ? 'b' : 'w');
                 if (targetIndex === kingPos) continue; 
             }
-
             const moves = getRawMoves(i); 
             if (moves.includes(targetIndex)) return true;
         }
@@ -120,7 +118,6 @@ function getRawMoves(i) {
             moves.push(forward);
             if (r === (color === 'w' ? 6 : 1) && !layout[getIndex(r+2*dir, c)]) moves.push(getIndex(r+2*dir, c));
         }
-        // Piyon Koruma Düzeltmesi: Her zaman çaprazları tehdit eder/korur
         [getIndex(r+dir, c-1), getIndex(r+dir, c+1)].forEach(diag => {
             if (diag !== null) {
                 const columnDiff = Math.abs((diag % 8) - c);
@@ -137,7 +134,7 @@ function handleSquareClick(i) {
         const moves = getLegalMoves(betrayalTarget);
         if (moves.includes(i)) {
             executeMove(betrayalTarget, i);
-            layout[i] = ''; // Hamle bitti silinir
+            layout[i] = ''; 
             completeTurn();
         } else {
             alert("İhanet eden taşı hareket ettirmelisin!");
@@ -153,17 +150,19 @@ function handleSquareClick(i) {
         if (moves.includes(i)) {
             executeMove(selectedSquare, i);
             selectedSquare = null;
-            draw(); // TAŞIN YERİNE GİTTİĞİNİ ÖNCE ÇİZ
+            draw(); 
 
-            // ZAMANLAMA DÜZELTMESİ: Taş yerine oturduktan sonra pop-up açılır
-            setTimeout(() => {
-                const potentialBetrayal = checkBetrayalOpportunity();
-                if (potentialBetrayal !== null) {
-                    handleBetrayal(potentialBetrayal);
-                } else {
-                    completeTurn();
-                }
-            }, 100); 
+            // İhanet kontrolünü setTimeout ile değil, bir akış olarak yönetelim
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    const potentialBetrayal = checkBetrayalOpportunity();
+                    if (potentialBetrayal !== null) {
+                        handleBetrayal(potentialBetrayal);
+                    } else {
+                        completeTurn();
+                    }
+                });
+            });
         } else {
             selectedSquare = piece && piece.startsWith(turn) ? i : null;
             draw();
@@ -173,34 +172,39 @@ function handleSquareClick(i) {
 
 function checkBetrayalOpportunity() {
     const opp = turn === 'w' ? 'b' : 'w';
+    // Eğer Şah altındaysa ihanet olmaz
     if (isSquareAttacked(findKing(turn), opp)) return null;
+
     for (let i = 0; i < 64; i++) {
         const p = layout[i];
         if (p && p.startsWith(turn) && ['n', 'b', 'r'].includes(p[2])) {
-            if (isSquareAttacked(i, opp) && !isSquareAttacked(i, turn)) return i;
+            const targeted = isSquareAttacked(i, opp);
+            const protected = isSquareAttacked(i, turn);
+            if (targeted && !protected) return i;
         }
     }
     return null;
 }
 
 function handleBetrayal(targetIndex) {
-    const name = layout[targetIndex][2] === 'r' ? 'Kale' : layout[targetIndex][2] === 'n' ? 'At' : 'Fil';
+    const p = layout[targetIndex];
+    const name = p[2] === 'r' ? 'Kale' : p[2] === 'n' ? 'At' : 'Fil';
     
-    // Görsel olarak sıranın değiştiğini hissettirmek için status güncelle
-    statusElement.innerText = "⚠️ KRİTİK KARAR BEKLENİYOR...";
-
-    if (confirm(`${name} korunmasız! İhanet mi etsin (Tamam), feda mı edilsin (İptal)?`)) {
-        const oldPiece = layout[targetIndex];
-        layout[targetIndex] = (oldPiece[0] === 'w' ? 'b' : 'w') + oldPiece.substring(1);
-        isBetrayalMoveMode = true;
-        betrayalTarget = targetIndex;
-        draw();
-        updateStatus();
-        alert("İHANET! Bu taşla rakip adına tek bir hamle yap (Şah çekemezsin).");
-    } else {
-        layout[targetIndex] = '';
-        completeTurn();
-    }
+    // Gecikmeli onay penceresi
+    setTimeout(() => {
+        if (confirm(`${name} korunmasız! \n\nTAMAM: İhanet etsin (Rakip adına hamle yapar). \nİPTAL: Feda edilsin (Tahtadan silinir).`)) {
+            const oldPiece = layout[targetIndex];
+            layout[targetIndex] = (oldPiece[0] === 'w' ? 'b' : 'w') + oldPiece.substring(1);
+            isBetrayalMoveMode = true;
+            betrayalTarget = targetIndex;
+            draw();
+            updateStatus();
+            alert("İHANET! Bu taşla rakip adına hamle yap. (Şah çekemez)");
+        } else {
+            layout[targetIndex] = '';
+            completeTurn();
+        }
+    }, 50);
 }
 
 function executeMove(from, to) {
