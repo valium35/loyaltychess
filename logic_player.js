@@ -4,7 +4,7 @@ let turn = 'w';
 let selectedSquare = null;
 let isBetrayalMoveMode = false;
 let betrayalTarget = null;
-let lastTurnThreats = []; 
+let currentThreatsToOpponent = []; // Bu tur hamle bittikten sonra oluşan tehditler
 
 const boardElement = document.getElementById('chess-board');
 const statusElement = document.getElementById('status');
@@ -19,13 +19,13 @@ const initialSetup = {
 function initGame() {
     layout.fill('');
     Object.keys(initialSetup).forEach(i => layout[i] = initialSetup[i]);
-    lastTurnThreats = [];
+    currentThreatsToOpponent = [];
     turn = 'w';
     draw();
     updateStatus();
 }
 
-// --- 2. HAREKET VE TEHDİT MANTIĞI ---
+// --- 2. HAREKET VE TEHDİT ANALİZİ ---
 function getCoords(i) { return { r: Math.floor(i / 8), c: i % 8 }; }
 function getIndex(r, c) { return (r < 0 || r > 7 || c < 0 || c > 7) ? null : r * 8 + c; }
 
@@ -59,7 +59,7 @@ function getRawMoves(i, checkThreatOnly = false) {
         });
     } else if (type === 'p') {
         const dir = color === 'w' ? -1 : 1;
-        if (checkThreatOnly) {
+        if (checkThreatOnly) { // Tehdit için sadece çaprazlar
             [getIndex(r + dir, c - 1), getIndex(r + dir, c + 1)].forEach(diag => {
                 if (diag !== null) moves.push(diag);
             });
@@ -80,6 +80,22 @@ function getRawMoves(i, checkThreatOnly = false) {
     return moves;
 }
 
+// Belirli bir rengin (attackerColor) tahtada tehdit ettiği TÜM rakip kareleri bulur
+function getAllThreatsByColor(attackerColor) {
+    let threats = [];
+    for (let i = 0; i < 64; i++) {
+        if (layout[i] && layout[i].startsWith(attackerColor)) {
+            const moves = getRawMoves(i, true);
+            moves.forEach(m => {
+                if (layout[m] && !layout[m].startsWith(attackerColor)) {
+                    threats.push(m);
+                }
+            });
+        }
+    }
+    return [...new Set(threats)]; // Tekrar edenleri temizle
+}
+
 function isSquareAttacked(targetIndex, attackerColor) {
     for (let i = 0; i < 64; i++) {
         if (layout[i] && layout[i].startsWith(attackerColor)) {
@@ -89,15 +105,15 @@ function isSquareAttacked(targetIndex, attackerColor) {
     return false;
 }
 
-// --- 3. OYUN AKIŞI ---
+// --- 3. OYUN DÖNGÜSÜ ---
 function handleSquareClick(i) {
     if (isBetrayalMoveMode) {
         if (getRawMoves(betrayalTarget).includes(i)) {
             layout[betrayalTarget] = ''; 
-            layout[i] = ''; // İhanet eden taş tahtadan kalkar
+            layout[i] = ''; 
             isBetrayalMoveMode = false;
             betrayalTarget = null;
-            completeTurn([]); 
+            completeTurn();
         }
         return;
     }
@@ -108,10 +124,9 @@ function handleSquareClick(i) {
     } else {
         const moves = getRawMoves(selectedSquare);
         if (moves.includes(i)) {
-            const newThreats = getAttackedPiecesByMove(turn, selectedSquare, i);
             executeMove(selectedSquare, i);
             selectedSquare = null;
-            completeTurn(newThreats);
+            completeTurn();
         } else {
             selectedSquare = (piece && piece.startsWith(turn)) ? i : null;
             draw();
@@ -119,53 +134,45 @@ function handleSquareClick(i) {
     }
 }
 
-function getAttackedPiecesByMove(attackerColor, from, to) {
-    const threats = [];
-    const oppColor = (attackerColor === 'w' ? 'b' : 'w');
-    const originalFrom = layout[from], originalTo = layout[to];
-    
-    layout[to] = originalFrom; layout[from] = '';
-    const moves = getRawMoves(to, true);
-    moves.forEach(m => {
-        if (layout[m] && layout[m].startsWith(oppColor)) threats.push(m);
-    });
-    
-    layout[from] = originalFrom; layout[to] = originalTo;
-    return threats;
-}
-
 function executeMove(from, to) {
     layout[to] = layout[from];
     layout[from] = '';
 }
 
-function completeTurn(newThreats) {
-    const previousPlayer = turn;
+function completeTurn() {
+    const lastPlayer = turn;
+    // 1. ADIM: Sıra değişmeden ÖNCE, şu anki oyuncunun yaptığı tehditleri kaydet
+    const threatsMadeThisTurn = getAllThreatsByColor(lastPlayer);
+
+    // 2. ADIM: Sırayı değiştir
     turn = (turn === 'w' ? 'b' : 'w');
-    
+
+    // 3. ADIM: İhanet kontrolü (Bir önceki turda tehdit edilenler arasından şu an korunmayan var mı?)
     let betrayalFound = null;
-    for (let targetIndex of lastTurnThreats) {
+    for (let targetIndex of currentThreatsToOpponent) {
         if (layout[targetIndex] && layout[targetIndex].startsWith(turn)) {
-            // Tehdit devam ediyor mu ve korunmuyor mu?
-            if (isSquareAttacked(targetIndex, previousPlayer) && !isSquareAttacked(targetIndex, turn)) {
+            // Hala düşman (lastPlayer) tarafından isteniyor mu? VE artık kendi rengince korunmuyor mu?
+            if (isSquareAttacked(targetIndex, lastPlayer) && !isSquareAttacked(targetIndex, turn)) {
                 betrayalFound = targetIndex;
                 break;
             }
         }
     }
 
-    lastTurnThreats = newThreats;
+    // 4. ADIM: Gelecek tur için tehdit listesini güncelle
+    currentThreatsToOpponent = threatsMadeThisTurn;
+
     draw();
     updateStatus();
 
     if (betrayalFound !== null) {
-        setTimeout(() => askForBetrayal(betrayalFound), 100);
+        setTimeout(() => askForBetrayal(betrayalFound), 150);
     }
 }
 
 function askForBetrayal(targetIndex) {
     const name = (turn === 'w' ? 'BEYAZ' : 'SİYAH');
-    if (confirm(`${name}! Rakibinin tehdit ettiği taşı korumadın. \nİhanet hamlesi yapmak ister misin?`)) {
+    if (confirm(`${name}! Tehdit edilen taşını korumadın. Hainle oynamak ister misin?`)) {
         const p = layout[targetIndex];
         layout[targetIndex] = turn + p.substring(1); 
         isBetrayalMoveMode = true;
@@ -181,7 +188,7 @@ function draw() {
         const square = document.createElement('div');
         square.className = `square ${(Math.floor(i/8)+(i%8))%2!==0?'black':'white'}`;
         if (selectedSquare === i) square.classList.add('active-law');
-        if (isBetrayalMoveMode && betrayalTarget === i) square.style.backgroundColor = "rgba(255, 0, 0, 0.5)";
+        if (isBetrayalMoveMode && betrayalTarget === i) square.style.backgroundColor = "red";
         
         if (layout[i]) {
             const p = document.createElement('div');
