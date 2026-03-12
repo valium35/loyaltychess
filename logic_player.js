@@ -4,6 +4,8 @@ let turn = 'w';
 let selectedSquare = null;
 let isBetrayalMoveMode = false;
 let betrayalTarget = null;
+// YENİ: Bir önceki oyuncunun hamle bittiğinde oluşturduğu tehdit listesi
+let lastTurnThreats = [];
 
 const boardElement = document.getElementById('chess-board');
 const statusElement = document.getElementById('status');
@@ -133,33 +135,52 @@ function executeMove(from, to) {
 }
 
 function completeTurn() {
+    const lastPlayer = turn; // Hamleyi az önce bitiren
+    // 1. ÖNCE: Şu anki oyuncu hamlesini bitirdi, nereleri tehdit ediyor? Kaydet.
+    const currentThreats = [];
+    for (let i = 0; i < 64; i++) {
+        if (layout[i] && layout[i].startsWith(lastPlayer)) {
+            getRawMoves(i).forEach(m => currentThreats.push(m));
+        }
+    }
+
+    // 2. SONRA: Sırayı değiştir
     turn = (turn === 'w' ? 'b' : 'w');
     draw();
     updateStatus();
 
-    // SIRA DEĞİŞTİ: Yeni oyuncu için ihanet fırsatı var mı?
+    // 3. İHANET KONTROLÜ: 
+    // Sadece 'lastTurnThreats' (bir önceki oyuncunun tehdit ettikleri) üzerinden kontrol yap.
     setTimeout(() => {
-        const betrayedIndex = checkBetrayalOpportunity();
-        if (betrayedIndex !== null) {
+        const betrayedIndex = checkBetrayalOpportunity(lastTurnThreats);
+        
+        // ÖNEMLİ: Bir sonraki tur için hafızayı güncelle
+        lastTurnThreats = currentThreats;
+
+        if (betrayalIndex !== null) {
             askForBetrayal(betrayedIndex);
         }
     }, 100);
 }
 
-function checkBetrayalOpportunity() {
+function checkBetrayalOpportunity(threatsToFollow) {
     const myColor = turn;
     const oppColor = turn === 'w' ? 'b' : 'w';
     
-    for (let i = 0; i < 64; i++) {
+    // Artık 64 kareyi değil, sadece bize gelen 'tehdit altındaki' kareleri kontrol ediyoruz
+    for (let i of threatsToFollow) {
         const p = layout[i];
-        // Rakibin kalesi, atı veya fili mi?
-        if (p && p.startsWith(oppColor) && ['n', 'r', 'b'].includes(p[2])) {
-            // Ben istiyor muyum ve o korumuyor mu?
-            if (isSquareAttacked(i, myColor) && !isSquareAttacked(i, oppColor)) return i;
+        // Taş rakibin mi ve hala orada mı?
+        if (p && p.startsWith(oppColor) && ['n', 'r', 'b', 'p'].includes(p[2])) {
+            // Aktif tehdit var (rakip istiyor) VE koruma yok (ben korumuyorum)
+            if (isSquareAttacked(i, myColor) && !isSquareAttacked(i, oppColor)) {
+                return i;
+            }
         }
     }
     return null;
 }
+
 
 function askForBetrayal(targetIndex) {
     const name = (turn === 'w' ? 'BEYAZ' : 'SİYAH');
