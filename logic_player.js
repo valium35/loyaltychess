@@ -168,12 +168,10 @@ function handleSquareClick(i) {
 function executeMove(from, to) {
     const piece = layout[from], type = piece[2], color = piece[0];
     
-    // Geçerken Alış (En Passant)
     if (type === 'p' && to === enPassantTarget) {
         layout[getIndex(Math.floor(from/8), to % 8)] = '';
     }
     
-    // Rok (Castling)
     if (type === 'k' && Math.abs((from % 8) - (to % 8)) === 2) {
         const rFrom = (to % 8 === 6) ? getIndex(Math.floor(to/8), 7) : getIndex(Math.floor(to/8), 0);
         const rTo = (to % 8 === 6) ? getIndex(Math.floor(to/8), 5) : getIndex(Math.floor(to/8), 3);
@@ -181,112 +179,17 @@ function executeMove(from, to) {
         layout[rFrom] = '';
     }
 
-    // Rok Haklarının Kaydı
     if (type === 'k') hasMoved[color + '-k'] = true;
     if (type === 'r') hasMoved[color + '-r-' + from] = true;
 
-    // Geçerken Alış Hedefi Belirleme (Çift sürüşte)
     enPassantTarget = (type === 'p' && Math.abs(Math.floor(from/8) - Math.floor(to/8)) === 2) ? 
                       getIndex((Math.floor(from/8) + Math.floor(to/8)) / 2, from % 8) : null;
 
-    // TAŞI TAŞI
     layout[to] = layout[from];
     layout[from] = '';
 
-    // --- TERFİ KONTROLÜ (GÜNCELLENDİ) ---
+    // --- TERFİ MANTIĞI ---
     if (type === 'p') {
         const endRow = (color === 'w' ? 0 : 7);
         if (Math.floor(to / 8) === endRow) {
-            let choice = "";
-            while (!['q', 'r', 'b', 'n'].includes(choice)) {
-                choice = prompt("Piyon terfi ediyor! Seçiniz: (q: Vezir, r: Kale, b: Fil, n: At)", "q").toLowerCase();
-            }
-            layout[to] = color + '-' + choice;
-        }
-    }
-}
-
-function completeTurn() {
-    const lastPlayer = turn;
-    const nextPlayer = (turn === 'w' ? 'b' : 'w');
-    
-    let currentAttacks = [];
-    for (let i = 0; i < 64; i++) {
-        if (layout[i] && layout[i].startsWith(lastPlayer)) {
-            getRawMoves(i, true).forEach(m => currentAttacks.push(m));
-        }
-    }
-
-    let betrayalCandidate = null;
-    for (let targetIndex of threatsFromLastTurn) {
-        const p = layout[targetIndex];
-        if (p && p.startsWith(nextPlayer) && ['n', 'r', 'b'].includes(p[2])) {
-            const isStillAttacked = currentAttacks.includes(targetIndex);
-            const isProtected = isSquareAttacked(targetIndex, nextPlayer);
-            if (isStillAttacked && !isProtected) {
-                betrayalCandidate = targetIndex;
-                break;
-            }
-        }
-    }
-
-    turn = nextPlayer;
-    threatsFromLastTurn = currentAttacks;
-    draw();
-    updateStatus();
-
-    if (isCheckmate(turn)) {
-        setTimeout(() => alert("ŞAH MAT! Oyun bitti."), 300);
-        return;
-    }
-
-    if (betrayalCandidate !== null) {
-        setTimeout(() => {
-            if (confirm("LoyaltyChess: Korumasız kalan subayın taraf değiştiriyor! İhanet hamlesi yapmak ister misin?")) {
-                layout[betrayalCandidate] = turn + layout[betrayalCandidate].substring(1);
-                isBetrayalMoveMode = true;
-                betrayalTarget = betrayalCandidate;
-                draw();
-                updateStatus();
-            }
-        }, 150);
-    }
-}
-
-function isCheckmate(color) {
-    const kingPos = findKing(color);
-    if (!isSquareAttacked(kingPos, color === 'w' ? 'b' : 'w')) return false;
-    for (let i = 0; i < 64; i++) {
-        if (layout[i] && layout[i].startsWith(color)) {
-            if (getLegalMoves(i).length > 0) return false;
-        }
-    }
-    return true;
-}
-
-function draw() {
-    boardElement.innerHTML = '';
-    for (let i = 0; i < 64; i++) {
-        const square = document.createElement('div');
-        const isBlack = (Math.floor(i / 8) + (i % 8)) % 2 !== 0;
-        square.className = `square ${isBlack ? 'black' : 'white'} ${selectedSquare === i ? 'active-law' : ''}`;
-        
-        if (isBetrayalMoveMode && betrayalTarget === i) {
-            square.style.backgroundColor = "rgba(255, 69, 0, 0.7)";
-        }
-
-        if (layout[i]) {
-            const p = document.createElement('div');
-            p.className = `piece ${layout[i]}`;
-            square.appendChild(p);
-        }
-        square.onclick = () => handleSquareClick(i);
-        boardElement.appendChild(square);
-    }
-}
-
-function updateStatus() {
-    statusElement.innerText = isBetrayalMoveMode ? "⚠️ İHANET HAMLESİ BEKLENİYOR" : "SIRA: " + (turn === 'w' ? "BEYAZDA" : "SİYAHTA");
-}
-
-initGame();
+            let choice =
