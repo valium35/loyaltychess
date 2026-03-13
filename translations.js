@@ -134,13 +134,16 @@ function applyLanguageToPage() {
     // 1. Basit Yazılar (Butonlar, Başlıklar)
     const map = {
         'status': t.status,
-        'restart-btn': t.resetBtn,
-        'undo-btn': t.undoBtn,
-        'history-title': t.historyTitle,
-        'panel-title': t.rulesTitle,
-        'alert-title': t.popups.alertTitle,
-        'popup-law-label': t.popups.lawLabel,
-        'popup-confirm-btn': t.popups.confirmBtn
+    'restart-btn': t.resetBtn,
+    'undo-btn': t.undoBtn,
+    'next-btn': t.nextBtn, // Eklendi
+    'prev-btn': t.backBtn, // Eklendi
+    'history-title': t.historyTitle,
+    'panel-title': t.rulesTitle,
+    'alert-title': t.popups.alertTitle,
+    'popup-law-label': t.popups.lawLabel,
+    'popup-confirm-btn': t.popups.confirmBtn
+        
     };
 
     for (let id in map) {
