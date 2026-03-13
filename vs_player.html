@@ -89,58 +89,59 @@
     <script src="translations.js"></script>
     <script src="logic_alerts.js"></script>
     <script>
-        function applyPlayerLanguage() {
+       // Fonksiyonu global yapıyoruz ki her yerden erişilsin
+    window.applyPlayerLanguage = function() {
+        // LoyaltyDict yüklendi mi kontrol et
+        if (typeof LoyaltyDict === 'undefined') {
+            console.error("Hata: translations.js yüklenemedi!");
+            return;
+        }
+
         const lang = localStorage.getItem('gameLang') || 'tr';
         const t = LoyaltyDict[lang];
 
         if (t) {
-            // Durum ve Butonlar
-            const status = document.getElementById('status');
-            if(status) status.innerText = t.status;
+            // Panel Başlıkları ve Butonlar
+            const elements = {
+                'status': t.status,
+                'restart-btn': t.resetBtn,
+                'undo-btn': t.undoBtn,
+                'history-title': t.historyTitle,
+                'panel-title': t.rulesTitle,
+                'alert-title': t.popups.alertTitle,
+                'popup-law-label': t.popups.lawLabel,
+                'popup-confirm-btn': t.popups.confirmBtn
+            };
 
-            const restartBtn = document.getElementById('restart-btn');
-            if(restartBtn) restartBtn.innerText = t.resetBtn;
+            for (let id in elements) {
+                const el = document.getElementById(id);
+                if (el) el.innerText = elements[id];
+            }
 
-            const undoBtn = document.getElementById('undo-btn');
-            if(undoBtn) undoBtn.innerText = t.undoBtn;
-
-            const historyTitle = document.getElementById('history-title');
-            if(historyTitle) historyTitle.innerText = t.historyTitle;
-
-            // Kurallar Paneli
-            const pTitle = document.getElementById('panel-title');
-            if(pTitle) pTitle.innerText = t.rulesTitle;
-
-            // Kurallar (Eğer translations.js'de rules dizisi varsa)
+            // Kurallar Listesi
             if (t.rules) {
-                if(document.getElementById('rule-1-desc')) document.getElementById('rule-1-desc').innerText = t.rules[0];
-                if(document.getElementById('rule-2-desc')) document.getElementById('rule-2-desc').innerText = t.rules[1];
-                if(document.getElementById('rule-3-desc')) document.getElementById('rule-3-desc').innerText = t.rules[2];
+                for (let i = 0; i < 3; i++) {
+                    const el = document.getElementById(`rule-${i+1}-desc`);
+                    if (el) el.innerText = t.rules[i];
+                }
             }
 
             // Kısıtlamalar Kutusu
             const resBox = document.getElementById('restrictions-list');
             if (resBox && t.restrictions) {
-                resBox.innerHTML = `<h4>${t.restrictionsTitle}</h4>`;
+                let html = `<h4>${t.restrictionsTitle}</h4>`;
                 t.restrictions.forEach(r => {
-                    const d = document.createElement('div');
-                    d.className = 'restriction-item';
-                    d.style = "font-size: 0.75rem; color: #eee; margin-bottom: 5px;";
-                    d.innerText = `• ${r}`;
-                    resBox.appendChild(d);
+                    html += `<div style="font-size: 0.75rem; color: #eee; margin-bottom: 5px;">• ${r}</div>`;
                 });
+                resBox.innerHTML = html;
             }
-
-            // Popup statik kısımları
-            if(document.getElementById('alert-title')) document.getElementById('alert-title').innerText = t.popups.alertTitle;
-            if(document.getElementById('popup-law-label')) document.getElementById('popup-law-label').innerText = t.popups.lawLabel;
-            if(document.getElementById('popup-confirm-btn')) document.getElementById('popup-confirm-btn').innerText = t.popups.confirmBtn;
         }
-    }
+    };
 
-    // Fonksiyon ismini doğru çağıralım
-    document.addEventListener("DOMContentLoaded", applyPlayerLanguage);
+    // Sayfa yüklendiğinde çalıştır
+    document.addEventListener("DOMContentLoaded", window.applyPlayerLanguage);
     </script>
     <script src="logic_player.js"></script>
+    if(window.applyPlayerLanguage) window.applyPlayerLanguage();
 </body>
 </html>
