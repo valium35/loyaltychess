@@ -190,7 +190,7 @@ function completeTurn() {
     const lastPlayer = turn;
     const nextPlayer = (turn === 'w' ? 'b' : 'w');
     
-    // Saldırıları topla
+    // 1. Saldırıları topla
     let currentAttacks = [];
     for (let i = 0; i < 64; i++) {
         if (layout[i] && layout[i].startsWith(lastPlayer)) {
@@ -198,25 +198,19 @@ function completeTurn() {
         }
     }
 
-    // İhanet Kontrolü
-   if (betrayalCandidate !== null) {
-    betrayalTarget = betrayalCandidate;
-    
-    // logic_alerts.js içindeki fonksiyonu çağırıyoruz
-    if (typeof showPop === "function") {
-        showPop(
-            "LAW 2: THE CHOICE", 
-            "Bir subay saf değiştirmeye hazır! Onu kontrol edip son bir hamle yaptırmak ister misin?", 
-            "İhanet eden taş Şah çekemez. Hamleden sonra oyundan çıkar.", 
-            "#ff6600"
-        );
-    } else {
-        // Eğer showPop yüklenemediyse oyunun çökmemesi için fallback
-        if (confirm("LoyaltyChess: Bu subay ihanet etmeye hazır! Hamle yapmak ister misin?")) {
-            startBetrayal();
+    // --- KRİTİK EKLEME: İhanet Adayını Belirle ---
+    let betrayalCandidate = null;
+    for (let targetIndex of threatsFromLastTurn) {
+        const piece = layout[targetIndex];
+        // Rakip subay (n, r, b) hala saldırı altındaysa ve korumasızsa
+        if (piece && piece.startsWith(nextPlayer) && ['n', 'r', 'b'].includes(piece[2])) {
+            if (currentAttacks.includes(targetIndex) && !isSquareAttacked(targetIndex, nextPlayer)) {
+                betrayalCandidate = targetIndex;
+                break;
+            }
         }
     }
-}
+    // ---------------------------------------------
 
     // Log Sembol Güncelleme
     if (gameLog.length > 0 && !isBetrayalMoveMode) {
@@ -230,6 +224,33 @@ function completeTurn() {
             if (logDiv) { logDiv.lastChild.innerText = "!"; logDiv.lastChild.className = "threat-mark"; }
         }
     }
+
+    turn = nextPlayer;
+    threatsFromLastTurn = currentAttacks;
+    draw();
+    updateStatus();
+
+    if (isCheckmate(turn)) setTimeout(() => alert("ŞAH MAT!"), 300);
+
+    // İhanet Tetikleme (Popup burada açılır)
+    if (betrayalCandidate !== null) {
+        betrayalTarget = betrayalCandidate;
+        if (typeof showPop === "function") {
+            showPop(
+                "LAW 2: THE CHOICE", 
+                "Bir subay saf değiştirmeye hazır! Onu kontrol edip son bir hamle yaptırmak ister misin?", 
+                "İhanet eden taş Şah çekemez. Hamleden sonra oyundan çıkar.", 
+                "#ff6600"
+            );
+        } else {
+            if (confirm("LoyaltyChess: Bu subay ihanet etmeye hazır!")) {
+                startBetrayal();
+            }
+        }
+    }
+}
+
+  
 
     turn = nextPlayer;
     threatsFromLastTurn = currentAttacks;
