@@ -67,3 +67,11 @@ body {
     margin-top: 20px; padding: 10px 30px; background: #f1c40f; border: none;
     border-radius: 5px; font-weight: bold; cursor: pointer; color: #000;
 }
+.log-entry {
+    display: flex;
+    gap: 10px;
+    padding: 4px;
+    border-bottom: 1px solid #333;
+}
+.move-num { color: #888; width: 25px; }
+.white-move, .black-move { flex: 1; font-weight: bold; }
