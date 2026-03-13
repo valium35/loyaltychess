@@ -46,24 +46,24 @@
     <div class="main-container">
         <div id="chess-board"></div>
         <div class="side-panel">
-            
-            <div id="status" class="msg-box">Yükleniyor...</div>
-            
-            <div class="controls">
-                <button onclick="prevStep()" id="prev-btn" disabled>Geri</button>
-                <button onclick="nextStep()" id="next-btn">Sıradaki</button>
-            </div>
+    <div id="status" class="msg-box">Sıra Beyazda...</div>
 
-            <div class="full-rules-panel">
-                <h3 id="panel-title">📜 THE 3 LAWS</h3>
-                <div id="rules-content">
-                    <div class="law-item"><strong>⚡ 1. ACTIVE THREAT</strong><span id="rule-1-desc">...</span></div>
-                    <div class="law-item"><strong>🔄 2. THE CHOICE</strong><span id="rule-2-desc">...</span></div>
-                    <div class="law-item"><strong>💨 3. FINAL MISSION</strong><span id="rule-3-desc">...</span></div>
-                    <div id="restrictions-list" class="restrictions-box"></div>
-                </div>
-            </div>
-        </div> 
+    <div class="log-container">
+        <h3 class="log-title">⚔️ LOYALTY LOG</h3>
+        <div id="move-history">
+            <div class="log-placeholder">Henüz hamle yapılmadı...</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button onclick="prevStep()" id="prev-btn" disabled>Geri</button>
+        <button onclick="nextStep()" id="next-btn">Sıradaki</button>
+    </div>
+
+    <div class="full-rules-panel">
+        <h3 id="panel-title">📜 THE 3 LAWS</h3>
+        </div>
+</div>
     </div>
 
     <div id="betrayal-popup" class="popup-overlay" style="display: none;">
