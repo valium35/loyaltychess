@@ -6,7 +6,6 @@
     <title>LoyaltyChess - Player vs Player</title>
     <link rel="stylesheet" href="home_style.css">
     <style>
-        /* HTML'e özel ek görsel ayarlar */
         .controls { display: flex; gap: 10px; margin-bottom: 20px; }
         .controls button {
             flex: 1; padding: 12px; cursor: pointer; font-weight: bold;
@@ -43,48 +42,41 @@
         <div id="chess-board"></div>
 
         <div class="side-panel">
-            
             <div id="status" class="log-container" style="text-align:center; font-weight:bold; color:#f1c40f; font-size: 1.1rem; padding: 15px;">
-                Sıra Beyazda...
+                Yükleniyor...
             </div>
 
             <div class="log-container">
                 <h3 style="color:#f1c40f; text-align:center; margin-top:0; border-bottom: 1px solid #333; padding-bottom: 10px;">⚔️ LOYALTY LOG</h3>
-                <div id="move-history">
-                    </div>
+                <div id="move-history"></div>
             </div>
 
             <div class="controls">
                 <button onclick="location.reload()" id="restart-btn">Yeniden Başlat</button>
-                <button onclick="alert('Geri alma sistemi yakında eklenecek!')" id="undo-btn">Geri Al</button>
+                <button onclick="alert('Geri alma yakında eklenecek!')" id="undo-btn">Geri Al</button>
             </div>
 
             <div class="full-rules-panel">
-                <h3>📜 THE 3 LAWS</h3>
+                <h3 id="panel-title">📜 THE 3 LAWS</h3>
                 <div class="law-item">
-                    <strong>⚡ 1. ACTIVE THREAT (!)</strong>
-                    <span>Bir subay (At, Fil, Kale) tehdit edildiğinde korumasız bırakılırsa işaretlenir.</span>
+                    <strong id="rule-1-title">⚡ 1. ACTIVE THREAT</strong>
+                    <span id="rule-1-desc">...</span>
                 </div>
                 <div class="law-item">
-                    <strong>🔄 2. THE CHOICE (†)</strong>
-                    <span>İşaretli taş bir tur daha sahipsiz kalırsa, rakip tarafından ele geçirilebilir.</span>
+                    <strong id="rule-2-title">🔄 2. THE CHOICE</strong>
+                    <span id="rule-2-desc">...</span>
                 </div>
                 <div class="law-item">
-                    <strong>💨 3. FINAL MISSION (☠)</strong>
-                    <span>İhanet eden taş bir hamle yapar ve ardından savaş alanını terk eder.</span>
+                    <strong id="rule-3-title">💨 3. FINAL MISSION</strong>
+                    <span id="rule-3-desc">...</span>
                 </div>
-                <div class="restrictions-box">
-                    <h4>Kısıtlamalar</h4>
-                    <div style="font-size: 0.75rem; color: #eee; line-height: 1.4;">
-                        • İhanet eden taş Şah çekemez.<br>
-                        • İhanet eden taş Mat edemez.
+                <div id="restrictions-list" class="restrictions-box">
                     </div>
-                </div>
             </div>
         </div> 
     </div>
 
-    <div id="betrayal-popup" class="popup-overlay">
+    <div id="betrayal-popup" class="popup-overlay" style="display:none;">
         <div class="popup-content">
             <h2 class="alert-title">⚠️ ALERT</h2>
             <p id="popup-msg">...</p>
@@ -93,37 +85,51 @@
             </div>
             <button onclick="closePopup()" class="popup-btn">ANLADIM</button>
         </div>
-    </div><script src="logic_alerts.js"></script>
+    </div>
 
-    <script src="translations.js"></script> 
-
+    <script src="translations.js"></script>
+    <script src="logic_alerts.js"></script>
     <script>
         function applyPlayerLanguage() {
             const lang = localStorage.getItem('gameLang') || 'tr';
+            // Translations.js içindeki objenin adının LoyaltyDict olduğunu varsayıyorum
             const t = LoyaltyDict[lang];
 
             if (t) {
-                document.getElementById('panel-title').innerText = t.rulesTitle;
-                document.getElementById('rule-1-desc').innerText = t.rules[0];
-                document.getElementById('rule-2-desc').innerText = t.rules[1];
-                document.getElementById('rule-3-desc').innerText = t.rules[2];
+                // Başlık
+                const pTitle = document.getElementById('panel-title');
+                if(pTitle) pTitle.innerText = t.rulesTitle;
 
+                // Kurallar (Desc kısımları)
+                const r1 = document.getElementById('rule-1-desc');
+                const r2 = document.getElementById('rule-2-desc');
+                const r3 = document.getElementById('rule-3-desc');
+                
+                if(r1) r1.innerText = t.rules[0];
+                if(r2) r2.innerText = t.rules[1];
+                if(r3) r3.innerText = t.rules[2];
+
+                // Kısıtlamalar Kutusu
                 const resBox = document.getElementById('restrictions-list');
                 if (resBox) {
                     resBox.innerHTML = `<h4>${t.restrictionsTitle}</h4>`;
                     t.restrictions.forEach(r => {
                         const d = document.createElement('div');
                         d.className = 'restriction-item';
-                        d.innerText = r;
+                        d.style = "font-size: 0.75rem; color: #eee; margin-bottom: 5px;";
+                        d.innerText = `• ${r}`;
                         resBox.appendChild(d);
                     });
                 }
+                
+                // Status (Opsiyonel)
+                const status = document.getElementById('status');
+                if(status && step === 0) status.innerText = t.turnWhite || "SIRA BEYAZDA";
             }
         }
+        // Sayfa hazır olduğunda dili bas
         document.addEventListener("DOMContentLoaded", applyPlayerLanguage);
     </script>
-
+    <script src="logic_player.js"></script>
 </body>
 </html>
- 
-  
