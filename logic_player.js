@@ -64,7 +64,8 @@ function testMoveForSafety(from, to, color) {
     const originalFrom = layout[from], originalTo = layout[to];
     layout[to] = originalFrom; layout[from] = '';
     const kingPos = findKing(color);
-    const safe = kingPos === -1 ? true : !isSquareAttacked(kingPos, color === 'w' ? 'b' : 'w');
+    const opponent = color === 'w' ? 'b' : 'w';
+    const safe = kingPos === -1 ? true : !isSquareAttacked(kingPos, opponent);
     layout[from] = originalFrom; layout[to] = originalTo;
     return safe;
 }
@@ -140,9 +141,10 @@ function handleSquareClick(i) {
             executeMove(selectedSquare, i);
             selectedSquare = null;
             turn = (turn === 'w' ? 'b' : 'w');
+            
             draw();
             updateStatus();
-            if (isCheckmate(turn)) setTimeout(() => alert("ŞAH MAT!"), 300);
+            checkGameEnd();
         } else {
             selectedSquare = (layout[i] && layout[i].startsWith(turn)) ? i : null;
             draw();
@@ -153,12 +155,10 @@ function handleSquareClick(i) {
 function executeMove(from, to) {
     const piece = layout[from], type = piece[2], color = piece[0];
     
-    // En Passant alma
     if (type === 'p' && to === enPassantTarget) {
         layout[getIndex(Math.floor(from/8), to % 8)] = '';
     }
     
-    // Rok işlemi
     if (type === 'k' && Math.abs((from % 8) - (to % 8)) === 2) {
         const rFrom = (to % 8 === 6) ? getIndex(Math.floor(to/8), 7) : getIndex(Math.floor(to/8), 0);
         const rTo = (to % 8 === 6) ? getIndex(Math.floor(to/8), 5) : getIndex(Math.floor(to/8), 3);
@@ -168,30 +168,41 @@ function executeMove(from, to) {
     if (type === 'k') hasMoved[color + '-k'] = true;
     if (type === 'r') hasMoved[color + '-r-' + from] = true;
 
-    // En Passant hedef belirleme
     enPassantTarget = (type === 'p' && Math.abs(Math.floor(from/8) - Math.floor(to/8)) === 2) ? 
                       getIndex((Math.floor(from/8) + Math.floor(to/8)) / 2, from % 8) : null;
 
     layout[to] = layout[from];
     layout[from] = '';
 
-    // Piyon Terfisi
     if (type === 'p' && (Math.floor(to/8) === 0 || Math.floor(to/8) === 7)) {
         let choice = prompt("Piyon Terfisi (q, r, b, n):", "q") || "q";
         layout[to] = color + '-' + (['q','r','b','n'].includes(choice.toLowerCase()) ? choice.toLowerCase() : 'q');
     }
 }
 
-function isCheckmate(color) {
-    const kingPos = findKing(color);
-    if (kingPos === -1) return false;
-    if (!isSquareAttacked(kingPos, color === 'w' ? 'b' : 'w')) return false;
+function checkGameEnd() {
+    const kingPos = findKing(turn);
+    const opponent = turn === 'w' ? 'b' : 'w';
+    const isUnderAttack = isSquareAttacked(kingPos, opponent);
+    
+    // Yasal hamle kalıp kalmadığını kontrol et
+    let hasAnyMove = false;
     for (let i = 0; i < 64; i++) {
-        if (layout[i] && layout[i].startsWith(color)) {
-            if (getLegalMoves(i).length > 0) return false;
+        if (layout[i] && layout[i].startsWith(turn)) {
+            if (getLegalMoves(i).length > 0) {
+                hasAnyMove = true;
+                break;
+            }
         }
     }
-    return true;
+
+    if (!hasAnyMove) {
+        if (isUnderAttack) {
+            setTimeout(() => alert("ŞAH MAT! " + (turn === 'w' ? "SİYAH" : "BEYAZ") + " KAZANDI."), 200);
+        } else {
+            setTimeout(() => alert("BERABERE (PAT)! Yapacak hamle kalmadı."), 200);
+        }
+    }
 }
 
 // --- 6. GÖRSELLEŞTİRME ---
@@ -215,7 +226,14 @@ function draw() {
 
 function updateStatus() {
     if (statusElement) {
-        statusElement.innerText = "SIRA: " + (turn === 'w' ? "BEYAZ" : "SİYAH");
+        const kingPos = findKing(turn);
+        const opponent = turn === 'w' ? 'b' : 'w';
+        const check = isSquareAttacked(kingPos, opponent);
+        
+        let label = "SIRA: " + (turn === 'w' ? "BEYAZ" : "SİYAH");
+        if (check) label += " (ŞAH!)";
+        
+        statusElement.innerText = label;
     }
 }
 
