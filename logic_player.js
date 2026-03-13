@@ -30,17 +30,23 @@ const initialSetup = {
 };
 
 function initGame() {
+    // 1. Önce verileri sıfırla
     layout.fill('');
     Object.keys(initialSetup).forEach(i => layout[i] = initialSetup[i]);
     hasMoved = { 'w-k': false, 'b-k': false, 'w-r-56': false, 'w-r-63': false, 'b-r-0': false, 'b-r-7': false };
     gameLog = [];
     moveCount = 1;
     turn = 'w';
+    
+    // 2. Log panelini temizle
     if (logElement) logElement.innerHTML = '';
     
-    // Önce dili uygula sonra çiz (Önemli sıra!)
-    if (window.applyPlayerLanguage) window.applyPlayerLanguage();
+    // 3. KRİTİK NOKTA: Önce dili giydiriyoruz (HTML'deki yer tutucuları doldurur)
+    if (typeof window.applyPlayerLanguage === 'function') {
+        window.applyPlayerLanguage();
+    }
     
+    // 4. Sonra tahtayı çiz ve durum yazısını (Sıra Beyazda vs.) güncelle
     draw();
     updateStatus();
 }
