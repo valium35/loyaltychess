@@ -198,33 +198,61 @@ function prevStep() {
 
 function updateButtonStates() {
     const lang = localStorage.getItem('gameLang') || 'tr';
+    const t = translations[lang]; // Dosyanın başındaki nesneden alıyor
     document.getElementById('prev-btn').disabled = (step === 0);
-    document.getElementById('next-btn').innerText = (step >= tutorialSteps.length) ? translations[lang].resetBtn : translations[lang].nextBtn;
+    
+    // Buton metni güncellemesi
+    const nextBtn = document.getElementById('next-btn');
+    if (nextBtn) {
+        nextBtn.innerText = (step >= tutorialSteps.length) ? t.resetBtn : t.nextBtn;
+    }
 }
 
 function applyLanguage(lang) {
     const t = translations[lang];
+    if (!t) return;
+
     localStorage.setItem('gameLang', lang);
-    document.getElementById('panel-title').innerText = t.rulesTitle;
-    document.getElementById('rule-1-desc').innerText = t.rules[0];
-    document.getElementById('rule-2-desc').innerText = t.rules[1];
-    document.getElementById('rule-3-desc').innerText = t.rules[2];
     
+    // HTML Elementlerini Güncelle
+    const elements = {
+        'panel-title': t.rulesTitle,
+        'rule-1-desc': t.rules[0],
+        'rule-2-desc': t.rules[1],
+        'rule-3-desc': t.rules[2],
+        'prev-btn': t.backBtn
+    };
+
+    for (let id in elements) {
+        const el = document.getElementById(id);
+        if (el) el.innerText = elements[id];
+    }
+    
+    // Kısıtlamalar Kutusunu Güncelle
     const resBox = document.getElementById('restrictions-list');
-    resBox.innerHTML = `<h4>${t.restrictionsTitle}</h4>`;
-    t.restrictions.forEach(r => {
-        const d = document.createElement('div');
-        d.className = 'restriction-item';
-        d.innerText = r;
-        resBox.appendChild(d);
-    });
+    if (resBox) {
+        resBox.innerHTML = `<h4>${t.restrictionsTitle}</h4>`;
+        t.restrictions.forEach(r => {
+            const d = document.createElement('div');
+            d.className = 'restriction-item';
+            d.innerText = r;
+            resBox.appendChild(d);
+        });
+    }
     
-    statusElement.innerText = (step === 0) ? t.status : t.tutorialMsgs[step-1];
+    // Durum Mesajını Güncelle (Adıma göre)
+    if (statusElement) {
+        statusElement.innerText = (step === 0) ? t.status : t.tutorialMsgs[step-1];
+    }
+    
     updateButtonStates();
 }
 
+// SAYFA YÜKLENDİĞİNDE
 document.addEventListener("DOMContentLoaded", () => {
     resetBoard();
-    applyLanguage(localStorage.getItem('gameLang') || 'tr');
+    // Tarayıcı hafızasındaki dili kontrol et, yoksa TR yap
+    const savedLang = localStorage.getItem('gameLang') || 'tr';
+    applyLanguage(savedLang); 
     draw();
 });
