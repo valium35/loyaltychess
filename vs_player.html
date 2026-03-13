@@ -43,7 +43,7 @@
 
         <div class="side-panel">
             <div id="status" class="log-container" style="text-align:center; font-weight:bold; color:#f1c40f; font-size: 1.1rem; padding: 15px;">
-                Yükleniyor...
+                ...
             </div>
 
             <div class="log-container">
@@ -52,12 +52,12 @@
             </div>
 
             <div class="controls">
-                <button onclick="location.reload()" id="restart-btn">Yeniden Başlat</button>
-                <button onclick="alert('SOON!')" id="undo-btn">Geri Al</button>
+                <button onclick="location.reload()" id="restart-btn">...</button>
+                <button onclick="alert('SOON!')" id="undo-btn">...</button>
             </div>
 
             <div class="full-rules-panel">
-                <h3 id="panel-title">📜 THE 3 LAWS</h3>
+                <h3 id="panel-title">...</h3>
                 <div class="law-item">
                     <strong id="rule-1-title">⚡ 1. ACTIVE THREAT</strong>
                     <span id="rule-1-desc">...</span>
@@ -82,34 +82,69 @@
             <div style="font-size:0.8rem; color:#aaa; margin:15px 0; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px;">
                 <strong id="popup-law-label">KURAL:</strong> <span id="popup-rule">...</span>
             </div>
-            <button id="popup-confirm-btn" onclick="closePopup()" class="popup-btn">ANLADIM</button>
+            <button id="popup-confirm-btn" onclick="closePopup()" class="popup-btn">...</button>
         </div>
     </div>
 
- <script src="translations.js"></script>
-    <script>
-    // Sayfa açılır açılmaz dili bas
-    (function initLang() {
-        if (typeof applyGlobalLanguage === 'function') {
-            applyGlobalLanguage();
-        }
-    })();
-</script>
-<script src="logic_player.js"></script>
+    <script src="translations.js"></script>
 
-<script>
-    // Sayfa tamamen yüklendiğinde ve logic devreye girdikten sonra 
-    // duruma göre (Sıra kimde mesajı vb.) tekrar kontrol edebilirsin.
-    window.addEventListener('load', () => {
-        const lang = localStorage.getItem('gameLang') || 'tr';
-        const t = LoyaltyDict[lang];
-        // logic_player.js içindeki status kutusunu başlatırken dile göre yap
-        const statusBox = document.getElementById('status');
-        if (statusBox && t) {
-            statusBox.innerText = t.status; // "Sıra Beyazda..."
+    <script>
+        function applyPlayerLanguage() {
+            const lang = localStorage.getItem('gameLang') || 'tr';
+            const t = LoyaltyDict[lang];
+            if (!t) return;
+
+            // Metin Haritası
+            const uiMap = {
+                'restart-btn': t.resetBtn,
+                'undo-btn': t.undoBtn,
+                'history-title': t.historyTitle,
+                'panel-title': t.rulesTitle,
+                'alert-title': t.popups?.alertTitle || "UYARI",
+                'popup-law-label': t.popups?.lawLabel || "KURAL:",
+                'popup-confirm-btn': t.popups?.confirmBtn || "ANLADIM"
+            };
+
+            // ID'lere göre metinleri bas
+            Object.keys(uiMap).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = uiMap[id];
+            });
+
+            // 3 Temel Kural
+            for (let i = 0; i < 3; i++) {
+                const el = document.getElementById(`rule-${i+1}-desc`);
+                if (el && t.rules[i]) el.innerText = t.rules[i];
+            }
+
+            // Kısıtlamalar Kutusu
+            const resBox = document.getElementById('restrictions-list');
+            if (resBox && t.restrictions) {
+                let html = `<h4>${t.restrictionsTitle}</h4>`;
+                t.restrictions.forEach(r => {
+                    html += `<div style="font-size: 0.75rem; color: #eee; margin-bottom: 5px;">• ${r}</div>`;
+                });
+                resBox.innerHTML = html;
+            }
         }
-    });
-</script>
-  
+
+        // Sayfa parse edilir edilmez dili çalıştır (Boş görünmesin)
+        applyPlayerLanguage();
+    </script>
+
+    <script src="logic_player.js"></script>
+
+    <script>
+        // Sayfa tamamen hazır olduğunda son bir kontrol
+        window.addEventListener('load', () => {
+            applyPlayerLanguage(); 
+        });
+
+        // Pop-up kapatma fonksiyonu (HTML içindeki buton kullanır)
+        function closePopup() {
+            const popup = document.getElementById('betrayal-popup');
+            if(popup) popup.style.display = 'none';
+        }
+    </script>
 </body>
 </html>
