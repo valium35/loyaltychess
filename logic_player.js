@@ -73,6 +73,7 @@ function isSquareAttacked(targetIndex, attackerColor) {
 function addToLog(from, to) {
     const moveText = `${getCoordsLabel(from)}-${getCoordsLabel(to)}`;
     const t = getT();
+    const lang = localStorage.getItem('gameLang') || 'tr';
     
     if (turn === 'w') {
         const movePair = { index: moveCount, white: moveText, black: "" };
@@ -82,6 +83,7 @@ function addToLog(from, to) {
             const div = document.createElement('div');
             div.className = 'log-entry';
             div.id = `move-pair-${moveCount}`;
+            // Dile göre "Beyaz" veya "White" ibaresi istersen buraya ekleyebilirsin
             div.innerHTML = `<span class="move-num">${moveCount}.</span> <span class="white-move">${moveText}</span> <span class="black-move">...</span>`;
             logElement.prepend(div);
         }
@@ -96,7 +98,6 @@ function addToLog(from, to) {
         }
     }
 }
-
 // --- 4. HAREKET MANTIĞI ---
 function testMoveForSafety(from, to, color) {
     const originalFrom = layout[from], originalTo = layout[to];
@@ -275,17 +276,40 @@ function updateStatus() {
         const kingPos = findKing(turn);
         const opponent = turn === 'w' ? 'b' : 'w';
         const check = isSquareAttacked(kingPos, opponent);
+        const lang = localStorage.getItem('gameLang') || 'tr';
         
-        // Burayı dile tam duyarlı yapıyoruz:
         let label = (turn === 'w' ? t.status : t.statusBlack);
         
         if (check) {
-            const lang = localStorage.getItem('gameLang') || 'tr';
+            // translations.js içine statusCheck: " (ŞAH!)" eklersen daha temiz olur
             label += (lang === 'en' ? " (CHECK!)" : " (ŞAH!)");
         }
         
         statusElement.innerText = label;
     }
+}
+function triggerBetrayalPopup(ruleIndex) {
+    const t = getT();
+    const popup = document.getElementById('betrayal-popup');
+    if (!popup) return;
+
+    // Pop-up içeriğini dile göre doldur
+    document.getElementById('alert-title').innerText = t.popups.alertTitle;
+    document.getElementById('popup-law-label').innerText = t.popups.lawLabel;
+    document.getElementById('popup-confirm-btn').innerText = t.popups.confirmBtn;
+    
+    // Hangi kural ihlal edildiyse/tetiklendiyse onu göster
+    document.getElementById('popup-rule').innerText = t.rules[ruleIndex];
+    
+    // Mesajı göster (Örn: "Taş taraf değiştirdi!")
+    // Bu mesajı translations.js içine eklediğin bir alandan çekebilirsin
+    document.getElementById('popup-msg').innerText = t.popups.betrayalOccured || "İhanet Yasası İşledi!";
+    
+    popup.style.display = 'flex';
+}
+
+function closePopup() {
+    document.getElementById('betrayal-popup').style.display = 'none';
 }
 
 // İlk başlatma
