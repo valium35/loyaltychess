@@ -9,10 +9,11 @@ const LoyaltyDict = {
         status: "Sıra Beyazda...",
         statusBlack: "Sıra Siyahda...",
         startMsg: "Başlamak için butona basın.",
-        
+        statusCheck: " (ŞAH!)",
         // Butonlar
         nextBtn: "Sonraki Hamle",
         backBtn: "Geri",
+        statusCheck: " (CHECK!)",
         resetBtn: "Yeniden Başlat",
         undoBtn: "Geri Al",
         
@@ -91,6 +92,7 @@ const LoyaltyDict = {
                 const LoyaltyDict = {
     tr: {
         // ... (Senin paylaştığın TR içeriği buraya gelecek)
+        statusCheck: " (ŞAH!)"
         status: "Sıra Beyazda...",
         statusBlack: "Sıra Siyahda...",
         resetBtn: "Yeniden Başlat",
@@ -112,6 +114,7 @@ const LoyaltyDict = {
         statusBlack: "Black's Turn...",
         resetBtn: "Restart Game",
         undoBtn: "Undo Move",
+         statusCheck: " (ŞAH!)",
         rulesTitle: "📜 Laws of Betrayal",
         restrictionsTitle: "🚫 Restrictions",
         historyTitle: "⚔️ LOYALTY LOG",
