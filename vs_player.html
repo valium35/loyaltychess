@@ -1,134 +1,65 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LoyaltyChess - Player vs Player</title>
-    <link rel="stylesheet" href="home_style.css">
-    <style>
-        /* Oyun Kontrolleri */
-        .controls { display: flex; gap: 10px; margin-bottom: 20px; }
-        .controls button {
-            flex: 1; padding: 12px; cursor: pointer; font-weight: bold;
-            border-radius: 8px; border: 1px solid #f1c40f;
-            background: rgba(241, 196, 15, 0.05); color: #f1c40f;
-            transition: 0.3s; text-transform: uppercase; font-size: 0.8rem;
-        }
-        .controls button:hover:not(:disabled) { background: #f1c40f; color: #121212; }
-        .controls button:disabled { opacity: 0.2; cursor: not-allowed; color: #555; border-color: #555; }
+/* GENEL AYARLAR */
+body { 
+    margin: 0; padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: white; display: flex; justify-content: center; align-items: center; 
+    min-height: 100vh; 
+    background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)), 
+                      url('https://raw.githubusercontent.com/valium35/loyaltychess/refs/heads/main/logo.jpg');
+    background-size: cover; background-position: center; background-repeat: no-repeat;
+    background-attachment: fixed; background-color: #111;
+}
 
-        /* Loyalty Log Paneli */
-        .log-container {
-            background: rgba(0, 0, 0, 0.3);
-            border: 2px solid #333;
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-        .log-title {
-            color: #f1c40f;
-            font-size: 1rem;
-            margin: 0 0 10px 0;
-            text-align: center;
-            border-bottom: 1px solid rgba(241, 196, 15, 0.3);
-            padding-bottom: 8px;
-        }
-        #move-history {
-            height: 150px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-            color: #eee;
-        }
-        .log-entry {
-            display: flex;
-            justify-content: space-between;
-            padding: 5px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
+.main-container { 
+    display: flex; gap: 30px; padding: 25px; 
+    background: rgba(30, 30, 30, 0.9); border-radius: 20px; 
+    box-shadow: 0 20px 50px rgba(0,0,0,0.8); backdrop-filter: blur(5px);
+}
 
-        /* Kurallar Paneli */
-        .full-rules-panel {
-            background: rgba(255, 255, 255, 0.03); border-radius: 12px;
-            padding: 15px; border: 1px solid rgba(255, 255, 255, 0.1);
-            max-height: 400px; overflow-y: auto;
-        }
-        .full-rules-panel h3 {
-            color: #f1c40f; font-size: 1.1rem; margin-top: 0;
-            border-bottom: 1px solid rgba(241, 196, 15, 0.3);
-            padding-bottom: 10px; text-align: center;
-        }
-        .law-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-        .law-item strong { display: block; color: #ffffff; font-size: 0.9rem; margin-bottom: 5px; }
-        .law-item span { display: block; color: #aaa; font-size: 0.8rem; line-height: 1.4; }
+.side-panel { display: flex; flex-direction: column; gap: 15px; width: 320px; }
 
-        .restrictions-box {
-            margin-top: 15px; padding: 12px; background: rgba(231, 76, 60, 0.08); 
-            border: 1px dashed rgba(231, 76, 60, 0.4); border-radius: 8px;
-        }
-        .restrictions-box h4 { color: #e74c3c; font-size: 0.85rem; margin: 0 0 8px 0; text-transform: uppercase; text-align: center; }
-        
-        .popup-content { background: #1a1a1a; border: 2px solid #f1c40f; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
-    </style>
-</head>
-<body>
-    <div class="main-container">
-        <div id="chess-board"></div>
+/* LOG VE SEMBOLLER */
+.log-container { background: #1a1a1a; border: 2px solid #333; border-radius: 8px; padding: 10px; }
+#move-history { height: 160px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 0.9em; color: #ddd; background: #111; padding: 8px; border-radius: 4px; }
+.log-entry { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #222; }
 
-        <div class="side-panel">
-            
-            <div id="status" class="msg-box">Sıra Beyazda...</div>
+.threat-mark { color: #f1c40f; font-weight: bold; } /* ! - Sarı */
+.ready-mark { color: #ff6600; font-weight: bold; }  /* † - Turuncu */
+.betrayal-mark { color: #ff3333; font-weight: bold; } /* ☠ - Kırmızı */
 
-            <div class="log-container">
-                <h3 class="log-title">⚔️ LOYALTY LOG</h3>
-                <div id="move-history">
-                    <div class="log-placeholder" style="color: #666; font-style: italic; text-align: center; margin-top: 20px;">
-                        Hamle bekleniyor...
-                    </div>
-                </div>
-            </div>
+/* TAHTA */
+#chess-board { display: grid; grid-template-columns: repeat(8, 60px); grid-template-rows: repeat(8, 60px); border: 8px solid #34495e; border-radius: 8px; overflow: hidden; }
+.square { width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; position: relative; }
+.white { background: #ebecd0; }
+.black { background: #779556; }
+.active-law { background: rgba(241, 196, 15, 0.4) !important; }
 
-            <div class="controls">
-                <button onclick="prevStep()" id="prev-btn" disabled>Geri</button>
-                <button onclick="nextStep()" id="next-btn">Sıradaki</button>
-            </div>
+/* TAŞLAR */
+.piece { width: 100%; height: 100%; background-size: 85%; background-repeat: no-repeat; background-position: center; cursor: pointer; transition: transform 0.2s ease; }
+.w-p { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'); }
+.b-p { background-image: url('https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg'); }
+.w-n { background-image: url('https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg'); }
+.b-n { background-image: url('https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg'); }
+.w-b { background-image: url('https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg'); }
+.b-b { background-image: url('https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg'); }
+.w-r { background-image: url('https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg'); }
+.b-r { background-image: url('https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg'); }
+.w-q { background-image: url('https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg'); }
+.b-q { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg'); }
+.w-k { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg'); }
+.b-k { background-image: url('https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg'); }
 
-            <div class="full-rules-panel">
-                <h3 id="panel-title">📜 THE 3 LAWS</h3>
-                <div id="rules-content">
-                    <div class="law-item">
-                        <strong>⚡ 1. ACTIVE THREAT (!)</strong>
-                        <span id="rule-1-desc">Bir subay (At, Fil, Kale) tehdit edildiğinde korumasız bırakılırsa işaretlenir.</span>
-                    </div>
-                    <div class="law-item">
-                        <strong>🔄 2. THE CHOICE (†)</strong>
-                        <span id="rule-2-desc">İşaretli taş bir tur daha sahipsiz kalırsa, rakip tarafından ele geçirilebilir.</span>
-                    </div>
-                    <div class="law-item">
-                        <strong>💨 3. FINAL MISSION (☠)</strong>
-                        <span id="rule-3-desc">İhanet eden taş bir hamle yapar ve ardından savaş alanını terk eder.</span>
-                    </div>
-                    <div id="restrictions-list" class="restrictions-box">
-                        <h4>Kısıtlamalar</h4>
-                        <div style="font-size: 0.75rem; color: #eee; line-height: 1.4;">
-                            • İhanet eden taş Şah çekemez.<br>
-                            • İhanet eden taş Mat edemez.
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div> </div> <div id="betrayal-popup" class="popup-overlay" style="display: none;">
-        <div class="popup-content">
-            <h2 class="alert-title">⚠️ ALERT</h2>
-            <p id="popup-msg">...</p>
-            <div class="popup-rule-box">
-                <strong id="popup-law-label">LAW:</strong> <span id="popup-rule">...</span>
-            </div>
-            <button onclick="closePopup()" class="popup-btn">Tamam</button>
-        </div>
-    </div>
-
-    <script src="logic_alerts.js"></script>
-    <script src="logic_player.js"></script>
-</body>
-</html>
+/* POPUP SİSTEMİ (KRİTİK) */
+.popup-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center;
+    z-index: 10000;
+}
+.popup-content {
+    background: #1a1a1a; border: 2px solid #f1c40f; border-left: 10px solid #f1c40f;
+    padding: 30px; border-radius: 15px; max-width: 400px; text-align: center;
+}
+.popup-btn {
+    margin-top: 20px; padding: 10px 30px; background: #f1c40f; border: none;
+    border-radius: 5px; font-weight: bold; cursor: pointer; color: #000;
+}
