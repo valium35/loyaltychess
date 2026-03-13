@@ -52,24 +52,15 @@
             </div>
 
             <div class="controls">
-                <button onclick="location.reload()" id="restart-btn">---</button>
-                <button onclick="alert('SOON!')" id="undo-btn">---</button>
+                <button onclick="location.reload()" id="restart-btn">...</button>
+                <button onclick="alert('SOON!')" id="undo-btn">...</button>
             </div>
 
             <div class="full-rules-panel">
-                <h3 id="panel-title">---</h3>
-                <div class="law-item">
-                    <strong id="rule-1-title">---</strong>
-                    <span id="rule-1-desc">...</span>
-                </div>
-                <div class="law-item">
-                    <strong id="rule-2-title">---</strong>
-                    <span id="rule-2-desc">...</span>
-                </div>
-                <div class="law-item">
-                    <strong id="rule-3-title">---</strong>
-                    <span id="rule-3-desc">...</span>
-                </div>
+                <h3 id="panel-title">📜 THE 3 LAWS</h3>
+                <div class="law-item"><strong>⚡ 1. ACTIVE THREAT</strong><span id="rule-1-desc">...</span></div>
+                <div class="law-item"><strong>🔄 2. THE CHOICE</strong><span id="rule-2-desc">...</span></div>
+                <div class="law-item"><strong>💨 3. FINAL MISSION</strong><span id="rule-3-desc">...</span></div>
                 <div id="restrictions-list" class="restrictions-box"></div>
             </div>
         </div> 
@@ -82,39 +73,48 @@
             <div style="font-size:0.8rem; color:#aaa; margin:15px 0; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px;">
                 <strong id="popup-law-label">KURAL:</strong> <span id="popup-rule">...</span>
             </div>
-            <button id="popup-confirm-btn" onclick="closePopup()" class="popup-btn">---</button>
+            <button id="popup-confirm-btn" onclick="closePopup()" class="popup-btn">ANLADIM</button>
         </div>
     </div>
 
     <script src="translations.js"></script>
-
     <script src="logic_player.js"></script>
 
     <script>
-    window.onload = function() {
-        // translations.js içindeki home.html'de çalışan o akıllı fonksiyonu çağır
-        if (typeof applyLanguageToPage === 'function') {
-            applyLanguageToPage();
-        }
-
-        // Oyun özelindeki durum mesajını (Sıra Beyazda) ilk kez elle bas
-        const lang = localStorage.getItem('gameLang') || 'tr';
-        if (typeof LoyaltyDict !== 'undefined' && LoyaltyDict[lang]) {
-            const statusBox = document.getElementById('status');
-            if (statusBox) {
-                statusBox.innerText = LoyaltyDict[lang].status; 
+        window.onload = function() {
+            // 1. Home.html'deki o akıllı fonksiyonu çağırıyoruz
+            if (typeof applyLanguageToPage === 'function') {
+                applyLanguageToPage();
             }
-        }
-        
-        // Eğer logic_player.js kendi kendine başlamıyorsa burada başlatabilirsin
-        if (typeof initGame === 'function') {
-            initGame();
-        }
-    };
 
-    function closePopup() {
-        document.getElementById('betrayal-popup').style.display = 'none';
-    }
+            // 2. vs_player.html'e özel manuel güncellemeler
+            const lang = localStorage.getItem('gameLang') || 'tr';
+            const t = LoyaltyDict[lang];
+            
+            if (t) {
+                // PvP Butonları doldur
+                const restartBtn = document.getElementById('restart-btn');
+                const undoBtn = document.getElementById('undo-btn');
+                const confirmBtn = document.getElementById('popup-confirm-btn');
+                
+                if (restartBtn) restartBtn.innerText = t.resetBtn || "RESTART";
+                if (undoBtn) undoBtn.innerText = t.undoBtn || "UNDO";
+                if (confirmBtn) confirmBtn.innerText = t.popups?.confirmBtn || "OK";
+
+                // Başlangıç mesajını (Sıra Beyazda gibi) bas
+                const statusBox = document.getElementById('status');
+                if (statusBox) statusBox.innerText = t.status || "Game Ready";
+            }
+
+            // 3. Oyunun logic'ini başlat (Otomatik başlamıyorsa)
+            if (typeof initGame === 'function') {
+                initGame();
+            }
+        };
+
+        function closePopup() {
+            document.getElementById('betrayal-popup').style.display = 'none';
+        }
     </script>
 </body>
 </html>
