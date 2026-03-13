@@ -4,12 +4,18 @@ let turn = 'w';
 let selectedSquare = null;
 let enPassantTarget = null;
 let hasMoved = {}; 
-let gameLog = []; // Hamleleri tek tek değil, çiftler halinde tutacağız
+let gameLog = [];
 let moveCount = 1;
 
 const boardElement = document.getElementById('chess-board');
 const statusElement = document.getElementById('status');
 const logElement = document.getElementById('move-history');
+
+// Dil desteği için yardımcı fonksiyon
+function getT() {
+    const lang = localStorage.getItem('gameLang') || 'tr';
+    return LoyaltyDict[lang];
+}
 
 // --- 2. BAŞLATMA ---
 const initialSetup = {
@@ -24,6 +30,7 @@ function initGame() {
     Object.keys(initialSetup).forEach(i => layout[i] = initialSetup[i]);
     hasMoved = { 'w-k': false, 'b-k': false, 'w-r-56': false, 'w-r-63': false, 'b-r-0': false, 'b-r-7': false };
     gameLog = [];
+    moveCount = 1;
     turn = 'w';
     if (logElement) logElement.innerHTML = '';
     draw();
@@ -53,7 +60,6 @@ function addToLog(from, to) {
     const moveText = `${getCoordsLabel(from)}-${getCoordsLabel(to)}`;
     
     if (turn === 'w') {
-        // Beyazın hamlesi: Yeni bir satır oluştur
         const movePair = { index: moveCount, white: moveText, black: "" };
         gameLog.push(movePair);
         
@@ -65,18 +71,17 @@ function addToLog(from, to) {
             logElement.prepend(div);
         }
     } else {
-        // Siyahın hamlesi: Mevcut son satırı güncelle
         if (gameLog.length > 0) {
             gameLog[gameLog.length - 1].black = moveText;
-            
             const lastDiv = document.getElementById(`move-pair-${moveCount}`);
             if (lastDiv) {
                 lastDiv.querySelector('.black-move').innerText = moveText;
             }
-            moveCount++; // Siyah oynadıktan sonra hamle sayısını artır
+            moveCount++;
         }
     }
 }
+
 // --- 4. HAREKET MANTIĞI ---
 function testMoveForSafety(from, to, color) {
     const originalFrom = layout[from], originalTo = layout[to];
@@ -155,12 +160,11 @@ function handleSquareClick(i) {
     } else {
         const legalMoves = getLegalMoves(selectedSquare);
         if (legalMoves.includes(i)) {
-            // ÖNEMLİ: Önce loga ekliyoruz (sıra değişmeden önce), sonra sırayı değiştiriyoruz
             addToLog(selectedSquare, i); 
             executeMove(selectedSquare, i);
             
             selectedSquare = null;
-            turn = (turn === 'w' ? 'b' : 'w'); // Sıra şimdi değişti
+            turn = (turn === 'w' ? 'b' : 'w'); 
             
             draw();
             updateStatus();
@@ -201,11 +205,11 @@ function executeMove(from, to) {
 }
 
 function checkGameEnd() {
+    const t = getT();
     const kingPos = findKing(turn);
     const opponent = turn === 'w' ? 'b' : 'w';
     const isUnderAttack = isSquareAttacked(kingPos, opponent);
     
-    // Yasal hamle kalıp kalmadığını kontrol et
     let hasAnyMove = false;
     for (let i = 0; i < 64; i++) {
         if (layout[i] && layout[i].startsWith(turn)) {
@@ -217,10 +221,11 @@ function checkGameEnd() {
     }
 
     if (!hasAnyMove) {
+        const winner = (turn === 'w' ? (localStorage.getItem('gameLang') === 'en' ? "BLACK" : "SİYAH") : (localStorage.getItem('gameLang') === 'en' ? "WHITE" : "BEYAZ"));
         if (isUnderAttack) {
-            setTimeout(() => alert("ŞAH MAT! " + (turn === 'w' ? "SİYAH" : "BEYAZ") + " KAZANDI."), 200);
+            setTimeout(() => alert("ŞAH MAT! " + winner + (localStorage.getItem('gameLang') === 'en' ? " WINS." : " KAZANDI.")), 200);
         } else {
-            setTimeout(() => alert("BERABERE (PAT)! Yapacak hamle kalmadı."), 200);
+            setTimeout(() => alert(localStorage.getItem('gameLang') === 'en' ? "DRAW (STALEMATE)! No moves left." : "BERABERE (PAT)! Yapacak hamle kalmadı."), 200);
         }
     }
 }
@@ -245,16 +250,18 @@ function draw() {
 }
 
 function updateStatus() {
-    if (statusElement) {
+    const t = getT();
+    if (statusElement && t) {
         const kingPos = findKing(turn);
         const opponent = turn === 'w' ? 'b' : 'w';
         const check = isSquareAttacked(kingPos, opponent);
         
-        let label = "SIRA: " + (turn === 'w' ? "BEYAZ" : "SİYAH");
-        if (check) label += " (ŞAH!)";
+        let label = (turn === 'w' ? t.status : t.statusBlack);
+        if (check) label += (localStorage.getItem('gameLang') === 'en' ? " (CHECK!)" : " (ŞAH!)");
         
         statusElement.innerText = label;
     }
 }
 
+// İlk başlatma
 initGame();
