@@ -52,22 +52,22 @@
             </div>
 
             <div class="controls">
-                <button onclick="location.reload()" id="restart-btn">Yeniden Başlat</button>
-                <button onclick="alert('SOON!')" id="undo-btn">Geri Al</button>
+                <button onclick="location.reload()" id="restart-btn">---</button>
+                <button onclick="alert('SOON!')" id="undo-btn">---</button>
             </div>
 
             <div class="full-rules-panel">
-                <h3 id="panel-title">📜 THE 3 LAWS</h3>
+                <h3 id="panel-title">---</h3>
                 <div class="law-item">
-                    <strong id="rule-1-title">⚡ 1. ACTIVE THREAT</strong>
+                    <strong id="rule-1-title">---</strong>
                     <span id="rule-1-desc">...</span>
                 </div>
                 <div class="law-item">
-                    <strong id="rule-2-title">🔄 2. THE CHOICE</strong>
+                    <strong id="rule-2-title">---</strong>
                     <span id="rule-2-desc">...</span>
                 </div>
                 <div class="law-item">
-                    <strong id="rule-3-title">💨 3. FINAL MISSION</strong>
+                    <strong id="rule-3-title">---</strong>
                     <span id="rule-3-desc">...</span>
                 </div>
                 <div id="restrictions-list" class="restrictions-box"></div>
@@ -82,87 +82,35 @@
             <div style="font-size:0.8rem; color:#aaa; margin:15px 0; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px;">
                 <strong id="popup-law-label">KURAL:</strong> <span id="popup-rule">...</span>
             </div>
-            <button id="popup-confirm-btn" onclick="closePopup()" class="popup-btn">ANLADIM</button>
+            <button id="popup-confirm-btn" onclick="closePopup()" class="popup-btn">---</button>
         </div>
     </div>
 
     <script src="translations.js"></script>
 
-    <script>
-    window.applyPlayerLanguage = function() {
-    if (typeof LoyaltyDict === 'undefined') return;
-
-    const lang = localStorage.getItem('gameLang') || 'tr';
-    const t = LoyaltyDict[lang];
-
-    if (t) {
-        // 1. Butonlar ve Başlıklar
-        const uiMap = {
-            'restart-btn': t.resetBtn,
-            'undo-btn': t.undoBtn,
-            'history-title': t.historyTitle,
-            'panel-title': t.rulesTitle, // "📜 THE 3 LAWS" burayı Türkçeyse "YASALAR" yapar
-            'alert-title': t.popups?.alertTitle,
-            'popup-law-label': t.popups?.lawLabel,
-            'popup-confirm-btn': t.popups?.confirmBtn
-        };
-
-        Object.keys(uiMap).forEach(id => {
-            const el = document.getElementById(id);
-            if (el && uiMap[id]) el.innerText = uiMap[id];
-        });
-
-        // 2. Kural Başlıklarını Güncelle (Hatalı olan yer burası olabilir)
-        // Eğer translations.js içinde rule1Title gibi isimler varsa onları da ekleyelim
-        if (document.getElementById('rule-1-title') && t.rule1Title) {
-            document.getElementById('rule-1-title').innerText = t.rule1Title;
-            document.getElementById('rule-2-title').innerText = t.rule2Title;
-            document.getElementById('rule-3-title') && (document.getElementById('rule-3-title').innerText = t.rule3Title);
-        }
-
-        // 3. Kural Açıklamaları (--- kalan yerler)
-        // translations.js içindeki "rules" dizisini tek tek kontrol ederek basalım
-        if (t.rules && Array.isArray(t.rules)) {
-            // İlk kuralı rule-1-desc'e bas
-            if (document.getElementById('rule-1-desc')) document.getElementById('rule-1-desc').innerText = t.rules[0] || "--";
-            // İkinci kuralı rule-2-desc'e bas
-            if (document.getElementById('rule-2-desc')) document.getElementById('rule-2-desc').innerText = t.rules[1] || "--";
-            // Üçüncü kuralı rule-3-desc'e bas
-            if (document.getElementById('rule-3-desc')) document.getElementById('rule-3-desc').innerText = t.rules[2] || "--";
-        }
-
-        // 4. Kısıtlamalar (Restrictions)
-        const resBox = document.getElementById('restrictions-list');
-        if (resBox && t.restrictions) {
-            let resHtml = `<h4>${t.restrictionsTitle || (lang === 'tr' ? "KISITLAMALAR" : "RESTRICTIONS")}</h4>`;
-            t.restrictions.forEach(r => {
-                resHtml += `<div style="font-size: 0.75rem; color: #eee; margin-bottom: 5px;">• ${r}</div>`;
-            });
-            resBox.innerHTML = resHtml;
-        }
-    }
-};
-
-    // Sayfa okunurken hemen çalıştır
-    applyPlayerLanguage();
-    </script>
-
     <script src="logic_player.js"></script>
 
     <script>
-    // Sayfa tamamen yüklendiğinde ve logic devreye girdikten sonra son dokunuş
-    window.addEventListener('load', () => {
-        applyPlayerLanguage();
-        // logic_player.js içindeki status'ü güncelle
+    window.onload = function() {
+        // translations.js içindeki home.html'de çalışan o akıllı fonksiyonu çağır
+        if (typeof applyLanguageToPage === 'function') {
+            applyLanguageToPage();
+        }
+
+        // Oyun özelindeki durum mesajını (Sıra Beyazda) ilk kez elle bas
         const lang = localStorage.getItem('gameLang') || 'tr';
         if (typeof LoyaltyDict !== 'undefined' && LoyaltyDict[lang]) {
             const statusBox = document.getElementById('status');
             if (statusBox) {
-                // Eğer turn henüz tanımlı değilse varsayılan 'w' (Beyaz) kabul edilir
                 statusBox.innerText = LoyaltyDict[lang].status; 
             }
         }
-    });
+        
+        // Eğer logic_player.js kendi kendine başlamıyorsa burada başlatabilirsin
+        if (typeof initGame === 'function') {
+            initGame();
+        }
+    };
 
     function closePopup() {
         document.getElementById('betrayal-popup').style.display = 'none';
