@@ -1,176 +1,287 @@
+// --- 1. DEĞİŞKENLER VE DURUM ---
 let layout = Array(64).fill('');
 let turn = 'w';
 let selectedSquare = null;
-let gameLog = []; 
+let enPassantTarget = null;
+let hasMoved = {}; 
+
 let isBetrayalMoveMode = false;
 let betrayalTarget = null;
+let threatsFromLastTurn = [];
 
 const boardElement = document.getElementById('chess-board');
 const statusElement = document.getElementById('status');
-const logElement = document.getElementById('move-history');
 
+// --- 2. BAŞLATMA ---
 const initialSetup = {
-    0:'b-r',1:'b-n',2:'b-b',3:'b-q',4:'b-k',5:'b-b',6:'b-n',7:'b-r',
-    8:'b-p',9:'b-p',10:'b-p',11:'b-p',12:'b-p',13:'b-p',14:'b-p',15:'b-p',
-    48:'w-p',49:'w-p',50:'w-p',51:'w-p',52:'w-p',53:'w-p',54:'w-p',55:'w-p',
-    56:'w-r',57:'w-n',58:'w-b',59:'w-q',60:'w-k',61:'w-b',62:'w-n',63:'w-r'
+    0: 'b-r', 1: 'b-n', 2: 'b-b', 3: 'b-q', 4: 'b-k', 5: 'b-b', 6: 'b-n', 7: 'b-r',
+    8: 'b-p', 9: 'b-p', 10: 'b-p', 11: 'b-p', 12: 'b-p', 13: 'b-p', 14: 'b-p', 15: 'b-p',
+    48: 'w-p', 49: 'w-p', 50: 'w-p', 51: 'w-p', 52: 'w-p', 53: 'w-p', 54: 'w-p', 55: 'w-p',
+    56: 'w-r', 57: 'w-n', 58: 'w-b', 59: 'w-q', 60: 'w-k', 61: 'w-b', 62: 'w-n', 63: 'w-r'
 };
 
 function initGame() {
     layout.fill('');
-    Object.keys(initialSetup).forEach(i => layout[parseInt(i)] = initialSetup[i]);
-    gameLog = [];
+    Object.keys(initialSetup).forEach(i => layout[i] = initialSetup[i]);
+    hasMoved = { 'w-k': false, 'b-k': false, 'w-r-56': false, 'w-r-63': false, 'b-r-0': false, 'b-r-7': false };
+    isBetrayalMoveMode = false;
+    betrayalTarget = null;
+    threatsFromLastTurn = [];
     turn = 'w';
     draw();
+    updateStatus();
 }
 
-function getCoordsLabel(i) {
-    return 'abcdefgh'[i % 8] + '87654321'[Math.floor(i / 8)];
+// --- 3. HAKEM MANTIĞI ---
+function getCoords(i) { return { r: Math.floor(i / 8), c: i % 8 }; }
+function getIndex(r, c) { return (r < 0 || r > 7 || c < 0 || c > 7) ? null : r * 8 + c; }
+
+function findKing(color) {
+    for (let i = 0; i < 64; i++) if (layout[i] === color + '-k') return i;
+    return -1;
 }
 
-function analyzeAndLog(from, to, piece, isBetrayal = false) {
-    let symbol = "";
-    let statusClass = "";
-    let currentThreats = []; 
-    const movingPlayer = piece[0];
-    const opponent = movingPlayer === 'w' ? 'b' : 'w';
-
-    // Tehdit Kontrolü
-    for (let i = 0; i < 64; i++) {
-        const target = layout[i];
-        if (target && target.startsWith(opponent) && ['n','r','b'].includes(target[2])) {
-            if (isSquareAttacked(i, movingPlayer) && !isSquareAttacked(i, opponent)) {
-                currentThreats.push(i);
-            }
-        }
-    }
-
-    if (isBetrayal) {
-        symbol = "☠"; statusClass = "betrayal-mark";
-    } else if (currentThreats.length > 0) {
-        symbol = "!"; statusClass = "threat-mark";
-        
-        // READY (†) KONTROLÜ
-        if (gameLog.length >= 2) {
-            const prevLog = gameLog[gameLog.length - 2];
-            if (prevLog.threats && prevLog.threats.some(idx => currentThreats.includes(idx))) {
-                symbol = "†"; statusClass = "ready-mark";
-            }
-        }
-    }
-
-    const logEntry = { move: `${getCoordsLabel(from)}-${getCoordsLabel(to)}`, symbol, threats: currentThreats };
-    gameLog.push(logEntry);
-    
-    if (logElement) {
-        const div = document.createElement('div');
-        div.className = 'log-entry';
-        div.innerHTML = `<span>${logEntry.move}</span> <span class="${statusClass}">${symbol}</span>`;
-        logElement.prepend(div);
-    }
-
-    if (symbol === "†") {
-        showPop("LAW 2: THE CHOICE", "Bir subay saf değiştirmeye hazır!", "Sahipsiz kalan taşı kontrol edebilirsiniz.", "#ff6600");
-    }
-}
-
-function isSquareAttacked(idx, attackerColor) {
+function isSquareAttacked(targetIndex, attackerColor) {
     for (let i = 0; i < 64; i++) {
         if (layout[i] && layout[i].startsWith(attackerColor)) {
-            if (getRawMoves(i, true).includes(idx)) return true;
+            if (getRawMoves(i, true).includes(targetIndex)) return true;
         }
     }
     return false;
 }
 
+function testMoveForSafety(from, to, color) {
+    const originalFrom = layout[from];
+    const originalTo = layout[to];
+    layout[to] = originalFrom;
+    layout[from] = '';
+    const kingPos = findKing(color);
+    const safe = !isSquareAttacked(kingPos, color === 'w' ? 'b' : 'w');
+    layout[from] = originalFrom;
+    layout[to] = originalTo;
+    return safe;
+}
+
+function getLegalMoves(i) {
+    const piece = layout[i];
+    if (!piece) return [];
+    const color = piece[0];
+    const rawMoves = getRawMoves(i);
+    return rawMoves.filter(move => testMoveForSafety(i, move, color));
+}
+
 function getRawMoves(i, onlyAttacks = false) {
-    const piece = layout[i]; if (!piece) return [];
-    const color = piece[0], type = piece[2], r = Math.floor(i/8), c = i%8;
+    const piece = layout[i];
+    if (!piece) return [];
+    const color = piece[0], type = piece[2], { r, c } = getCoords(i);
     let moves = [];
-    const dirs = {
-        'r':[[1,0],[-1,0],[0,1],[0,-1]], 'b':[[1,1],[1,-1],[-1,1],[-1,-1]],
-        'q':[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]],
-        'n':[[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]],
-        'k':[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]
+
+    const directions = {
+        'r': [[1,0],[-1,0],[0,1],[0,-1]],
+        'b': [[1,1],[1,-1],[-1,1],[-1,-1]],
+        'q': [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]],
+        'n': [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]],
+        'k': [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]
     };
 
-    if (['r','b','q'].includes(type)) {
-        dirs[type].forEach(d => {
+    if (['r', 'b', 'q'].includes(type)) {
+        directions[type].forEach(d => {
             for(let j=1; j<8; j++) {
-                let tr = r+d[0]*j, tc = c+d[1]*j;
-                if (tr<0||tr>7||tc<0||tc>7) break;
-                let t = tr*8+tc;
-                if (!layout[t]) moves.push(t);
-                else { if (onlyAttacks || layout[t][0]!==color) moves.push(t); break; }
+                const target = getIndex(r + d[0]*j, c + d[1]*j);
+                if (target === null) break;
+                if (!layout[target]) moves.push(target);
+                else { if (onlyAttacks || layout[target][0] !== color) moves.push(target); break; }
             }
         });
-    } else if (['n','k'].includes(type)) {
-        dirs[type].forEach(d => {
-            let tr = r+d[0], tc = c+d[1];
-            if (tr>=0&&tr<=7&&tc>=0&&tc<=7) {
-                let t = tr*8+tc;
-                if (onlyAttacks || !layout[t] || layout[t][0]!==color) moves.push(t);
-            }
+    } else if (type === 'n' || type === 'k') {
+        directions[type].forEach(d => {
+            const target = getIndex(r + d[0], c + d[1]);
+            if (target !== null && (onlyAttacks || !layout[target] || layout[target][0] !== color)) moves.push(target);
         });
+        
+        if (type === 'k' && !onlyAttacks && !hasMoved[color+'-k']) {
+            const opponent = color === 'w' ? 'b' : 'w';
+            if (!isSquareAttacked(i, opponent)) {
+                const r7 = getIndex(r, 7), f1 = getIndex(r, 5), g1 = getIndex(r, 6);
+                if (!hasMoved[color+'-r-'+r7] && !layout[f1] && !layout[g1]) {
+                    if (!isSquareAttacked(f1, opponent) && !isSquareAttacked(g1, opponent)) moves.push(g1);
+                }
+                const r0 = getIndex(r, 0), d1 = getIndex(r, 3), c1 = getIndex(r, 2), b1 = getIndex(r, 1);
+                if (!hasMoved[color+'-r-'+r0] && !layout[d1] && !layout[c1] && !layout[b1]) {
+                    if (!isSquareAttacked(d1, opponent) && !isSquareAttacked(c1, opponent)) moves.push(c1);
+                }
+            }
+        }
     } else if (type === 'p') {
-        let d = color === 'w' ? -1 : 1;
-        if (!onlyAttacks && !layout[(r+d)*8+c]) moves.push((r+d)*8+c);
-        [c-1, c+1].forEach(dc => {
-            let t = (r+d)*8+dc;
-            if (dc>=0&&dc<=7&&t>=0&&t<64 && (onlyAttacks || (layout[t] && layout[t][0]!==color))) moves.push(t);
+        const dir = color === 'w' ? -1 : 1;
+        if (!onlyAttacks) {
+            const f1 = getIndex(r + dir, c);
+            if (f1 !== null && !layout[f1]) {
+                moves.push(f1);
+                if (r === (color === 'w' ? 6 : 1) && !layout[getIndex(r + 2*dir, c)]) moves.push(getIndex(r + 2*dir, c));
+            }
+        }
+        [getIndex(r + dir, c - 1), getIndex(r + dir, c + 1)].forEach(diag => {
+            if (diag !== null) {
+                const targetPiece = layout[diag];
+                if (onlyAttacks || (targetPiece && targetPiece[0] !== color) || diag === enPassantTarget) {
+                    moves.push(diag);
+                }
+            }
         });
     }
     return moves;
 }
 
+// --- 4. OYUN DÖNGÜSÜ ---
 function handleSquareClick(i) {
-    if (isBetrayalMoveMode && betrayalTarget !== null) {
+    if (isBetrayalMoveMode) {
         if (getRawMoves(betrayalTarget).includes(i)) {
-            const p = layout[betrayalTarget];
-            layout[i] = p; layout[betrayalTarget] = '';
-            analyzeAndLog(betrayalTarget, i, p, true);
-            setTimeout(() => { layout[i] = ''; draw(); }, 500);
-            isBetrayalMoveMode = false; betrayalTarget = null;
-            turn = turn === 'w' ? 'b' : 'w'; draw();
+            layout[i] = ''; 
+            layout[betrayalTarget] = ''; 
+            isBetrayalMoveMode = false;
+            betrayalTarget = null;
+            completeTurn();
         }
         return;
     }
+
+    const piece = layout[i];
     if (selectedSquare === null) {
-        if (layout[i] && layout[i].startsWith(turn)) { selectedSquare = i; draw(); }
+        if (piece && piece.startsWith(turn)) {
+            selectedSquare = i;
+            draw();
+        }
     } else {
-        if (getRawMoves(selectedSquare).includes(i)) {
-            const p = layout[selectedSquare];
-            layout[i] = p; layout[selectedSquare] = '';
-            analyzeAndLog(selectedSquare, i, p);
-            selectedSquare = null; turn = turn === 'w' ? 'b' : 'w'; draw();
+        const legalMoves = getLegalMoves(selectedSquare);
+        if (legalMoves.includes(i)) {
+            executeMove(selectedSquare, i);
+            selectedSquare = null;
+            completeTurn();
         } else {
-            selectedSquare = (layout[i] && layout[i].startsWith(turn)) ? i : null; draw();
+            selectedSquare = (piece && piece.startsWith(turn)) ? i : null;
+            draw();
         }
     }
 }
 
+function executeMove(from, to) {
+    const piece = layout[from], type = piece[2], color = piece[0];
+    
+    if (type === 'p' && to === enPassantTarget) {
+        layout[getIndex(Math.floor(from/8), to % 8)] = '';
+    }
+    
+    if (type === 'k' && Math.abs((from % 8) - (to % 8)) === 2) {
+        const rFrom = (to % 8 === 6) ? getIndex(Math.floor(to/8), 7) : getIndex(Math.floor(to/8), 0);
+        const rTo = (to % 8 === 6) ? getIndex(Math.floor(to/8), 5) : getIndex(Math.floor(to/8), 3);
+        layout[rTo] = layout[rFrom];
+        layout[rFrom] = '';
+    }
+
+    if (type === 'k') hasMoved[color + '-k'] = true;
+    if (type === 'r') hasMoved[color + '-r-' + from] = true;
+
+    enPassantTarget = (type === 'p' && Math.abs(Math.floor(from/8) - Math.floor(to/8)) === 2) ? 
+                      getIndex((Math.floor(from/8) + Math.floor(to/8)) / 2, from % 8) : null;
+
+    layout[to] = layout[from];
+    layout[from] = '';
+
+    // --- TERFİ MANTIĞI ---
+    if (type === 'p') {
+        const endRow = (color === 'w' ? 0 : 7);
+        if (Math.floor(to / 8) === endRow) {
+            let choice = prompt("Piyon terfi ediyor! (q: Vezir, r: Kale, b: Fil, n: At)", "q") || "q";
+            choice = choice.toLowerCase();
+            if(!['q','r','b','n'].includes(choice)) choice = 'q';
+            layout[to] = color + '-' + choice;
+        }
+    }
+}
+
+function completeTurn() {
+    const lastPlayer = turn;
+    const nextPlayer = (turn === 'w' ? 'b' : 'w');
+    
+    let currentAttacks = [];
+    for (let i = 0; i < 64; i++) {
+        if (layout[i] && layout[i].startsWith(lastPlayer)) {
+            getRawMoves(i, true).forEach(m => currentAttacks.push(m));
+        }
+    }
+
+    let betrayalCandidate = null;
+    for (let targetIndex of threatsFromLastTurn) {
+        const p = layout[targetIndex];
+        if (p && p.startsWith(nextPlayer) && ['n', 'r', 'b'].includes(p[2])) {
+            const isStillAttacked = currentAttacks.includes(targetIndex);
+            const isProtected = isSquareAttacked(targetIndex, nextPlayer);
+            if (isStillAttacked && !isProtected) {
+                betrayalCandidate = targetIndex;
+                break;
+            }
+        }
+    }
+
+    turn = nextPlayer;
+    threatsFromLastTurn = currentAttacks;
+    draw();
+    updateStatus();
+
+    if (isCheckmate(turn)) {
+        setTimeout(() => alert("ŞAH MAT! Oyun bitti."), 300);
+        return;
+    }
+
+    if (betrayalCandidate !== null) {
+        setTimeout(() => {
+            if (confirm("LoyaltyChess: Korumasız kalan subayın taraf değiştiriyor! İhanet hamlesi yapmak ister misin?")) {
+                layout[betrayalCandidate] = turn + layout[betrayalCandidate].substring(1);
+                isBetrayalMoveMode = true;
+                betrayalTarget = betrayalCandidate;
+                draw();
+                updateStatus();
+            }
+        }, 150);
+    }
+}
+
+function isCheckmate(color) {
+    const kingPos = findKing(color);
+    if (kingPos === -1) return false;
+    if (!isSquareAttacked(kingPos, color === 'w' ? 'b' : 'w')) return false;
+    for (let i = 0; i < 64; i++) {
+        if (layout[i] && layout[i].startsWith(color)) {
+            if (getLegalMoves(i).length > 0) return false;
+        }
+    }
+    return true;
+}
+
 function draw() {
     boardElement.innerHTML = '';
-    const lastLog = gameLog[gameLog.length-1];
     for (let i = 0; i < 64; i++) {
-        const div = document.createElement('div');
-        div.className = `square ${(Math.floor(i/8)+i%8)%2 ? 'black':'white'} ${selectedSquare===i?'active-law':''}`;
+        const square = document.createElement('div');
+        const isBlack = (Math.floor(i / 8) + (i % 8)) % 2 !== 0;
+        square.className = `square ${isBlack ? 'black' : 'white'} ${selectedSquare === i ? 'active-law' : ''}`;
         
-        if (lastLog && lastLog.symbol === "†" && lastLog.threats.includes(i)) {
-            div.style.boxShadow = "inset 0 0 15px #ff6600";
-            div.onclick = () => { isBetrayalMoveMode = true; betrayalTarget = i; draw(); };
-        } else {
-            div.onclick = () => handleSquareClick(i);
+        if (isBetrayalMoveMode && betrayalTarget === i) {
+            square.style.backgroundColor = "rgba(255, 69, 0, 0.7)";
         }
 
         if (layout[i]) {
             const p = document.createElement('div');
             p.className = `piece ${layout[i]}`;
-            div.appendChild(p);
+            square.appendChild(p);
         }
-        boardElement.appendChild(div);
+        square.onclick = () => handleSquareClick(i);
+        boardElement.appendChild(square);
     }
-    statusElement.innerText = "SIRA: " + (turn==='w'?'BEYAZDA':'SİYAHTA');
+}
+
+function updateStatus() {
+    statusElement.innerText = isBetrayalMoveMode ? "⚠️ İHANET HAMLESİ BEKLENİYOR" : "SIRA: " + (turn === 'w' ? "BEYAZDA" : "SİYAHTA");
 }
 
 initGame();
