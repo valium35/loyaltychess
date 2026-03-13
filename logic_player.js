@@ -14,7 +14,11 @@ const logElement = document.getElementById('move-history');
 // Dil desteği için yardımcı fonksiyon
 function getT() {
     const lang = localStorage.getItem('gameLang') || 'tr';
-    return LoyaltyDict[lang];
+    if (typeof LoyaltyDict !== 'undefined' && LoyaltyDict[lang]) {
+        return LoyaltyDict[lang];
+    }
+    // Fallback (Sözlük yüklenmemişse hata vermemesi için)
+    return { status: "Sıra Beyazda", statusBlack: "Sıra Siyahda", popups: { alertTitle: "UYARI" } };
 }
 
 // --- 2. BAŞLATMA ---
@@ -35,6 +39,9 @@ function initGame() {
     if (logElement) logElement.innerHTML = '';
     draw();
     updateStatus();
+    
+    // Sayfa içindeki statik panelleri de çevir
+    if (window.applyPlayerLanguage) window.applyPlayerLanguage();
 }
 
 // --- 3. YARDIMCI VE ANALİZ ---
@@ -58,6 +65,7 @@ function isSquareAttacked(targetIndex, attackerColor) {
 
 function addToLog(from, to) {
     const moveText = `${getCoordsLabel(from)}-${getCoordsLabel(to)}`;
+    const t = getT();
     
     if (turn === 'w') {
         const movePair = { index: moveCount, white: moveText, black: "" };
@@ -199,7 +207,8 @@ function executeMove(from, to) {
     layout[from] = '';
 
     if (type === 'p' && (Math.floor(to/8) === 0 || Math.floor(to/8) === 7)) {
-        let choice = prompt("Piyon Terfisi (q, r, b, n):", "q") || "q";
+        const t = getT();
+        let choice = prompt(t.popups?.promotionMsg || "Piyon Terfisi (q, r, b, n):", "q") || "q";
         layout[to] = color + '-' + (['q','r','b','n'].includes(choice.toLowerCase()) ? choice.toLowerCase() : 'q');
     }
 }
@@ -221,11 +230,15 @@ function checkGameEnd() {
     }
 
     if (!hasAnyMove) {
-        const winner = (turn === 'w' ? (localStorage.getItem('gameLang') === 'en' ? "BLACK" : "SİYAH") : (localStorage.getItem('gameLang') === 'en' ? "WHITE" : "BEYAZ"));
+        const lang = localStorage.getItem('gameLang') || 'tr';
+        const winner = (turn === 'w' ? (lang === 'en' ? "BLACK" : "SİYAH") : (lang === 'en' ? "WHITE" : "BEYAZ"));
+        
         if (isUnderAttack) {
-            setTimeout(() => alert("ŞAH MAT! " + winner + (localStorage.getItem('gameLang') === 'en' ? " WINS." : " KAZANDI.")), 200);
+            const checkmateMsg = lang === 'en' ? `CHECKMATE! ${winner} WINS.` : `ŞAH MAT! ${winner} KAZANDI.`;
+            setTimeout(() => alert(checkmateMsg), 200);
         } else {
-            setTimeout(() => alert(localStorage.getItem('gameLang') === 'en' ? "DRAW (STALEMATE)! No moves left." : "BERABERE (PAT)! Yapacak hamle kalmadı."), 200);
+            const drawMsg = lang === 'en' ? "DRAW (STALEMATE)! No moves left." : "BERABERE (PAT)! Yapacak hamle kalmadı.";
+            setTimeout(() => alert(drawMsg), 200);
         }
     }
 }
@@ -257,7 +270,10 @@ function updateStatus() {
         const check = isSquareAttacked(kingPos, opponent);
         
         let label = (turn === 'w' ? t.status : t.statusBlack);
-        if (check) label += (localStorage.getItem('gameLang') === 'en' ? " (CHECK!)" : " (ŞAH!)");
+        if (check) {
+            const lang = localStorage.getItem('gameLang') || 'tr';
+            label += (lang === 'en' ? " (CHECK!)" : " (ŞAH!)");
+        }
         
         statusElement.innerText = label;
     }
