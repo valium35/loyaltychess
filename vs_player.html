@@ -17,39 +17,22 @@
         .controls button:hover:not(:disabled) { background: #f1c40f; color: #121212; }
         .controls button:disabled { opacity: 0.2; cursor: not-allowed; }
 
+        /* Üzeri çizili olan kısmı burayla ezebilirsin */
+        #move-history .log-entry span {
+            display: block !important;
+            margin: 8px !important;
+        }
+
         .full-rules-panel {
             background: rgba(255, 255, 255, 0.03); border-radius: 12px;
             padding: 15px; border: 1px solid rgba(255, 255, 255, 0.1);
             max-height: 400px; overflow-y: auto; margin-top: 10px;
         }
-        .full-rules-panel h3 {
-            color: #f1c40f; font-size: 1.1rem; margin-top: 0;
-            border-bottom: 1px solid rgba(241, 196, 15, 0.3);
-            padding-bottom: 10px; text-align: center;
-        }
-        .law-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-        .law-item strong { display: block; color: #ffffff; font-size: 0.9rem; margin-bottom: 5px; }
-        .law-item span { display: block; color: #aaa; font-size: 0.8rem; line-height: 1.4; }
-
-        .restrictions-box {
-            margin-top: 15px; padding: 12px; background: rgba(231, 76, 60, 0.08); 
-            border: 1px dashed rgba(231, 76, 60, 0.4); border-radius: 8px;
-        }
-        .restrictions-box h4 { color: #e74c3c; font-size: 0.85rem; margin: 0 0 8px 0; text-transform: uppercase; text-align: center; }
+        /* ... diğer stiller ... */
     </style>
 </head>
-     <div id="betrayal-popup" class="popup-overlay">
-        <div class="popup-content">
-            <h2 class="alert-title">⚠️ ALERT</h2>
-            <p id="popup-msg">...</p>
-            <div style="font-size:0.8rem; color:#aaa; margin:15px 0; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px;">
-                <strong id="popup-law-label">KURAL:</strong> <span id="popup-rule">...</span>
-            </div>
-            <button onclick="closePopup()" class="popup-btn">ANLADIM</button>
-        </div>
-    </div>
 <body>
-     <div id="betrayal-popup" class="popup-overlay">
+    <div id="betrayal-popup" class="popup-overlay">
         <div class="popup-content">
             <h2 class="alert-title">⚠️ ALERT</h2>
             <p id="popup-msg">...</p>
@@ -59,52 +42,15 @@
             <button onclick="closePopup()" class="popup-btn">ANLADIM</button>
         </div>
     </div>
+
     <div class="main-container">
         <div id="chess-board"></div>
-
         <div class="side-panel">
-            
-            <div id="status" class="log-container" style="text-align:center; font-weight:bold; color:#f1c40f; font-size: 1.1rem; padding: 15px;">
+             <div id="status" class="log-container" style="text-align:center; font-weight:bold; color:#f1c40f; font-size: 1.1rem; padding: 15px;">
                 Sıra Beyazda...
             </div>
-
-            <div class="log-container">
-                <h3 style="color:#f1c40f; text-align:center; margin-top:0; border-bottom: 1px solid #333; padding-bottom: 10px;">⚔️ LOYALTY LOG</h3>
-                <div id="move-history">
-                    </div>
             </div>
-
-            <div class="controls">
-                <button onclick="location.reload()" id="restart-btn">Yeniden Başlat</button>
-                <button onclick="alert('Geri alma sistemi yakında eklenecek!')" id="undo-btn">Geri Al</button>
-            </div>
-
-            <div class="full-rules-panel">
-                <h3>📜 THE 3 LAWS</h3>
-                <div class="law-item">
-                    <strong>⚡ 1. ACTIVE THREAT (!)</strong>
-                    <span>Bir subay (At, Fil, Kale) tehdit edildiğinde korumasız bırakılırsa işaretlenir.</span>
-                </div>
-                <div class="law-item">
-                    <strong>🔄 2. THE CHOICE (†)</strong>
-                    <span>İşaretli taş bir tur daha sahipsiz kalırsa, rakip tarafından ele geçirilebilir.</span>
-                </div>
-                <div class="law-item">
-                    <strong>💨 3. FINAL MISSION (☠)</strong>
-                    <span>İhanet eden taş bir hamle yapar ve ardından savaş alanını terk eder.</span>
-                </div>
-                <div class="restrictions-box">
-                    <h4>Kısıtlamalar</h4>
-                    <div style="font-size: 0.75rem; color: #eee; line-height: 1.4;">
-                        • İhanet eden taş Şah çekemez.<br>
-                        • İhanet eden taş Mat edemez.
-                    </div>
-                </div>
-            </div>
-        </div> 
     </div>
-
-   
 
     <script src="logic_alerts.js"></script>
     <script src="logic_player.js"></script>
