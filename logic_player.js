@@ -27,7 +27,7 @@ function initGame() {
     turn = 'w';
     draw();
     updateStatus();
-    logElement.innerHTML = '<div class="log-placeholder">Oyun başladı...</div>';
+    if (logElement) logElement.innerHTML = '<div class="log-placeholder">Oyun başladı...</div>';
 }
 
 // --- 3. ANALİZ VE KAYIT MOTORU ---
@@ -41,7 +41,7 @@ function getCoordsLabel(i) {
 function analyzeAndLog(from, to, piece, isBetrayal = false) {
     let symbol = "";
     let statusClass = "";
-    let currentThreats = []; // Bu hamle sonunda oluşan tehditler
+    let currentThreats = []; 
     const movingPlayer = piece[0];
     const opponent = movingPlayer === 'w' ? 'b' : 'w';
 
@@ -49,108 +49,62 @@ function analyzeAndLog(from, to, piece, isBetrayal = false) {
         symbol = "☠";
         statusClass = "betrayal-mark";
     } else {
-        // 1. ADIM: Hamle bitti, şimdi tahtadaki tüm rakip subayları tara
+        // Hamle bitti, rakip subayları tara (n, r, b)
         for (let i = 0; i < 64; i++) {
             const targetPiece = layout[i];
-            // Eğer rakip subay ise (At, Kale, Fil)
             if (targetPiece && targetPiece.startsWith(opponent) && ['n', 'r', 'b'].includes(targetPiece[2])) {
-                // KURAL: Bizim taraf saldırıyor mu VE rakip koruyamıyor mu?
+                // Biz saldırıyoruz ve rakip koruyamıyor
                 if (isSquareAttacked(i, movingPlayer) && !isSquareAttacked(i, opponent)) {
                     currentThreats.push(i);
                 }
             }
         }
 
-        // 2. ADIM: Sembol Belirleme
         if (currentThreats.length > 0) {
-            symbol = "!"; // Varsayılan: Tehdit var
+            symbol = "!"; 
             statusClass = "threat-mark";
 
-            // 3. ADIM: "Ready" (†) Kontrolü (Hafıza Testi)
-            if (gameLog.length > 0) {
-                // Bir önceki hamlenin loguna bak
-                const lastLog = gameLog[gameLog.length - 1];
-                
-                // Eğer geçen turdaki tehditlerden biri hala bu turdaki tehditler arasındaysa...
-                const isStillThreatened = currentThreats.some(index => lastLog.threats.includes(index));
-                
-                if (isStillThreatened) {
-                    symbol = "†";
-                    statusClass = "ready-mark";
+            // READY (†) KONTROLÜ: Kendi önceki hamlemize bakıyoruz (hamle sırası: Biz -> Rakip -> Biz)
+            if (gameLog.length >= 2) {
+                const myLastMove = gameLog[gameLog.length - 2]; 
+                if (myLastMove.threats && myLastMove.threats.length > 0) {
+                    const isStillVulnerable = currentThreats.some(idx => myLastMove.threats.includes(idx));
+                    if (isStillVulnerable) {
+                        symbol = "†";
+                        statusClass = "ready-mark";
+                    }
                 }
             }
         }
     }
 
-    // 4. ADIM: Log Kaydı (Hafıza burada oluşuyor)
     const moveText = `${getCoordsLabel(from)}-${getCoordsLabel(to)}`;
     const logEntry = {
         move: moveText,
         symbol: symbol,
-        threats: currentThreats, // BURASI KRİTİK: Tehditleri kaydetmezsek bir sonraki turda karşılaştıramayız!
+        threats: currentThreats, 
         player: movingPlayer
     };
-
     gameLog.push(logEntry);
     
     // UI Güncelleme (Log Paneli)
-    if (gameLog.length === 1) logElement.innerHTML = '';
-    const logItem = document.createElement('div');
-    logItem.className = 'log-entry';
-    logItem.innerHTML = `<span>${moveText}</span> <span class="${statusClass}">${symbol}</span>`;
-    logElement.prepend(logItem);
-
-    // 5. ADIM: Popup Tetikleme
-    if (symbol === "†") {
-        // logic_alerts.js dosyasındaki openPopup fonksiyonunu çağırır
-        if (typeof openPopup === "function") {
-            const victimIdx = currentThreats[0]; // İlk tehdit edilen taşı baz alalım
-            const victimName = layout[victimIdx][2].toUpperCase();
-            openPopup(
-                `İHANET UYARISI: ${getCoordsLabel(victimIdx)} karesindeki ${victimName} sahipsiz kaldı!`,
-                "LAW 2: THE CHOICE",
-                "Bu taş artık rakibin emrine girmeye hazır."
-            );
-        } else {
-            console.error("Popup fonksiyonu (openPopup) bulunamadı!");
-        }
+    if (logElement) {
+        if (gameLog.length === 1) logElement.innerHTML = '';
+        const logItem = document.createElement('div');
+        logItem.className = 'log-entry';
+        logItem.innerHTML = `<span>${moveText}</span> <span class="${statusClass}">${symbol}</span>`;
+        logElement.prepend(logItem);
     }
-}
 
-    const moveText = `${getCoordsLabel(from)}-${getCoordsLabel(to)}`;
-    const logEntry = {
-        move: moveText,
-        symbol: symbol,
-        threats: activeThreats, // Kritik: Tehditleri hafızaya al
-        player: movingPlayer
-    };
-
-    gameLog.push(logEntry);
-    
-    // UI Güncelleme
-    if (gameLog.length === 1) logElement.innerHTML = '';
-    const logItem = document.createElement('div');
-    logItem.className = 'log-entry';
-    logItem.innerHTML = `<span>${moveText}</span> <span class="${statusClass}">${symbol}</span>`;
-    logElement.prepend(logItem);
-
-    // İhanet Mümkünse Popup tetikle
-    if (symbol === "†") {
-        showBetrayalAlert(activeThreats);
-    }
-}
-
-function showBetrayalAlert(threats) {
-    // Birden fazla varsa ilkini hedef alalım (Geliştirilebilir)
-    betrayalTarget = threats[0];
-    const pieceName = layout[betrayalTarget][2] === 'n' ? 'At' : layout[betrayalTarget][2] === 'r' ? 'Kale' : 'Fil';
-    
-    // HTML'deki popup fonksiyonlarını kullanıyoruz
-    const msg = `Dikkat! ${getCoordsLabel(betrayalTarget)} karesindeki ${pieceName} ihanet etmeye hazır.`;
-    if(typeof openPopup === "function") {
-        openPopup(msg, "LAW 2: THE CHOICE", "Sahipsiz kalan subay taraf değiştirebilir.");
-    } else {
-        alert(msg);
+    // Popup Tetikleme
+    if (symbol === "†" && typeof openPopup === "function") {
+        const victimIdx = currentThreats[0];
+        const victimName = layout[victimIdx] ? layout[victimIdx][2].toUpperCase() : "SUBAY";
+        openPopup(
+            `İHANET UYARISI: ${getCoordsLabel(victimIdx)} karesindeki ${victimName} sahipsiz kaldı!`,
+            "LAW 2: THE CHOICE",
+            "Bu taş artık rakibin emrine girmeye hazır."
+        );
     }
 }
 
@@ -159,7 +113,6 @@ function showBetrayalAlert(threats) {
 function isSquareAttacked(targetIndex, attackerColor) {
     for (let i = 0; i < 64; i++) {
         if (layout[i] && layout[i].startsWith(attackerColor)) {
-            // Şah çekme kontrolü için basit saldırı analizi
             if (getRawMoves(i, true).includes(targetIndex)) return true;
         }
     }
@@ -204,7 +157,10 @@ function getRawMoves(i, onlyAttacks = false) {
             const f1 = (r + dir) * 8 + c;
             if (r + dir >= 0 && r + dir <= 7 && !layout[f1]) {
                 moves.push(f1);
-                if (r === (color === 'w' ? 6 : 1) && !layout[(r + 2*dir) * 8 + c]) moves.push((r + 2*dir) * 8 + c);
+                if (r === (color === 'w' ? 6 : 1)) {
+                    const f2 = (r + 2*dir) * 8 + c;
+                    if (!layout[f2]) moves.push(f2);
+                }
             }
         }
         [c-1, c+1].forEach(dc => {
@@ -220,21 +176,17 @@ function getRawMoves(i, onlyAttacks = false) {
 // --- 5. TIKLAMA VE TUR YÖNETİMİ ---
 
 function handleSquareClick(i) {
-    // İhanet Hamlesi Modu
     if (isBetrayalMoveMode && betrayalTarget !== null) {
         let moves = getRawMoves(betrayalTarget);
         if (moves.includes(i)) {
             const from = betrayalTarget;
             const piece = layout[from];
-            
-            // İhanet Kısıtlaması: Şah alamaz/Şah çekemez (Basitleştirilmiş)
-            if(layout[i].includes('-k')) return; 
+            if(layout[i] && layout[i].includes('-k')) return; 
 
             layout[i] = piece;
             layout[from] = '';
             analyzeAndLog(from, i, piece, true);
             
-            // İhanet eden taş görevini tamamlar ve silinir
             setTimeout(() => {
                 layout[i] = '';
                 draw();
@@ -247,7 +199,6 @@ function handleSquareClick(i) {
         return;
     }
 
-    // Normal Hamle Modu
     if (selectedSquare === null) {
         if (layout[i] && layout[i].startsWith(turn)) {
             selectedSquare = i;
@@ -258,10 +209,8 @@ function handleSquareClick(i) {
         if (moves.includes(i)) {
             const piece = layout[selectedSquare];
             const from = selectedSquare;
-            
             layout[i] = piece;
             layout[selectedSquare] = '';
-            
             analyzeAndLog(from, i, piece);
             selectedSquare = null;
             completeTurn();
@@ -285,7 +234,6 @@ function draw() {
         const isBlack = (Math.floor(i / 8) + (i % 8)) % 2 !== 0;
         square.className = `square ${isBlack ? 'black' : 'white'} ${selectedSquare === i ? 'active-law' : ''}`;
         
-        // İhanet edebilir taşı görselleştir (Ready durumu)
         const currentThreats = gameLog.length > 0 ? gameLog[gameLog.length-1].threats : [];
         if (currentThreats && currentThreats.includes(i) && gameLog[gameLog.length-1].symbol === "†") {
             square.style.boxShadow = "inset 0 0 15px #ff6600";
@@ -313,5 +261,4 @@ function updateStatus() {
     statusElement.innerText = "SIRA: " + (turn === 'w' ? "BEYAZDA" : "SİYAHTA");
 }
 
-// Oyunu Başlat
 initGame();
