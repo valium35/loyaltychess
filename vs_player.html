@@ -89,11 +89,10 @@
     <script src="translations.js"></script>
     <script src="logic_alerts.js"></script>
     <script>
-       // Fonksiyonu global yapıyoruz ki her yerden erişilsin
+      // 1. Fonksiyonu Tanımlıyoruz
     window.applyPlayerLanguage = function() {
-        // LoyaltyDict yüklendi mi kontrol et
         if (typeof LoyaltyDict === 'undefined') {
-            console.error("Hata: translations.js yüklenemedi!");
+            console.error("KRİTİK HATA: translations.js dosyasına ulaşılamıyor!");
             return;
         }
 
@@ -101,7 +100,7 @@
         const t = LoyaltyDict[lang];
 
         if (t) {
-            // Panel Başlıkları ve Butonlar
+            // Panel ve Buton Metinleri
             const elements = {
                 'status': t.status,
                 'restart-btn': t.resetBtn,
@@ -118,7 +117,7 @@
                 if (el) el.innerText = elements[id];
             }
 
-            // Kurallar Listesi
+            // Kurallar Açıklamaları
             if (t.rules) {
                 for (let i = 0; i < 3; i++) {
                     const el = document.getElementById(`rule-${i+1}-desc`);
@@ -126,7 +125,7 @@
                 }
             }
 
-            // Kısıtlamalar Kutusu
+            // Kısıtlamalar Listesi
             const resBox = document.getElementById('restrictions-list');
             if (resBox && t.restrictions) {
                 let html = `<h4>${t.restrictionsTitle}</h4>`;
@@ -135,16 +134,21 @@
                 });
                 resBox.innerHTML = html;
             }
+            console.log("LoyaltyChess: Dil başarıyla uygulandı (" + lang + ")");
         }
     };
+    </script>
 
-    // Sayfa yüklendiğinde çalıştır
-    document.addEventListener("DOMContentLoaded", window.applyPlayerLanguage);
-    </script>
     <script src="logic_player.js"></script>
+
     <script>
-        // Oyun motoru yüklendikten SONRA dili bir kez daha zorla güncelle
-        if(window.applyPlayerLanguage) window.applyPlayerLanguage();
+    // 3. Her şey bittiğinde (Sayfa + JS dosyaları) son bir kez tetikle
+    window.onload = function() {
+        if(window.applyPlayerLanguage) {
+            window.applyPlayerLanguage();
+        }
+    };
     </script>
+  
 </body>
 </html>
