@@ -201,6 +201,7 @@ function completeTurn() {
     let betrayalCandidate = null;
     for (let targetIndex of threatsFromLastTurn) {
         const piece = layout[targetIndex];
+        // Eğer hedefte hala rakip subay varsa VE şu anki saldırılar içinde yer alıyorsa VE korunmuyorsa
         if (piece && piece.startsWith(nextPlayer) && ['n', 'r', 'b'].includes(piece[2])) {
             if (currentAttacks.includes(targetIndex) && !isSquareAttacked(targetIndex, nextPlayer)) {
                 betrayalCandidate = targetIndex;
@@ -209,17 +210,24 @@ function completeTurn() {
         }
     }
 
-    // 3. Log Sembol Güncelleme
+    // 3. Log Sembol Güncelleme (Garantili Akış)
     if (gameLog.length > 0 && !isBetrayalMoveMode) {
-        const lastEntry = gameLog[gameLog.length-1];
-        const logDiv = logElement.firstChild;
-        if (betrayalCandidate !== null) {
-            lastEntry.symbol = "†";
-            if (logDiv) { logDiv.lastChild.innerText = "†"; logDiv.lastChild.className = "ready-mark"; }
-        } else if (currentAttacks.some(idx => layout[idx] && layout[idx].startsWith(nextPlayer) && ['n','r','b'].includes(layout[idx][2]))) {
-            lastEntry.symbol = "!";
-            if (logDiv) { logDiv.lastChild.innerText = "!"; logDiv.lastChild.className = "threat-mark"; }
-        }
+        const lastEntry = gameLog[gameLog.length - 1];
+        setTimeout(() => { // Log elementinin DOM'da oluşması için minik bir gecikme
+            const logDiv = logElement.querySelector('.log-entry'); // En üstteki (en yeni) log
+            if (logDiv) {
+                const symbolSpan = logDiv.lastChild;
+                if (betrayalCandidate !== null) {
+                    lastEntry.symbol = "†";
+                    symbolSpan.innerText = "†";
+                    symbolSpan.className = "ready-mark";
+                } else if (currentAttacks.some(idx => layout[idx] && layout[idx].startsWith(nextPlayer) && ['n','r','b'].includes(layout[idx][2]))) {
+                    lastEntry.symbol = "!";
+                    symbolSpan.innerText = "!";
+                    symbolSpan.className = "threat-mark";
+                }
+            }
+        }, 10);
     }
 
     // 4. Durum Güncellemesi
@@ -231,24 +239,25 @@ function completeTurn() {
     // 5. Şah Mat Kontrolü
     if (isCheckmate(turn)) setTimeout(() => alert("ŞAH MAT!"), 300);
 
-    // 6. İhanet Tetikleme (Popup)
+    // 6. İhanet Tetikleme (Görsel gecikme ile)
     if (betrayalCandidate !== null) {
         betrayalTarget = betrayalCandidate;
-        if (typeof showPop === "function") {
-            showPop(
-                "LAW 2: THE CHOICE", 
-                "Bir subay saf değiştirmeye hazır! Onu kontrol edip son bir hamle yaptırmak ister misin?", 
-                "İhanet eden taş Şah çekemez. Hamleden sonra oyundan çıkar.", 
-                "#ff6600"
-            );
-        } else {
-            if (confirm("LoyaltyChess: Bu subay ihanet etmeye hazır!")) {
-                startBetrayal();
+        setTimeout(() => { // Tahta çizildikten sonra popup açılır
+            if (typeof showPop === "function") {
+                showPop(
+                    "LAW 2: THE CHOICE", 
+                    "Bir subay saf değiştirmeye hazır! Onu kontrol edip son bir hamle yaptırmak ister misin?", 
+                    "İhanet eden taş Şah çekemez. Hamleden sonra oyundan çıkar.", 
+                    "#ff6600"
+                );
+            } else {
+                if (confirm("LoyaltyChess: Bu subay ihanet etmeye hazır!")) {
+                    startBetrayal();
+                }
             }
-        }
+        }, 200);
     }
 }
-
 function startBetrayal() {
     if (betrayalTarget !== null) {
         layout[betrayalTarget] = turn + layout[betrayalTarget].substring(1);
