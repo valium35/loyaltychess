@@ -117,10 +117,36 @@ body {
         height: 40px;
     }
 
-    .side-panel {
-        width: 100%; /* Yan paneli ekran genişliğine yayar */
-        max-width: 400px;
-    }
+   .side-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 350px; /* Sabit bir genişlik paneli derli toplu tutar */
+    max-height: 90vh; /* Ekranın dışına taşmasını engeller */
+}
+
+.log-container {
+    background: #1a1a1a;
+    border: 2px solid #333;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+#move-history {
+    height: 180px; /* Çok uzun olmasın, kurallara yer kalsın */
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    color: #ddd;
+    background: #111;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+/* Semboller için özel renkler */
+.threat-mark { color: #ffcc00; font-weight: bold; } /* ! */
+.ready-mark { color: #ff6600; font-weight: bold; }  /* † */
+.betrayal-mark { color: #ff0000; font-weight: bold; } /* ☠ */
 
     .popup-overlay {
         left: 50%; /* Pop-up'ı mobilde ortalar */
