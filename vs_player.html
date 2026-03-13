@@ -90,59 +90,56 @@
     <script src="logic_alerts.js"></script>
     <script>
         function applyPlayerLanguage() {
-            const lang = localStorage.getItem('gameLang') || 'tr';
-            const t = LoyaltyDict[lang];
+        const lang = localStorage.getItem('gameLang') || 'tr';
+        const t = LoyaltyDict[lang];
 
-            if (t) {
-                // Durum ve Butonlar
-                const status = document.getElementById('status');
-                if(status) status.innerText = t.status;
+        if (t) {
+            // Durum ve Butonlar
+            const status = document.getElementById('status');
+            if(status) status.innerText = t.status;
 
-                const restartBtn = document.getElementById('restart-btn');
-                if(restartBtn) restartBtn.innerText = t.resetBtn;
+            const restartBtn = document.getElementById('restart-btn');
+            if(restartBtn) restartBtn.innerText = t.resetBtn;
 
-                const undoBtn = document.getElementById('undo-btn');
-                if(undoBtn) undoBtn.innerText = t.undoBtn;
+            const undoBtn = document.getElementById('undo-btn');
+            if(undoBtn) undoBtn.innerText = t.undoBtn;
 
-                const historyTitle = document.getElementById('history-title');
-                if(historyTitle) historyTitle.innerText = t.historyTitle;
+            const historyTitle = document.getElementById('history-title');
+            if(historyTitle) historyTitle.innerText = t.historyTitle;
 
-                // Kurallar Paneli
-                const pTitle = document.getElementById('panel-title');
-                if(pTitle) pTitle.innerText = t.rulesTitle;
+            // Kurallar Paneli
+            const pTitle = document.getElementById('panel-title');
+            if(pTitle) pTitle.innerText = t.rulesTitle;
 
-                document.getElementById('rule-1-desc').innerText = t.rules[0];
-                document.getElementById('rule-2-desc').innerText = t.rules[1];
-                document.getElementById('rule-3-desc').innerText = t.rules[2];
-
-                // Kısıtlamalar Kutusu
-                const resBox = document.getElementById('restrictions-list');
-                if (resBox) {
-                    resBox.innerHTML = `<h4>${t.restrictionsTitle}</h4>`;
-                    t.restrictions.forEach(r => {
-                        const d = document.createElement('div');
-                        d.className = 'restriction-item';
-                        d.style = "font-size: 0.75rem; color: #eee; margin-bottom: 5px;";
-                        d.innerText = `• ${r}`;
-                        resBox.appendChild(d);
-                    });
-                }
-
-                // Popup statik kısımları
-                const alertTitle = document.getElementById('alert-title');
-                if(alertTitle) alertTitle.innerText = t.popups.alertTitle;
-
-                const lawLabel = document.getElementById('popup-law-label');
-                if(lawLabel) lawLabel.innerText = t.popups.lawLabel;
-
-                const confirmBtn = document.getElementById('popup-confirm-btn');
-                if(confirmBtn) confirmBtn.innerText = t.popups.confirmBtn;
+            // Kurallar (Eğer translations.js'de rules dizisi varsa)
+            if (t.rules) {
+                if(document.getElementById('rule-1-desc')) document.getElementById('rule-1-desc').innerText = t.rules[0];
+                if(document.getElementById('rule-2-desc')) document.getElementById('rule-2-desc').innerText = t.rules[1];
+                if(document.getElementById('rule-3-desc')) document.getElementById('rule-3-desc').innerText = t.rules[2];
             }
+
+            // Kısıtlamalar Kutusu
+            const resBox = document.getElementById('restrictions-list');
+            if (resBox && t.restrictions) {
+                resBox.innerHTML = `<h4>${t.restrictionsTitle}</h4>`;
+                t.restrictions.forEach(r => {
+                    const d = document.createElement('div');
+                    d.className = 'restriction-item';
+                    d.style = "font-size: 0.75rem; color: #eee; margin-bottom: 5px;";
+                    d.innerText = `• ${r}`;
+                    resBox.appendChild(d);
+                });
+            }
+
+            // Popup statik kısımları
+            if(document.getElementById('alert-title')) document.getElementById('alert-title').innerText = t.popups.alertTitle;
+            if(document.getElementById('popup-law-label')) document.getElementById('popup-law-label').innerText = t.popups.lawLabel;
+            if(document.getElementById('popup-confirm-btn')) document.getElementById('popup-confirm-btn').innerText = t.popups.confirmBtn;
         }
-        document.addEventListener("DOMContentLoaded", applyLanguage); // applyPlayerLanguage ismini applyLanguage olarak çağırdık yukarıda
-        
-        // applyPlayerLanguage ismini applyLanguage olarak da tanımlayalım çakışmasın
-        window.onload = applyPlayerLanguage;
+    }
+
+    // Fonksiyon ismini doğru çağıralım
+    document.addEventListener("DOMContentLoaded", applyPlayerLanguage);
     </script>
     <script src="logic_player.js"></script>
 </body>
