@@ -86,19 +86,22 @@
         </div>
     </div>
 
-   <script src="translations.js"></script>
+ <script src="translations.js"></script>
 <script src="logic_player.js"></script>
 
 <script>
 window.applyPlayerLanguage = function() {
-    if (typeof LoyaltyDict === 'undefined') return;
+    if (typeof LoyaltyDict === 'undefined') {
+        console.error("Sözlük bulunamadı!");
+        return;
+    }
 
     const lang = localStorage.getItem('gameLang') || 'tr';
     const t = LoyaltyDict[lang];
 
     if (t) {
-        // 1. Basit Metinler
-        const elements = {
+        // ID eşleşmeleri
+        const uiMap = {
             'restart-btn': t.resetBtn,
             'undo-btn': t.undoBtn,
             'history-title': t.historyTitle,
@@ -108,35 +111,30 @@ window.applyPlayerLanguage = function() {
             'popup-confirm-btn': t.popups.confirmBtn
         };
 
-        for (let id in elements) {
+        Object.keys(uiMap).forEach(id => {
             const el = document.getElementById(id);
-            if (el) el.innerText = elements[id];
-        }
+            if (el) el.innerText = uiMap[id];
+        });
 
-        // 2. Kurallar (0. 1. 2. indexleri için)
-        if (t.rules) {
-            t.rules.forEach((text, i) => {
-                const el = document.getElementById(`rule-${i+1}-desc`);
-                if (el) el.innerText = text;
-            });
-        }
+        // Kurallar
+        t.rules.forEach((ruleText, index) => {
+            const el = document.getElementById(`rule-${index+1}-desc`);
+            if (el) el.innerText = ruleText;
+        });
 
-        // 3. Kısıtlamalar Listesi
+        // Kısıtlamalar
         const resBox = document.getElementById('restrictions-list');
         if (resBox && t.restrictions) {
-            let html = `<h4>${t.restrictionsTitle}</h4>`;
-            t.restrictions.forEach(r => {
-                html += `<div style="font-size: 0.75rem; color: #eee; margin-bottom: 5px;">• ${r}</div>`;
-            });
-            resBox.innerHTML = html;
+            let resHtml = `<h4>${t.restrictionsTitle}</h4>`;
+            t.restrictions.forEach(r => resHtml += `<div style="font-size: 0.75rem; color: #eee; margin-bottom: 5px;">• ${r}</div>`);
+            resBox.innerHTML = resHtml;
         }
     }
 };
 
-// SAYFA YÜKLENDİĞİNDE TETİKLE
+// Sayfa tamamen yüklendiğinde ve oyun her başladığında dili uygula
 document.addEventListener('DOMContentLoaded', () => {
     window.applyPlayerLanguage();
-    // Eğer logic_player initGame'i otomatik çağırmıyorsa buradan çağırabilirsin
 });
 </script>
   
