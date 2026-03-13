@@ -169,3 +169,38 @@ function applyLanguageToPage() {
         resBox.innerHTML = html;
     }
 }
+             function applyGlobalLanguage() {
+    const lang = localStorage.getItem('gameLang') || 'tr';
+    const t = LoyaltyDict[lang];
+    if (!t) return;
+
+    // Basit metinler (ID bazlı)
+    const map = {
+        'restart-btn': t.resetBtn,
+        'undo-btn': t.undoBtn,
+        'history-title': t.historyTitle,
+        'panel-title': t.rulesTitle,
+        'alert-title': t.popups?.alertTitle || "UYARI",
+        'popup-law-label': t.popups?.lawLabel || "KURAL:",
+        'popup-confirm-btn': t.popups?.confirmBtn || "ANLADIM"
+    };
+
+    for (let id in map) {
+        const el = document.getElementById(id);
+        if (el) el.innerText = map[id];
+    }
+
+    // Kurallar
+    for (let i = 0; i < 3; i++) {
+        const el = document.getElementById(`rule-${i+1}-desc`);
+        if (el && t.rules[i]) el.innerText = t.rules[i];
+    }
+
+    // Kısıtlamalar
+    const resBox = document.getElementById('restrictions-list');
+    if (resBox && t.restrictions) {
+        let html = `<h4>${t.restrictionsTitle}</h4>`;
+        t.restrictions.forEach(r => html += `<div style="font-size: 0.75rem; color: #eee; margin-bottom: 5px;">• ${r}</div>`);
+        resBox.innerHTML = html;
+    }
+}   
