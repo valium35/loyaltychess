@@ -271,18 +271,18 @@ function draw() {
 }
 
 function updateStatus() {
-    const t = getT();
+    const t = getT(); // Zaten hazırladığın yardımcı fonksiyon
     if (statusElement && t) {
         const kingPos = findKing(turn);
         const opponent = turn === 'w' ? 'b' : 'w';
-        const check = isSquareAttacked(kingPos, opponent);
-        const lang = localStorage.getItem('gameLang') || 'tr';
+        const isCheck = isSquareAttacked(kingPos, opponent);
         
+        // Temel metin (Sıra Beyazda / Sıra Siyahda)
         let label = (turn === 'w' ? t.status : t.statusBlack);
         
-        if (check) {
-            // translations.js içine statusCheck: " (ŞAH!)" eklersen daha temiz olur
-            label += (lang === 'en' ? " (CHECK!)" : " (ŞAH!)");
+        // Eğer şah varsa sözlükteki (ŞAH!) veya (CHECK!) metnini ekle
+        if (isCheck) {
+            label += (t.statusCheck || " (ŞAH!)"); 
         }
         
         statusElement.innerText = label;
