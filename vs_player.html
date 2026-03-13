@@ -142,6 +142,9 @@
     document.addEventListener("DOMContentLoaded", window.applyPlayerLanguage);
     </script>
     <script src="logic_player.js"></script>
-    if(window.applyPlayerLanguage) window.applyPlayerLanguage();
+    <script>
+        // Oyun motoru yüklendikten SONRA dili bir kez daha zorla güncelle
+        if(window.applyPlayerLanguage) window.applyPlayerLanguage();
+    </script>
 </body>
 </html>
