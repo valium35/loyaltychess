@@ -199,16 +199,24 @@ function completeTurn() {
     }
 
     // İhanet Kontrolü
-    let betrayalCandidate = null;
-    for (let targetIndex of threatsFromLastTurn) {
-        const p = layout[targetIndex];
-        if (p && p.startsWith(nextPlayer) && ['n', 'r', 'b'].includes(p[2])) {
-            if (currentAttacks.includes(targetIndex) && !isSquareAttacked(targetIndex, nextPlayer)) {
-                betrayalCandidate = targetIndex;
-                break;
-            }
+   if (betrayalCandidate !== null) {
+    betrayalTarget = betrayalCandidate;
+    
+    // logic_alerts.js içindeki fonksiyonu çağırıyoruz
+    if (typeof showPop === "function") {
+        showPop(
+            "LAW 2: THE CHOICE", 
+            "Bir subay saf değiştirmeye hazır! Onu kontrol edip son bir hamle yaptırmak ister misin?", 
+            "İhanet eden taş Şah çekemez. Hamleden sonra oyundan çıkar.", 
+            "#ff6600"
+        );
+    } else {
+        // Eğer showPop yüklenemediyse oyunun çökmemesi için fallback
+        if (confirm("LoyaltyChess: Bu subay ihanet etmeye hazır! Hamle yapmak ister misin?")) {
+            startBetrayal();
         }
     }
+}
 
     // Log Sembol Güncelleme
     if (gameLog.length > 0 && !isBetrayalMoveMode) {
