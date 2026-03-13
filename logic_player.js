@@ -156,9 +156,8 @@ function handleSquareClick(i) {
     } else {
         const legalMoves = getLegalMoves(selectedSquare);
         if (legalMoves.includes(i)) {
-            const piece = layout[selectedSquare];
             executeMove(selectedSquare, i);
-            addToLog(selectedSquare, i, ""); // Sembol completeTurn'de eklenecek
+            addToLog(selectedSquare, i, ""); 
             selectedSquare = null;
             completeTurn();
         } else {
@@ -190,7 +189,7 @@ function completeTurn() {
     const lastPlayer = turn;
     const nextPlayer = (turn === 'w' ? 'b' : 'w');
     
-    // 1. Saldırıları topla
+    // 1. Mevcut saldırıları topla
     let currentAttacks = [];
     for (let i = 0; i < 64; i++) {
         if (layout[i] && layout[i].startsWith(lastPlayer)) {
@@ -198,11 +197,10 @@ function completeTurn() {
         }
     }
 
-    // --- KRİTİK EKLEME: İhanet Adayını Belirle ---
+    // 2. İhanet Adayını Belirle
     let betrayalCandidate = null;
     for (let targetIndex of threatsFromLastTurn) {
         const piece = layout[targetIndex];
-        // Rakip subay (n, r, b) hala saldırı altındaysa ve korumasızsa
         if (piece && piece.startsWith(nextPlayer) && ['n', 'r', 'b'].includes(piece[2])) {
             if (currentAttacks.includes(targetIndex) && !isSquareAttacked(targetIndex, nextPlayer)) {
                 betrayalCandidate = targetIndex;
@@ -210,9 +208,8 @@ function completeTurn() {
             }
         }
     }
-    // ---------------------------------------------
 
-    // Log Sembol Güncelleme
+    // 3. Log Sembol Güncelleme
     if (gameLog.length > 0 && !isBetrayalMoveMode) {
         const lastEntry = gameLog[gameLog.length-1];
         const logDiv = logElement.firstChild;
@@ -225,14 +222,16 @@ function completeTurn() {
         }
     }
 
+    // 4. Durum Güncellemesi
     turn = nextPlayer;
     threatsFromLastTurn = currentAttacks;
     draw();
     updateStatus();
 
+    // 5. Şah Mat Kontrolü
     if (isCheckmate(turn)) setTimeout(() => alert("ŞAH MAT!"), 300);
 
-    // İhanet Tetikleme (Popup burada açılır)
+    // 6. İhanet Tetikleme (Popup)
     if (betrayalCandidate !== null) {
         betrayalTarget = betrayalCandidate;
         if (typeof showPop === "function") {
@@ -250,34 +249,11 @@ function completeTurn() {
     }
 }
 
-  
-
-    turn = nextPlayer;
-    threatsFromLastTurn = currentAttacks;
-    draw();
-    updateStatus();
-
-    if (isCheckmate(turn)) setTimeout(() => alert("ŞAH MAT!"), 300);
-
-    // İhanet Tetikleme (Sadece senin Popup'ını kullanır)
-    if (betrayalCandidate !== null) {
-        betrayalTarget = betrayalCandidate;
-        if (typeof showPop === "function") {
-            showPop(
-                "LAW 2: THE CHOICE", 
-                "Bir subay saf değiştirmeye hazır! Onu kontrol edip son bir hamle yaptırmak ister misin?", 
-                "İhanet eden taş Şah çekemez. Hamleden sonra oyundan çıkar.", 
-                "#ff6600"
-            );
-        }
-    }
-}
-
 function startBetrayal() {
     if (betrayalTarget !== null) {
         layout[betrayalTarget] = turn + layout[betrayalTarget].substring(1);
         isBetrayalMoveMode = true;
-        closePopup();
+        if (typeof closePopup === "function") closePopup();
         draw();
         updateStatus();
     }
