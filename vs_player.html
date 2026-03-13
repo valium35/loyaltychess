@@ -93,10 +93,38 @@
             </div>
             <button onclick="closePopup()" class="popup-btn">ANLADIM</button>
         </div>
-    </div>
- 
-    <script src="logic_alerts.js"></script>
+    </div><script src="logic_alerts.js"></script>
+
+    <script src="translations.js"></script> 
+
+    <script>
+        function applyPlayerLanguage() {
+            const lang = localStorage.getItem('gameLang') || 'tr';
+            const t = LoyaltyDict[lang];
+
+            if (t) {
+                document.getElementById('panel-title').innerText = t.rulesTitle;
+                document.getElementById('rule-1-desc').innerText = t.rules[0];
+                document.getElementById('rule-2-desc').innerText = t.rules[1];
+                document.getElementById('rule-3-desc').innerText = t.rules[2];
+
+                const resBox = document.getElementById('restrictions-list');
+                if (resBox) {
+                    resBox.innerHTML = `<h4>${t.restrictionsTitle}</h4>`;
+                    t.restrictions.forEach(r => {
+                        const d = document.createElement('div');
+                        d.className = 'restriction-item';
+                        d.innerText = r;
+                        resBox.appendChild(d);
+                    });
+                }
+            }
+        }
+        document.addEventListener("DOMContentLoaded", applyPlayerLanguage);
+    </script>
+
     <script src="logic_player.js"></script>
-  
 </body>
 </html>
+ 
+  
