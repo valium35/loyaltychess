@@ -8,7 +8,8 @@ let hasMoved = {};
 let isBetrayalMoveMode = false;
 let betrayalTarget = null;
 let threatsFromLastTurn = [];
-
+// registry.js (Tüm sayfalarda ortak kullanılabilir)
+let gameLog = [];
 const boardElement = document.getElementById('chess-board');
 const statusElement = document.getElementById('status');
 
@@ -282,6 +283,24 @@ function draw() {
 
 function updateStatus() {
     statusElement.innerText = isBetrayalMoveMode ? "⚠️ İHANET HAMLESİ BEKLENİYOR" : "SIRA: " + (turn === 'w' ? "BEYAZDA" : "SİYAHTA");
+}function addLog(move, symbol, analysisData) {
+    const entry = {
+        move: move, // Örn: "e2-e4"
+        symbol: symbol, // Örn: "!"
+        turn: turn,
+        analysis: analysisData // İleride sorgulamak için tüm teknik detay
+    };
+    gameLog.push(entry);
+    renderLog();
+}
+
+// Senin istediğin Query fonksiyonu:
+function getBetrayalStatus() {
+    if (gameLog.length < 2) return null;
+    return {
+        lastMove: gameLog[gameLog.length - 1],
+        previousMove: gameLog[gameLog.length - 2]
+    };
 }
 
 initGame();
