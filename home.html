@@ -106,7 +106,36 @@
             </div>
             <button onclick="closePopup()" class="popup-btn">Tamam</button>
         </div>
-    </div>
+    </div><script src="translations.js"></script>
+    <script src="logic_alerts.js"></script>
+    <script src="home_script.js"></script>
+
+    <script>
+        // Sayfa yüklendiğinde dili otomatik uygula
+        window.onload = function() {
+            // translations.js içindeki akıllı fonksiyonu çağır
+            if (typeof applyLanguageToPage === 'function') {
+                applyLanguageToPage();
+            }
+
+            // home.html'e özel: Buton metinlerini de güncelle
+            const lang = localStorage.getItem('gameLang') || 'tr';
+            const t = LoyaltyDict[lang];
+            
+            if (t) {
+                const nextBtn = document.getElementById('next-btn');
+                const prevBtn = document.getElementById('prev-btn');
+                if (nextBtn) nextBtn.innerText = t.nextBtn;
+                if (prevBtn) prevBtn.innerText = t.backBtn;
+                
+                // İlk mesajı bas (Yükleniyor yerine)
+                const statusBox = document.getElementById('status');
+                if (statusBox) statusBox.innerText = t.startMsg;
+            }
+            
+            // Eğer home_script.js içinde bir başlangıç fonksiyonu varsa (örn: init) onu burada çağırabilirsin
+        };
+    </script>
 
     <script src="logic_alerts.js"></script>
     <script src="home_script.js"></script>
