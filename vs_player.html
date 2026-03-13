@@ -86,69 +86,59 @@
         </div>
     </div>
 
-    <script src="translations.js"></script>
-    <script src="logic_alerts.js"></script>
-    <script>
-      // 1. Fonksiyonu Tanımlıyoruz
-    window.applyPlayerLanguage = function() {
-        if (typeof LoyaltyDict === 'undefined') {
-            console.error("KRİTİK HATA: translations.js dosyasına ulaşılamıyor!");
-            return;
+   <script src="translations.js"></script>
+<script src="logic_player.js"></script>
+
+<script>
+window.applyPlayerLanguage = function() {
+    if (typeof LoyaltyDict === 'undefined') return;
+
+    const lang = localStorage.getItem('gameLang') || 'tr';
+    const t = LoyaltyDict[lang];
+
+    if (t) {
+        // 1. Basit Metinler
+        const elements = {
+            'restart-btn': t.resetBtn,
+            'undo-btn': t.undoBtn,
+            'history-title': t.historyTitle,
+            'panel-title': t.rulesTitle,
+            'alert-title': t.popups.alertTitle,
+            'popup-law-label': t.popups.lawLabel,
+            'popup-confirm-btn': t.popups.confirmBtn
+        };
+
+        for (let id in elements) {
+            const el = document.getElementById(id);
+            if (el) el.innerText = elements[id];
         }
 
-        const lang = localStorage.getItem('gameLang') || 'tr';
-        const t = LoyaltyDict[lang];
-
-        if (t) {
-            // Panel ve Buton Metinleri
-            const elements = {
-                'status': t.status,
-                'restart-btn': t.resetBtn,
-                'undo-btn': t.undoBtn,
-                'history-title': t.historyTitle,
-                'panel-title': t.rulesTitle,
-                'alert-title': t.popups.alertTitle,
-                'popup-law-label': t.popups.lawLabel,
-                'popup-confirm-btn': t.popups.confirmBtn
-            };
-
-            for (let id in elements) {
-                const el = document.getElementById(id);
-                if (el) el.innerText = elements[id];
-            }
-
-            // Kurallar Açıklamaları
-            if (t.rules) {
-                for (let i = 0; i < 3; i++) {
-                    const el = document.getElementById(`rule-${i+1}-desc`);
-                    if (el) el.innerText = t.rules[i];
-                }
-            }
-
-            // Kısıtlamalar Listesi
-            const resBox = document.getElementById('restrictions-list');
-            if (resBox && t.restrictions) {
-                let html = `<h4>${t.restrictionsTitle}</h4>`;
-                t.restrictions.forEach(r => {
-                    html += `<div style="font-size: 0.75rem; color: #eee; margin-bottom: 5px;">• ${r}</div>`;
-                });
-                resBox.innerHTML = html;
-            }
-            console.log("LoyaltyChess: Dil başarıyla uygulandı (" + lang + ")");
+        // 2. Kurallar (0. 1. 2. indexleri için)
+        if (t.rules) {
+            t.rules.forEach((text, i) => {
+                const el = document.getElementById(`rule-${i+1}-desc`);
+                if (el) el.innerText = text;
+            });
         }
-    };
-    </script>
 
-    <script src="logic_player.js"></script>
-
-    <script>
-    // 3. Her şey bittiğinde (Sayfa + JS dosyaları) son bir kez tetikle
-    window.onload = function() {
-        if(window.applyPlayerLanguage) {
-            window.applyPlayerLanguage();
+        // 3. Kısıtlamalar Listesi
+        const resBox = document.getElementById('restrictions-list');
+        if (resBox && t.restrictions) {
+            let html = `<h4>${t.restrictionsTitle}</h4>`;
+            t.restrictions.forEach(r => {
+                html += `<div style="font-size: 0.75rem; color: #eee; margin-bottom: 5px;">• ${r}</div>`;
+            });
+            resBox.innerHTML = html;
         }
-    };
-    </script>
+    }
+};
+
+// SAYFA YÜKLENDİĞİNDE TETİKLE
+document.addEventListener('DOMContentLoaded', () => {
+    window.applyPlayerLanguage();
+    // Eğer logic_player initGame'i otomatik çağırmıyorsa buradan çağırabilirsin
+});
+</script>
   
 </body>
 </html>
