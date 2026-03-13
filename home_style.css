@@ -21,7 +21,11 @@ body {
 /* LOG VE SEMBOLLER */
 .log-container { background: #1a1a1a; border: 2px solid #333; border-radius: 8px; padding: 10px; }
 #move-history { height: 160px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 0.9em; color: #ddd; background: #111; padding: 8px; border-radius: 4px; }
-.log-entry { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #222; }
+.log-entry span {
+    display: block !important;
+    margin: 8px !important;
+    width: 100%; /* Blok gibi davranması için genişlik verdik */
+}
 
 .threat-mark { color: #f1c40f; font-weight: bold; } /* ! - Sarı */
 .ready-mark { color: #ff6600; font-weight: bold; }  /* † - Turuncu */
