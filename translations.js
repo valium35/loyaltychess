@@ -88,3 +88,81 @@ const LoyaltyDict = {
             step5Msg: "White Bishop moved to b5, threatening the Knight on c6!",
             step6Title: "🔥 BETRAYAL!",
             step6Msg: "Knight was left undefended. Law of Betrayal is
+                const LoyaltyDict = {
+    tr: {
+        // ... (Senin paylaştığın TR içeriği buraya gelecek)
+        status: "Sıra Beyazda...",
+        statusBlack: "Sıra Siyahda...",
+        resetBtn: "Yeniden Başlat",
+        undoBtn: "Geri Al",
+        rulesTitle: "📜 İhanet Yasaları",
+        restrictionsTitle: "🚫 Kısıtlamalar",
+        historyTitle: "⚔️ LOYALTY LOG",
+        rules: [
+            "1. AKTİF TEHDİT: İhanet sadece taze tehditlerde tetiklenir.",
+            "2. SEÇİM HAKKI: At, Kale ve Fil ihanet edebilir.",
+            "3. SON GÖREV: İhanet eden taş şah çekemez."
+        ],
+        restrictions: ["İhanet eden taş Şah çekemez.", "Vezirler asla ihanet etmez.", "Şah çatalında geçersizdir."],
+        popups: { alertTitle: "⚠️ UYARI", confirmBtn: "ANLADIM", lawLabel: "KURAL:" }
+    },
+    en: {
+        // ... (Senin paylaştığın EN içeriği buraya gelecek)
+        status: "White's Turn...",
+        statusBlack: "Black's Turn...",
+        resetBtn: "Restart Game",
+        undoBtn: "Undo Move",
+        rulesTitle: "📜 Laws of Betrayal",
+        restrictionsTitle: "🚫 Restrictions",
+        historyTitle: "⚔️ LOYALTY LOG",
+        rules: [
+            "1. ACTIVE THREAT: Betrayal triggers on fresh threats.",
+            "2. THE CHOICE: Knights, Rooks, and Bishops can betray.",
+            "3. FINAL MISSION: Traitors cannot check."
+        ],
+        restrictions: ["Traitors cannot check.", "Queens are always loyal.", "Void during Royal Fork."],
+        popups: { alertTitle: "⚠️ ALERT", confirmBtn: "GOT IT", lawLabel: "LAW:" }
+    }
+};
+
+// --- İŞTE O AKILLI BAĞLANTI FONKSİYONU ---
+function applyLanguageToPage() {
+    const lang = localStorage.getItem('gameLang') || 'tr';
+    const t = LoyaltyDict[lang];
+    if (!t) return;
+
+    // 1. Basit Yazılar (Butonlar, Başlıklar)
+    const map = {
+        'status': t.status,
+        'restart-btn': t.resetBtn,
+        'undo-btn': t.undoBtn,
+        'history-title': t.historyTitle,
+        'panel-title': t.rulesTitle,
+        'alert-title': t.popups.alertTitle,
+        'popup-law-label': t.popups.lawLabel,
+        'popup-confirm-btn': t.popups.confirmBtn
+    };
+
+    for (let id in map) {
+        const el = document.getElementById(id);
+        if (el) el.innerText = map[id];
+    }
+
+    // 2. Kurallar (rule-1-desc, rule-2-desc, rule-3-desc)
+    for (let i = 0; i < 3; i++) {
+        const el = document.getElementById(`rule-${i+1}-desc`);
+        // index.html için de uyumlu olsun diye alternatif ID:
+        const homeEl = document.getElementById(`h-rule-${i+1}-desc`);
+        
+        if (el) el.innerText = t.rules[i];
+        if (homeEl) homeEl.innerText = t.rules[i];
+    }
+
+    // 3. Kısıtlamalar Kutusu
+    const resBox = document.getElementById('restrictions-list');
+    if (resBox && t.restrictions) {
+        let html = `<h4>${t.restrictionsTitle}</h4>`;
+        t.restrictions.forEach(r => html += `<div>• ${r}</div>`);
+        resBox.innerHTML = html;
+    }
+}
