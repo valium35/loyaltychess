@@ -36,7 +36,9 @@ function getCoordsLabel(i) {
     const cols = 'abcdefgh';
     const rows = '87654321';
     return cols[i % 8] + rows[Math.floor(i / 8)];
-}function analyzeAndLog(from, to, piece, isBetrayal = false) {
+}
+
+function analyzeAndLog(from, to, piece, isBetrayal = false) {
     let symbol = "";
     let statusClass = "";
     let currentThreats = []; 
@@ -60,24 +62,19 @@ function getCoordsLabel(i) {
         symbol = "!";
         statusClass = "threat-mark";
 
-        // READY (†) KONTROLÜ
-        // Eğer benim ÖNCEKİ hamlemde de birileri tehlikedeyse (gameLog[length-2])
+        // READY (†) KONTROLÜ: Önceki hamlemde de aynı taş tehdit altındaysa
         if (gameLog.length >= 2) {
             const myLastTurn = gameLog[gameLog.length - 2];
             if (myLastTurn.threats && myLastTurn.threats.length > 0) {
-                // Ortak bir kare var mı? (Önceki tehdit hala devam ediyor mu?)
-                const stillVulnerable = currentThreats.some(idx => myLastMoveCheck(myLastTurn.threats, idx));
+                const stillVulnerable = currentThreats.some(idx => 
+                    myLastTurn.threats.map(Number).includes(Number(idx))
+                );
                 if (stillVulnerable) {
                     symbol = "†";
                     statusClass = "ready-mark";
                 }
             }
         }
-    }
-
-    // Yardımcı fonksiyon: Number vs String tip hatasını önler
-    function myLastMoveCheck(arr, val) {
-        return arr.map(Number).includes(Number(val));
     }
 
     // Log Kaydı
@@ -90,7 +87,7 @@ function getCoordsLabel(i) {
     };
     gameLog.push(logEntry);
     
-    // UI Log Güncelleme
+    // UI Güncelleme (Log Paneli)
     if (logElement) {
         if (gameLog.length === 1) logElement.innerHTML = '';
         const logItem = document.createElement('div');
@@ -103,24 +100,22 @@ function getCoordsLabel(i) {
     if (symbol === "†") {
         console.log("İhanet tespit edildi, popup tetikleniyor...");
         const victimIdx = currentThreats[0];
-        
-        // Önce basit bir alert ile test edelim
-        // alert("İhanet Hazır: " + getCoordsLabel(victimIdx)); 
+        const victimName = (layout[victimIdx] && layout[victimIdx][2] === 'n') ? 'AT' : 
+                           (layout[victimIdx] && layout[victimIdx][2] === 'r') ? 'KALE' : 'FİL';
 
-        // logic_alerts.js içindeki fonksiyonu çağır
-        if (typeof openPopup === "function") {
-            openPopup(
-                `İHANET UYARISI: ${getCoordsLabel(victimIdx)} karesindeki subay sahipsiz kaldı!`,
-                "LAW 2: THE CHOICE",
-                "Bu taş artık saf değiştirmeye hazır."
+        // Senin logic_alerts.js dosmandaki fonksiyonu çağırıyoruz:
+        if (typeof showPop === "function") {
+            showPop(
+                "LAW 2: THE CHOICE", // title
+                `${getCoordsLabel(victimIdx)} karesindeki ${victimName} sahipsiz kaldı!`, // message
+                "Bu subay bir sonraki hamlede saf değiştirmeye hazır.", // rule
+                "#f1c40f" // Sarı Loyalty rengi
             );
         } else {
-            console.error("HATA: openPopup fonksiyonu logic_alerts.js içinde bulunamadı!");
+            console.error("HATA: showPop fonksiyonu bulunamadı! logic_alerts.js yüklü mü?");
         }
     }
 }
-
-
 
 // --- 4. HAREKET VE SALDIRI KONTROLÜ ---
 
@@ -173,7 +168,7 @@ function getRawMoves(i, onlyAttacks = false) {
                 moves.push(f1);
                 if (r === (color === 'w' ? 6 : 1)) {
                     const f2 = (r + 2*dir) * 8 + c;
-                    if (!layout[f2]) moves.push(f2);
+                    if (f2 >= 0 && f2 < 64 && !layout[f2]) moves.push(f2);
                 }
             }
         }
@@ -248,8 +243,9 @@ function draw() {
         const isBlack = (Math.floor(i / 8) + (i % 8)) % 2 !== 0;
         square.className = `square ${isBlack ? 'black' : 'white'} ${selectedSquare === i ? 'active-law' : ''}`;
         
-        const currentThreats = gameLog.length > 0 ? gameLog[gameLog.length-1].threats : [];
-        if (currentThreats && currentThreats.includes(i) && gameLog[gameLog.length-1].symbol === "†") {
+        // İhanet edebilir taşı görselleştir (Logdaki son hamleye göre)
+        const lastMove = gameLog.length > 0 ? gameLog[gameLog.length-1] : null;
+        if (lastMove && lastMove.symbol === "†" && lastMove.threats.includes(i)) {
             square.style.boxShadow = "inset 0 0 15px #ff6600";
             square.title = "İhanet için tıkla!";
             square.onclick = () => {
