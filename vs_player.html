@@ -47,20 +47,29 @@
             </div>
 
             <div class="log-container">
-                <h3 id="history-title" style="color:#f1c40f; text-align:center; margin-top:0; border-bottom: 1px solid #333; padding-bottom: 10px;">⚔️ LOYALTY LOG</h3>
+                <h3 id="historyTitle" style="color:#f1c40f; text-align:center; margin-top:0; border-bottom: 1px solid #333; padding-bottom: 10px;">⚔️ LOYALTY LOG</h3>
                 <div id="move-history"></div>
             </div>
 
             <div class="controls">
-                <button onclick="location.reload()" id="restart-btn">...</button>
-                <button onclick="alert('SOON!')" id="undo-btn">...</button>
+                <button onclick="location.reload()" id="resetBtn">---</button>
+                <button onclick="alert('SOON!')" id="undoBtn">---</button>
             </div>
 
             <div class="full-rules-panel">
-                <h3 id="panel-title">📜 THE 3 LAWS</h3>
-                <div class="law-item"><strong>⚡ 1. ACTIVE THREAT</strong><span id="rule-1-desc">...</span></div>
-                <div class="law-item"><strong>🔄 2. THE CHOICE</strong><span id="rule-2-desc">...</span></div>
-                <div class="law-item"><strong>💨 3. FINAL MISSION</strong><span id="rule-3-desc">...</span></div>
+                <h3 id="rulesTitle">📜 THE 3 LAWS</h3>
+                <div class="law-item">
+                    <strong id="rule1Title">⚡ 1. ACTIVE THREAT</strong>
+                    <span id="rule-1-desc">...</span>
+                </div>
+                <div class="law-item">
+                    <strong id="rule2Title">🔄 2. THE CHOICE</strong>
+                    <span id="rule-2-desc">...</span>
+                </div>
+                <div class="law-item">
+                    <strong id="rule3Title">💨 3. FINAL MISSION</strong>
+                    <span id="rule-3-desc">...</span>
+                </div>
                 <div id="restrictions-list" class="restrictions-box"></div>
             </div>
         </div> 
@@ -68,45 +77,46 @@
 
     <div id="betrayal-popup" class="popup-overlay" style="display:none;">
         <div class="popup-content">
-            <h2 id="alert-title" class="alert-title">⚠️ ALERT</h2>
+            <h2 id="alertTitle" class="alert-title">⚠️ ALERT</h2>
             <p id="popup-msg">...</p>
             <div style="font-size:0.8rem; color:#aaa; margin:15px 0; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px;">
-                <strong id="popup-law-label">KURAL:</strong> <span id="popup-rule">...</span>
+                <strong id="lawLabel">KURAL:</strong> <span id="popup-rule">...</span>
             </div>
-            <button id="popup-confirm-btn" onclick="closePopup()" class="popup-btn">ANLADIM</button>
+            <button id="confirmBtn" onclick="closePopup()" class="popup-btn">---</button>
         </div>
     </div>
 
     <script src="translations.js"></script>
+    
     <script src="logic_player.js"></script>
 
     <script>
         window.onload = function() {
-            // 1. Home.html'deki o akıllı fonksiyonu çağırıyoruz
+            // home.html'de çalışan o meşhur fonksiyonu çağır
             if (typeof applyLanguageToPage === 'function') {
                 applyLanguageToPage();
             }
 
-            // 2. vs_player.html'e özel manuel güncellemeler
+            // Sayfaya özel status (Sıra Beyazda) güncellemesi
             const lang = localStorage.getItem('gameLang') || 'tr';
             const t = LoyaltyDict[lang];
             
             if (t) {
-                // PvP Butonları doldur
-                const restartBtn = document.getElementById('restart-btn');
-                const undoBtn = document.getElementById('undo-btn');
-                const confirmBtn = document.getElementById('popup-confirm-btn');
-                
-                if (restartBtn) restartBtn.innerText = t.resetBtn || "RESTART";
-                if (undoBtn) undoBtn.innerText = t.undoBtn || "UNDO";
-                if (confirmBtn) confirmBtn.innerText = t.popups?.confirmBtn || "OK";
-
-                // Başlangıç mesajını (Sıra Beyazda gibi) bas
                 const statusBox = document.getElementById('status');
-                if (statusBox) statusBox.innerText = t.status || "Game Ready";
+                if (statusBox) {
+                    statusBox.innerText = t.status || "Game Ready";
+                }
+                
+                // Kısıtlamalar başlığı ve listesi
+                const resBox = document.getElementById('restrictions-list');
+                if (resBox && t.restrictions) {
+                    let html = `<h4>${t.restrictionsTitle || "RESTRICTIONS"}</h4>`;
+                    t.restrictions.forEach(r => html += `<div style="font-size:0.75rem; color:#eee; margin-bottom:5px;">• ${r}</div>`);
+                    resBox.innerHTML = html;
+                }
             }
 
-            // 3. Oyunun logic'ini başlat (Otomatik başlamıyorsa)
+            // Logic başlat
             if (typeof initGame === 'function') {
                 initGame();
             }
