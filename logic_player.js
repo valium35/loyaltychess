@@ -4,7 +4,8 @@ let turn = 'w';
 let selectedSquare = null;
 let enPassantTarget = null;
 let hasMoved = {}; 
-let gameLog = [];
+let gameLog = []; // Hamleleri tek tek değil, çiftler halinde tutacağız
+let moveCount = 1;
 
 const boardElement = document.getElementById('chess-board');
 const statusElement = document.getElementById('status');
@@ -49,16 +50,33 @@ function isSquareAttacked(targetIndex, attackerColor) {
 }
 
 function addToLog(from, to) {
-    const moveText = `${getCoordsLabel(from)} ➔ ${getCoordsLabel(to)}`;
-    gameLog.push(moveText);
-    if (logElement) {
-        const div = document.createElement('div');
-        div.className = 'log-entry';
-        div.innerText = moveText;
-        logElement.prepend(div);
+    const moveText = `${getCoordsLabel(from)}-${getCoordsLabel(to)}`;
+    
+    if (turn === 'w') {
+        // Beyazın hamlesi: Yeni bir satır oluştur
+        const movePair = { index: moveCount, white: moveText, black: "" };
+        gameLog.push(movePair);
+        
+        if (logElement) {
+            const div = document.createElement('div');
+            div.className = 'log-entry';
+            div.id = `move-pair-${moveCount}`;
+            div.innerHTML = `<span class="move-num">${moveCount}.</span> <span class="white-move">${moveText}</span> <span class="black-move">...</span>`;
+            logElement.prepend(div);
+        }
+    } else {
+        // Siyahın hamlesi: Mevcut son satırı güncelle
+        if (gameLog.length > 0) {
+            gameLog[gameLog.length - 1].black = moveText;
+            
+            const lastDiv = document.getElementById(`move-pair-${moveCount}`);
+            if (lastDiv) {
+                lastDiv.querySelector('.black-move').innerText = moveText;
+            }
+            moveCount++; // Siyah oynadıktan sonra hamle sayısını artır
+        }
     }
 }
-
 // --- 4. HAREKET MANTIĞI ---
 function testMoveForSafety(from, to, color) {
     const originalFrom = layout[from], originalTo = layout[to];
@@ -137,10 +155,12 @@ function handleSquareClick(i) {
     } else {
         const legalMoves = getLegalMoves(selectedSquare);
         if (legalMoves.includes(i)) {
-            addToLog(selectedSquare, i);
+            // ÖNEMLİ: Önce loga ekliyoruz (sıra değişmeden önce), sonra sırayı değiştiriyoruz
+            addToLog(selectedSquare, i); 
             executeMove(selectedSquare, i);
+            
             selectedSquare = null;
-            turn = (turn === 'w' ? 'b' : 'w');
+            turn = (turn === 'w' ? 'b' : 'w'); // Sıra şimdi değişti
             
             draw();
             updateStatus();
