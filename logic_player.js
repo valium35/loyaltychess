@@ -41,7 +41,7 @@ function getCoordsLabel(i) {
 function analyzeAndLog(from, to, piece, isBetrayal = false) {
     let symbol = "";
     let statusClass = "";
-    const activeThreats = [];
+    let currentThreats = []; // Bu hamle sonunda oluşan tehditler
     const movingPlayer = piece[0];
     const opponent = movingPlayer === 'w' ? 'b' : 'w';
 
@@ -49,31 +49,73 @@ function analyzeAndLog(from, to, piece, isBetrayal = false) {
         symbol = "☠";
         statusClass = "betrayal-mark";
     } else {
-        // Hamle sonrası rakip subaylara (n, r, b) tehdit analizi
+        // 1. ADIM: Hamle bitti, şimdi tahtadaki tüm rakip subayları tara
         for (let i = 0; i < 64; i++) {
             const targetPiece = layout[i];
+            // Eğer rakip subay ise (At, Kale, Fil)
             if (targetPiece && targetPiece.startsWith(opponent) && ['n', 'r', 'b'].includes(targetPiece[2])) {
-                // Rakip subay saldırı altında mı VE korumasız mı?
+                // KURAL: Bizim taraf saldırıyor mu VE rakip koruyamıyor mu?
                 if (isSquareAttacked(i, movingPlayer) && !isSquareAttacked(i, opponent)) {
-                    activeThreats.push(i);
+                    currentThreats.push(i);
                 }
             }
         }
 
-        if (activeThreats.length > 0) {
-            symbol = "!";
+        // 2. ADIM: Sembol Belirleme
+        if (currentThreats.length > 0) {
+            symbol = "!"; // Varsayılan: Tehdit var
             statusClass = "threat-mark";
-            
-            // Hafıza sorgusu: Bu taşlar geçen tur da tehdit altında mıydı?
+
+            // 3. ADIM: "Ready" (†) Kontrolü (Hafıza Testi)
             if (gameLog.length > 0) {
-                const lastEntry = gameLog[gameLog.length - 1];
-                if (lastEntry.threats && lastEntry.threats.some(t => activeThreats.includes(t))) {
+                // Bir önceki hamlenin loguna bak
+                const lastLog = gameLog[gameLog.length - 1];
+                
+                // Eğer geçen turdaki tehditlerden biri hala bu turdaki tehditler arasındaysa...
+                const isStillThreatened = currentThreats.some(index => lastLog.threats.includes(index));
+                
+                if (isStillThreatened) {
                     symbol = "†";
                     statusClass = "ready-mark";
                 }
             }
         }
     }
+
+    // 4. ADIM: Log Kaydı (Hafıza burada oluşuyor)
+    const moveText = `${getCoordsLabel(from)}-${getCoordsLabel(to)}`;
+    const logEntry = {
+        move: moveText,
+        symbol: symbol,
+        threats: currentThreats, // BURASI KRİTİK: Tehditleri kaydetmezsek bir sonraki turda karşılaştıramayız!
+        player: movingPlayer
+    };
+
+    gameLog.push(logEntry);
+    
+    // UI Güncelleme (Log Paneli)
+    if (gameLog.length === 1) logElement.innerHTML = '';
+    const logItem = document.createElement('div');
+    logItem.className = 'log-entry';
+    logItem.innerHTML = `<span>${moveText}</span> <span class="${statusClass}">${symbol}</span>`;
+    logElement.prepend(logItem);
+
+    // 5. ADIM: Popup Tetikleme
+    if (symbol === "†") {
+        // logic_alerts.js dosyasındaki openPopup fonksiyonunu çağırır
+        if (typeof openPopup === "function") {
+            const victimIdx = currentThreats[0]; // İlk tehdit edilen taşı baz alalım
+            const victimName = layout[victimIdx][2].toUpperCase();
+            openPopup(
+                `İHANET UYARISI: ${getCoordsLabel(victimIdx)} karesindeki ${victimName} sahipsiz kaldı!`,
+                "LAW 2: THE CHOICE",
+                "Bu taş artık rakibin emrine girmeye hazır."
+            );
+        } else {
+            console.error("Popup fonksiyonu (openPopup) bulunamadı!");
+        }
+    }
+}
 
     const moveText = `${getCoordsLabel(from)}-${getCoordsLabel(to)}`;
     const logEntry = {
