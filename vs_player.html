@@ -47,13 +47,13 @@
             </div>
 
             <div class="log-container">
-                <h3 style="color:#f1c40f; text-align:center; margin-top:0; border-bottom: 1px solid #333; padding-bottom: 10px;">⚔️ LOYALTY LOG</h3>
+                <h3 id="history-title" style="color:#f1c40f; text-align:center; margin-top:0; border-bottom: 1px solid #333; padding-bottom: 10px;">⚔️ LOYALTY LOG</h3>
                 <div id="move-history"></div>
             </div>
 
             <div class="controls">
                 <button onclick="location.reload()" id="restart-btn">Yeniden Başlat</button>
-                <button onclick="alert('Geri alma yakında eklenecek!')" id="undo-btn">Geri Al</button>
+                <button onclick="alert('SOON!')" id="undo-btn">Geri Al</button>
             </div>
 
             <div class="full-rules-panel">
@@ -70,20 +70,19 @@
                     <strong id="rule-3-title">💨 3. FINAL MISSION</strong>
                     <span id="rule-3-desc">...</span>
                 </div>
-                <div id="restrictions-list" class="restrictions-box">
-                    </div>
+                <div id="restrictions-list" class="restrictions-box"></div>
             </div>
         </div> 
     </div>
 
     <div id="betrayal-popup" class="popup-overlay" style="display:none;">
         <div class="popup-content">
-            <h2 class="alert-title">⚠️ ALERT</h2>
+            <h2 id="alert-title" class="alert-title">⚠️ ALERT</h2>
             <p id="popup-msg">...</p>
             <div style="font-size:0.8rem; color:#aaa; margin:15px 0; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px;">
                 <strong id="popup-law-label">KURAL:</strong> <span id="popup-rule">...</span>
             </div>
-            <button onclick="closePopup()" class="popup-btn">ANLADIM</button>
+            <button id="popup-confirm-btn" onclick="closePopup()" class="popup-btn">ANLADIM</button>
         </div>
     </div>
 
@@ -92,22 +91,29 @@
     <script>
         function applyPlayerLanguage() {
             const lang = localStorage.getItem('gameLang') || 'tr';
-            // Translations.js içindeki objenin adının LoyaltyDict olduğunu varsayıyorum
             const t = LoyaltyDict[lang];
 
             if (t) {
-                // Başlık
+                // Durum ve Butonlar
+                const status = document.getElementById('status');
+                if(status) status.innerText = t.status;
+
+                const restartBtn = document.getElementById('restart-btn');
+                if(restartBtn) restartBtn.innerText = t.resetBtn;
+
+                const undoBtn = document.getElementById('undo-btn');
+                if(undoBtn) undoBtn.innerText = t.undoBtn;
+
+                const historyTitle = document.getElementById('history-title');
+                if(historyTitle) historyTitle.innerText = t.historyTitle;
+
+                // Kurallar Paneli
                 const pTitle = document.getElementById('panel-title');
                 if(pTitle) pTitle.innerText = t.rulesTitle;
 
-                // Kurallar (Desc kısımları)
-                const r1 = document.getElementById('rule-1-desc');
-                const r2 = document.getElementById('rule-2-desc');
-                const r3 = document.getElementById('rule-3-desc');
-                
-                if(r1) r1.innerText = t.rules[0];
-                if(r2) r2.innerText = t.rules[1];
-                if(r3) r3.innerText = t.rules[2];
+                document.getElementById('rule-1-desc').innerText = t.rules[0];
+                document.getElementById('rule-2-desc').innerText = t.rules[1];
+                document.getElementById('rule-3-desc').innerText = t.rules[2];
 
                 // Kısıtlamalar Kutusu
                 const resBox = document.getElementById('restrictions-list');
@@ -121,14 +127,22 @@
                         resBox.appendChild(d);
                     });
                 }
-                
-                // Status (Opsiyonel)
-                const status = document.getElementById('status');
-                if(status && step === 0) status.innerText = t.turnWhite || "SIRA BEYAZDA";
+
+                // Popup statik kısımları
+                const alertTitle = document.getElementById('alert-title');
+                if(alertTitle) alertTitle.innerText = t.popups.alertTitle;
+
+                const lawLabel = document.getElementById('popup-law-label');
+                if(lawLabel) lawLabel.innerText = t.popups.lawLabel;
+
+                const confirmBtn = document.getElementById('popup-confirm-btn');
+                if(confirmBtn) confirmBtn.innerText = t.popups.confirmBtn;
             }
         }
-        // Sayfa hazır olduğunda dili bas
-        document.addEventListener("DOMContentLoaded", applyPlayerLanguage);
+        document.addEventListener("DOMContentLoaded", applyLanguage); // applyPlayerLanguage ismini applyLanguage olarak çağırdık yukarıda
+        
+        // applyPlayerLanguage ismini applyLanguage olarak da tanımlayalım çakışmasın
+        window.onload = applyPlayerLanguage;
     </script>
     <script src="logic_player.js"></script>
 </body>
