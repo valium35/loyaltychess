@@ -37,11 +37,12 @@ function initGame() {
     moveCount = 1;
     turn = 'w';
     if (logElement) logElement.innerHTML = '';
+    
+    // Önce dili uygula sonra çiz (Önemli sıra!)
+    if (window.applyPlayerLanguage) window.applyPlayerLanguage();
+    
     draw();
     updateStatus();
-    
-    // Sayfa içindeki statik panelleri de çevir
-    if (window.applyPlayerLanguage) window.applyPlayerLanguage();
 }
 
 // --- 3. YARDIMCI VE ANALİZ ---
@@ -269,7 +270,9 @@ function updateStatus() {
         const opponent = turn === 'w' ? 'b' : 'w';
         const check = isSquareAttacked(kingPos, opponent);
         
+        // Burayı dile tam duyarlı yapıyoruz:
         let label = (turn === 'w' ? t.status : t.statusBlack);
+        
         if (check) {
             const lang = localStorage.getItem('gameLang') || 'tr';
             label += (lang === 'en' ? " (CHECK!)" : " (ŞAH!)");
