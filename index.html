@@ -131,35 +131,45 @@
 
     <script src="translations.js"></script>
 
-    <script>
-        function applyLanguage() {
-            if (typeof LoyaltyDict === 'undefined') return;
-            const lang = localStorage.getItem('gameLang') || 'tr';
-            const t = LoyaltyDict[lang];
+    <script src="translations.js"></script>
+<script>
+    function applyLanguage() {
+        // translations.js içindeki LoyaltyDict'i kontrol et
+        if (typeof LoyaltyDict === 'undefined') return;
+        
+        const lang = localStorage.getItem('gameLang') || 'tr';
+        const t = LoyaltyDict[lang];
 
-            if (t) {
-                // Kuralları translations.js'den çekip index'e basıyoruz
-                for (let i = 0; i < 3; i++) {
-                    const el = document.getElementById(`h-rule-${i+1}-desc`);
-                    if (el && t.rules[i]) el.innerText = t.rules[i];
+        if (t) {
+            // 1. Ana Başlık ve Tagline'ı Güncelle (Eğer sözlükte varsa)
+            // if (t.mainTitle) document.getElementById('main-title').innerHTML = t.mainTitle;
+            
+            // 2. Kuralları translations.js'den çekip index'e basıyoruz
+            for (let i = 0; i < 3; i++) {
+                const el = document.getElementById(`h-rule-${i+1}-desc`);
+                if (el && t.rules && t.rules[i]) {
+                    el.innerText = t.rules[i];
                 }
-                // Başlıkları da translations.js'deki "rules" kısmından veya manuel güncelleyebilirsin
             }
         }
+    }
 
-        function startWithLang(lang) {
-            localStorage.setItem('gameLang', lang);
-            // Önce dili uygula (sayfa değişmeden görsel görsün)
-            applyLanguage();
-            // Yarım saniye sonra yönlendir (Dosya ismin vs_player.html ise)
-            setTimeout(() => {
-                window.location.href = 'vs_player.html';
-            }, 300);
-        }
+    function startWithLang(lang) {
+        // Dili hafızaya kaydet
+        localStorage.setItem('gameLang', lang);
+        
+        // Görsel geri bildirim için sayfayı anında çevir
+        applyLanguage();
+        
+        // Yarım saniye sonra home.html'e yönlendir
+        setTimeout(() => {
+            window.location.href = 'home.html'; 
+        }, 300);
+    }
 
-        // Sayfa her açıldığında dili kontrol et
-        window.onload = applyLanguage;
-    </script>
+    // Sayfa her açıldığında (veya geri dönüldüğünde) dili kontrol et
+    window.onload = applyLanguage;
+</script>
 
 </body>
 </html>
