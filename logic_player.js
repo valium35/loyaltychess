@@ -312,5 +312,4 @@ function closePopup() {
     document.getElementById('betrayal-popup').style.display = 'none';
 }
 
-// İlk başlatma
-initGame();
+
