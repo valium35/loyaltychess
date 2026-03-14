@@ -6,7 +6,6 @@
     <title>LoyaltyChess - Oyun</title>
     <link rel="stylesheet" href="home_style.css">
     <style>
-        /* Mevcut Stil Kodların */
         .controls { display: flex; gap: 10px; margin-bottom: 20px; }
         .controls button {
             flex: 1; padding: 12px; cursor: pointer; font-weight: bold;
@@ -17,55 +16,23 @@
         .controls button:hover:not(:disabled) { background: #f1c40f; color: #121212; }
         .controls button:disabled { opacity: 0.2; cursor: not-allowed; color: #555; border-color: #555; }
 
-        /* YENİ: Oyun Modu Butonları Stili */
-        .mode-container {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
+        .mode-container { display: flex; gap: 10px; margin-bottom: 15px; }
         .mode-btn-link {
-            flex: 1;
-            padding: 12px;
-            text-align: center;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 0.75rem;
-            border-radius: 8px;
-            border: 2px solid #f1c40f;
-            background: rgba(241, 196, 15, 0.1);
-            color: #f1c40f;
-            transition: 0.3s ease;
-            text-transform: uppercase;
+            flex: 1; padding: 12px; text-align: center; text-decoration: none;
+            font-weight: bold; font-size: 0.75rem; border-radius: 8px;
+            border: 2px solid #f1c40f; background: rgba(241, 196, 15, 0.1);
+            color: #f1c40f; transition: 0.3s ease; text-transform: uppercase;
         }
-        .mode-btn-link:hover {
-            background: #f1c40f;
-            color: #121212;
-            box-shadow: 0 0 15px rgba(241, 196, 15, 0.4);
-        }
+        .mode-btn-link:hover { background: #f1c40f; color: #121212; box-shadow: 0 0 15px rgba(241, 196, 15, 0.4); }
 
         .full-rules-panel {
             background: rgba(255, 255, 255, 0.03); border-radius: 12px;
             padding: 15px; border: 1px solid rgba(255, 255, 255, 0.1);
             max-height: 500px; overflow-y: auto;
         }
-        .full-rules-panel h3 {
-            color: #f1c40f; font-size: 1.1rem; margin-top: 0;
-            border-bottom: 1px solid rgba(241, 196, 15, 0.3);
-            padding-bottom: 10px; text-align: center;
-        }
-        .law-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); transition: 0.3s; }
-        .law-item:last-child { border-bottom: none; }
+        .law-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
         .law-item strong { display: block; color: #ffffff; font-size: 0.9rem; margin-bottom: 5px; }
         .law-item span { display: block; color: #aaa; font-size: 0.8rem; line-height: 1.4; }
-
-        .restrictions-box {
-            margin-top: 15px; padding: 12px; background: rgba(231, 76, 60, 0.08); 
-            border: 1px dashed rgba(231, 76, 60, 0.4); border-radius: 8px;
-        }
-        .restrictions-box h4 { color: #e74c3c; font-size: 0.85rem; margin: 0 0 8px 0; text-transform: uppercase; text-align: center; }
-        .restriction-item { color: #eee; font-size: 0.75rem; line-height: 1.4; margin-bottom: 5px; }
-
-        .popup-content { background: #1a1a1a; border: 2px solid #f1c40f; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
     </style>
 </head>
 <body>
@@ -74,8 +41,8 @@
         <div class="side-panel">
             
             <div class="mode-container">
-                <a href="vs_bot.html" class="mode-btn-link">🤖 VS BOT</a>
-                <a href="vs_player.html" class="mode-btn-link">⚔️ 2 OYUNCU</a>
+                <a href="vs_bot.html" id="botBtn" class="mode-btn-link">🤖 VS BOT</a>
+                <a href="vs_player.html" id="playerBtn" class="mode-btn-link">⚔️ 2 OYUNCU</a>
             </div>
 
             <div id="status" class="msg-box">Yükleniyor...</div>
@@ -86,58 +53,65 @@
             </div>
 
             <div class="full-rules-panel">
-                <h3 id="panel-title">📜 THE 3 LAWS</h3>
-                <div id="rules-content">
-                    <div class="law-item"><strong>⚡ 1. ACTIVE THREAT</strong><span id="rule-1-desc">...</span></div>
-                    <div class="law-item"><strong>🔄 2. THE CHOICE</strong><span id="rule-2-desc">...</span></div>
-                    <div class="law-item"><strong>💨 3. FINAL MISSION</strong><span id="rule-3-desc">...</span></div>
-                    <div id="restrictions-list" class="restrictions-box"></div>
+                <div class="lang-tr">
+                    <h3 style="color:#f1c40f; text-align:center;">📜 3 TEMEL YASA</h3>
+                    <div class="law-item"><strong>⚡ 1. AKTİF TEHDİT</strong><span>Bir taş istenirse, ya kaçmalı ya da korunmalıdır.</span></div>
+                    <div class="law-item"><strong>🔄 2. SEÇİM</strong><span>Korunmasız bırakılan taş, rakip tarafından ele geçirilip kullanılır.</span></div>
+                    <div class="law-item"><strong>💨 3. SON GÖREV</strong><span>İhanet eden taş şah çekemez ve oyundan çıkar.</span></div>
+                </div>
+
+                <div class="lang-en" style="display:none;">
+                    <h3 style="color:#f1c40f; text-align:center;">📜 THE 3 LAWS</h3>
+                    <div class="law-item"><strong>⚡ 1. ACTIVE THREAT</strong><span>If a piece is threatened, it must be moved or protected.</span></div>
+                    <div class="law-item"><strong>🔄 2. THE CHOICE</strong><span>An unprotected piece can be controlled by the opponent.</span></div>
+                    <div class="law-item"><strong>💨 3. FINAL MISSION</strong><span>A betraying piece cannot give check and leaves the game.</span></div>
                 </div>
             </div>
         </div> 
     </div>
 
-    <div id="betrayal-popup" class="popup-overlay" style="display: none;">
-        <div class="popup-content">
-            <h2 class="alert-title">⚠️ ALERT</h2>
-            <p id="popup-msg">...</p>
-            <div class="popup-rule-box">
-                <strong id="popup-law-label">LAW:</strong> <span id="popup-rule">...</span>
-            </div>
-            <button onclick="closePopup()" class="popup-btn">Tamam</button>
-        </div>
-    </div><script src="translations.js"></script>
+    <script src="translations.js"></script>
     <script src="logic_alerts.js"></script>
     <script src="home_script.js"></script>
 
     <script>
-        // Sayfa yüklendiğinde dili otomatik uygula
         window.onload = function() {
-            // translations.js içindeki akıllı fonksiyonu çağır
-            if (typeof applyLanguageToPage === 'function') {
-                applyLanguageToPage();
+            const lang = localStorage.getItem('gameLang') || 'tr';
+            
+            // 1. DİL SEÇİMİNE GÖRE ELEMENTLERİ BUL
+            const trBlocks = document.querySelectorAll('.lang-tr');
+            const enBlocks = document.querySelectorAll('.lang-en');
+            const botBtn = document.getElementById('botBtn');
+            const playerBtn = document.getElementById('playerBtn');
+            const nextBtn = document.getElementById('next-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const statusBox = document.getElementById('status');
+
+            const t = LoyaltyDict[lang];
+
+            if (lang === 'en') {
+                trBlocks.forEach(b => b.style.display = 'none');
+                enBlocks.forEach(b => b.style.display = 'block');
+                if(botBtn) botBtn.innerText = "🤖 VS BOT";
+                if(playerBtn) playerBtn.innerText = "⚔️ 2 PLAYERS";
+                if(nextBtn) nextBtn.innerText = t ? t.nextBtn : "NEXT";
+                if(prevBtn) prevBtn.innerText = t ? t.backBtn : "BACK";
+                if(statusBox && t) statusBox.innerText = t.startMsg;
+            } else {
+                trBlocks.forEach(b => b.style.display = 'block');
+                enBlocks.forEach(b => b.style.display = 'none');
+                if(botBtn) botBtn.innerText = "🤖 BOT'A KARŞI";
+                if(playerBtn) playerBtn.innerText = "⚔️ 2 OYUNCU";
+                if(nextBtn) nextBtn.innerText = t ? t.nextBtn : "SIRADAKİ";
+                if(prevBtn) prevBtn.innerText = t ? t.backBtn : "GERİ";
+                if(statusBox && t) statusBox.innerText = t.startMsg;
             }
 
-            // home.html'e özel: Buton metinlerini de güncelle
-            const lang = localStorage.getItem('gameLang') || 'tr';
-            const t = LoyaltyDict[lang];
-            
-            if (t) {
-                const nextBtn = document.getElementById('next-btn');
-                const prevBtn = document.getElementById('prev-btn');
-                if (nextBtn) nextBtn.innerText = t.nextBtn;
-                if (prevBtn) prevBtn.innerText = t.backBtn;
-                
-                // İlk mesajı bas (Yükleniyor yerine)
-                const statusBox = document.getElementById('status');
-                if (statusBox) statusBox.innerText = t.startMsg;
+            // home_script içindeki init fonksiyonu varsa çalıştır
+            if (typeof init === 'function') {
+                init();
             }
-            
-            // Eğer home_script.js içinde bir başlangıç fonksiyonu varsa (örn: init) onu burada çağırabilirsin
         };
     </script>
-
-    <script src="logic_alerts.js"></script>
-    <script src="home_script.js"></script>
 </body>
 </html>
