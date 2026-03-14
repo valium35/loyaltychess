@@ -92,33 +92,41 @@
 
     <script>
       window.onload = function() {
-    console.log("Sistem: Sayfa yüklendi, dil motoru tetikleniyor...");
-
-    // 1. DİL MOTORUNU ZORLA ÇALIŞTIR
-    try {
-        if (typeof applyLanguageToPage === 'function') {
-            applyLanguageToPage();
-            console.log("Sistem: Dil motoru başarıyla çalıştı.");
-        } else {
-            console.warn("Sistem: applyLanguageToPage fonksiyonu bulunamadı!");
-        }
-    } catch (err) {
-        console.error("Sistem: Dil yüklenirken hata oluştu:", err);
+    // 1. Dil fonksiyonunu çağır (Home'daki sistem)
+    if (typeof applyLanguageToPage === 'function') {
+        applyLanguageToPage();
     }
 
-    // 2. OYUN MOTORUNU 100ms GECİKMEYLE BAŞLAT
-    // Bu gecikme, dilin yerleşmesi için tarayıcıya nefes aldırır.
-    setTimeout(() => {
-        if (typeof initGame === 'function') {
-            console.log("Sistem: Oyun motoru başlatılıyor...");
-            initGame();
-        }
-    }, 100);
-};
+    // 2. MANUEL TAKVİYE (Eğer home'daki fonksiyon burayı ıskalıyorsa)
+    const lang = localStorage.getItem('gameLang') || 'tr';
+    const t = LoyaltyDict[lang];
 
-        function closePopup() {
-            document.getElementById('betrayal-popup').style.display = 'none';
-        }
+    if (t && t.rules) {
+        console.log("Sistem: Kurallar sözlükten alınıyor...");
+        
+        // Kuralları tek tek bas (ID'ler senin HTML'inle birebir uyumlu)
+        const r1 = document.getElementById('rule-1-desc');
+        const r2 = document.getElementById('rule-2-desc');
+        const r3 = document.getElementById('rule-3-desc');
+        const rTitle = document.getElementById('rulesTitle') || document.getElementById('panel-title');
+
+        if (r1) r1.innerText = t.rules[0] || "...";
+        if (r2) r2.innerText = t.rules[1] || "...";
+        if (r3) r3.innerText = t.rules[2] || "...";
+        if (rTitle) rTitle.innerText = t.rulesTitle || "RULES";
+
+        // Butonları bas
+        const btnReset = document.getElementById('resetBtn');
+        const btnUndo = document.getElementById('undoBtn');
+        if (btnReset) btnReset.innerText = t.resetBtn || "Restart";
+        if (btnUndo) btnUndo.innerText = t.undoBtn || "Undo";
+    }
+
+    // 3. Oyun Motorunu Başlat
+    if (typeof initGame === 'function') {
+        initGame();
+    }
+};
     </script>
 </body>
 </html>
