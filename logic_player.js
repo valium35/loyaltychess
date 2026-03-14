@@ -311,5 +311,10 @@ function triggerBetrayalPopup(ruleIndex) {
 function closePopup() {
     document.getElementById('betrayal-popup').style.display = 'none';
 }
+if (document.readyState === 'complete') {
+    initGame();
+} else {
+    window.addEventListener('load', initGame);
+}
 
 
