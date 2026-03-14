@@ -84,36 +84,30 @@
 
     <script src="translations.js"></script>
     <script src="logic_player.js"></script> <script>
-        window.onload = function() {
-            // 1. Home.html'deki o meşhur dil fonksiyonunu çağır
-            if (typeof applyLanguageToPage === 'function') {
-                applyLanguageToPage();
-            }
+       window.onload = function() {
+    console.log("Sistem: Sayfa yüklendi, dil motoru tetikleniyor...");
 
-            // 2. PvP'ye özel eklemeler
-            const lang = localStorage.getItem('gameLang') || 'tr';
-            const t = LoyaltyDict[lang];
-            
-            if (t) {
-                // Durum mesajını başlat
-                const statusBox = document.getElementById('status');
-                if (statusBox) statusBox.innerText = t.status || "Ready!";
-            }
-
-            // 3. Oyun Motorunu Çalıştır
-            if (typeof initGame === 'function') {
-                initGame();
-            }
-        };
-
-        function closePopup() {
-            document.getElementById('betrayal-popup').style.display = 'none';
+    // 1. DİL MOTORUNU ZORLA ÇALIŞTIR
+    try {
+        if (typeof applyLanguageToPage === 'function') {
+            applyLanguageToPage();
+            console.log("Sistem: Dil motoru başarıyla çalıştı.");
+        } else {
+            console.warn("Sistem: applyLanguageToPage fonksiyonu bulunamadı!");
         }
+    } catch (err) {
+        console.error("Sistem: Dil yüklenirken hata oluştu:", err);
+    }
 
-        function undoMove() {
-            // Eğer logic_player.js içinde undo fonksiyonun varsa buraya yaz
-            alert("Undo coming soon!");
+    // 2. OYUN MOTORUNU 100ms GECİKMEYLE BAŞLAT
+    // Bu gecikme, dilin yerleşmesi için tarayıcıya nefes aldırır.
+    setTimeout(() => {
+        if (typeof initGame === 'function') {
+            console.log("Sistem: Oyun motoru başlatılıyor...");
+            initGame();
         }
+    }, 100);
+};
     </script>
 </body>
 </html>
