@@ -75,41 +75,58 @@
     <script src="logic_player.js"></script>
 
     <script>
-        window.onload = function() {
-            // 1. DİLİ BELİRLE
-            const lang = localStorage.getItem('gameLang') || 'tr';
-            
-            // 2. ELLE YAZILANLARI GÖSTER/GİZLE
-            const trElements = document.querySelectorAll('.lang-tr');
-            const enElements = document.querySelectorAll('.lang-en');
-            const resetBtn = document.getElementById('resetBtn');
-            const undoBtn = document.getElementById('undoBtn');
+       window.onload = function() {
+    // 1. DİLİ BELİRLE
+    const lang = localStorage.getItem('gameLang') || 'tr';
+    
+    // 2. ELLE YAZILANLARI GÖSTER/GİZLE
+    const trElements = document.querySelectorAll('.lang-tr');
+    const enElements = document.querySelectorAll('.lang-en');
+    const resetBtn = document.getElementById('resetBtn');
+    const undoBtn = document.getElementById('undoBtn');
 
-            if (lang === 'en') {
-                trElements.forEach(el => el.style.display = 'none');
-                enElements.forEach(el => el.style.display = 'block');
-                resetBtn.innerText = "RESTART";
-                undoBtn.innerText = "UNDO";
-                document.getElementById('historyTitle').innerText = "⚔️ LOYALTY LOG";
-            } else {
-                trElements.forEach(el => el.style.display = 'block');
-                enElements.forEach(el => el.style.display = 'none');
-                resetBtn.innerText = "YENİDEN BAŞLAT";
-                undoBtn.innerText = "GERİ AL";
-                document.getElementById('historyTitle').innerText = "⚔️ HAMLE KAYDI";
-            }
+    if (lang === 'en') {
+        trElements.forEach(el => el.style.display = 'none');
+        enElements.forEach(el => el.style.display = 'block');
+        resetBtn.innerText = "RESTART";
+        undoBtn.innerText = "UNDO";
+        document.getElementById('historyTitle').innerText = "⚔️ LOYALTY LOG";
+    } else {
+        trElements.forEach(el => el.style.display = 'block');
+        enElements.forEach(el => el.style.display = 'none');
+        resetBtn.innerText = "YENİDEN BAŞLAT";
+        undoBtn.innerText = "GERİ AL";
+        document.getElementById('historyTitle').innerText = "⚔️ HAMLE KAYDI";
+    }
 
-            // 3. OYUN MOTORUNU ÇALIŞTIR (Garantici Şalter)
-            if (typeof initGame === 'function') {
-                initGame();
-                console.log("Oyun başlatıldı.");
-            } else {
-                // Eğer hala yüklenmediyse 200ms bekle ve tekrar dene
-                setTimeout(() => {
-                    if (typeof initGame === 'function') initGame();
-                }, 200);
-            }
-        };
+    // --- KRİTİK EKLEME: STATUS MESAJLARINI DİREKT BURADAN YÖNETELİM ---
+    // Oyun motorundaki fonksiyonu bizim dile göre ezelim
+    window.updateStatus = function() {
+        const statusElement = document.getElementById('status');
+        if (!statusElement) return;
+
+        // logic_player.js'den gelen 'turn' değişkenini kullanıyoruz
+        if (lang === 'en') {
+            statusElement.innerText = (turn === 'w' ? "WHITE'S TURN" : "BLACK'S TURN");
+        } else {
+            statusElement.innerText = (turn === 'w' ? "SIRA BEYAZDA" : "SIRA SİYAHDA");
+        }
+        
+        // Şah kontrolü (logic_player.js fonksiyonlarını kullanarak)
+        const kingPos = findKing(turn);
+        const opponent = turn === 'w' ? 'b' : 'w';
+        if (typeof isSquareAttacked === 'function' && isSquareAttacked(kingPos, opponent)) {
+            statusElement.innerText += (lang === 'en' ? " (CHECK!)" : " (ŞAH!)");
+        }
+    };
+
+    // 3. OYUN MOTORUNU ÇALIŞTIR
+    if (typeof initGame === 'function') {
+        initGame();
+        // İlk açılışta dili bir kez daha zorla
+        window.updateStatus();
+    }
+};
     </script>
 </body>
 </html>
