@@ -21,20 +21,9 @@
             padding: 15px; border: 1px solid rgba(255, 255, 255, 0.1);
             max-height: 400px; overflow-y: auto; margin-top: 10px;
         }
-        .full-rules-panel h3 {
-            color: #f1c40f; font-size: 1.1rem; margin-top: 0;
-            border-bottom: 1px solid rgba(241, 196, 15, 0.3);
-            padding-bottom: 10px; text-align: center;
-        }
         .law-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
         .law-item strong { display: block; color: #ffffff; font-size: 0.9rem; margin-bottom: 5px; }
         .law-item span { display: block; color: #aaa; font-size: 0.8rem; line-height: 1.4; }
-
-        .restrictions-box {
-            margin-top: 15px; padding: 12px; background: rgba(231, 76, 60, 0.08); 
-            border: 1px dashed rgba(231, 76, 60, 0.4); border-radius: 8px;
-        }
-        .restrictions-box h4 { color: #e74c3c; font-size: 0.85rem; margin: 0 0 8px 0; text-transform: uppercase; text-align: center; }
     </style>
 </head>
 <body>
@@ -57,20 +46,19 @@
             </div>
 
             <div class="full-rules-panel">
-                <h3 id="rulesTitle">📜 THE 3 LAWS</h3>
-                <div class="law-item">
-                    <strong id="rule1Title">⚡ 1. ACTIVE THREAT</strong>
-                    <span id="rule-1-desc">...</span>
+                <div class="lang-tr">
+                    <h3 style="color:#f1c40f;">📜 3 TEMEL YASA</h3>
+                    <div class="law-item"><strong>⚡ 1. AKTİF TEHDİT</strong><span>Bir taş istenirse, ya kaçmalı ya da korunmalıdır.</span></div>
+                    <div class="law-item"><strong>🔄 2. SEÇİM</strong><span>Korunmasuız bırakılan taş, rakip tarafından ele geçirilip anında bir hamle için kullanılır.</span></div>
+                    <div class="law-item"><strong>💨 3. SON GÖREV</strong><span>İhanet eden taş şah çekemez ve hamlesi bitince oyundan çıkar.</span></div>
                 </div>
-                <div class="law-item">
-                    <strong id="rule2Title">🔄 2. THE CHOICE</strong>
-                    <span id="rule-2-desc">...</span>
+
+                <div class="lang-en" style="display:none;">
+                    <h3 style="color:#f1c40f;">📜 THE 3 LAWS</h3>
+                    <div class="law-item"><strong>⚡ 1. ACTIVE THREAT</strong><span>If a piece is threatened, it must be moved or protected.</span></div>
+                    <div class="law-item"><strong>🔄 2. THE CHOICE</strong><span>An unprotected piece can be controlled by the opponent for one move.</span></div>
+                    <div class="law-item"><strong>💨 3. FINAL MISSION</strong><span>A betraying piece cannot give check and leaves the game after its move.</span></div>
                 </div>
-                <div class="law-item">
-                    <strong id="rule3Title">💨 3. FINAL MISSION</strong>
-                    <span id="rule-3-desc">...</span>
-                </div>
-                <div id="restrictions-list" class="restrictions-box"></div>
             </div>
         </div> 
     </div>
@@ -79,51 +67,49 @@
         <div class="popup-content">
             <h2 id="alertTitle" class="alert-title">⚠️ ALERT</h2>
             <p id="popup-msg">...</p>
-            <div style="font-size:0.8rem; color:#aaa; margin:15px 0; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px;">
-                <strong id="lawLabel">KURAL:</strong> <span id="popup-rule">...</span>
-            </div>
-            <button id="confirmBtn" onclick="closePopup()" class="popup-btn">---</button>
+            <button id="confirmBtn" onclick="document.getElementById('betrayal-popup').style.display='none'" class="popup-btn">OK</button>
         </div>
     </div>
 
     <script src="translations.js"></script>
-    
     <script src="logic_player.js"></script>
 
     <script>
-  window.onload = function() {
-    // 1. Dil motorunu çalıştır
-    if (typeof applyLanguageToPage === 'function') {
-        applyLanguageToPage();
-    }
+        window.onload = function() {
+            // 1. DİLİ BELİRLE
+            const lang = localStorage.getItem('gameLang') || 'tr';
+            
+            // 2. ELLE YAZILANLARI GÖSTER/GİZLE
+            const trElements = document.querySelectorAll('.lang-tr');
+            const enElements = document.querySelectorAll('.lang-en');
+            const resetBtn = document.getElementById('resetBtn');
+            const undoBtn = document.getElementById('undoBtn');
 
-    // 2. Manuel Takviye (Kurallar ve Butonlar)
-    const lang = localStorage.getItem('gameLang') || 'tr';
-    const t = LoyaltyDict[lang];
+            if (lang === 'en') {
+                trElements.forEach(el => el.style.display = 'none');
+                enElements.forEach(el => el.style.display = 'block');
+                resetBtn.innerText = "RESTART";
+                undoBtn.innerText = "UNDO";
+                document.getElementById('historyTitle').innerText = "⚔️ LOYALTY LOG";
+            } else {
+                trElements.forEach(el => el.style.display = 'block');
+                enElements.forEach(el => el.style.display = 'none');
+                resetBtn.innerText = "YENİDEN BAŞLAT";
+                undoBtn.innerText = "GERİ AL";
+                document.getElementById('historyTitle').innerText = "⚔️ HAMLE KAYDI";
+            }
 
-    if (t) {
-        if (t.rules) {
-            const r1 = document.getElementById('rule-1-desc');
-            const r2 = document.getElementById('rule-2-desc');
-            const r3 = document.getElementById('rule-3-desc');
-            if (r1) r1.innerText = t.rules[0] || "...";
-            if (r2) r2.innerText = t.rules[1] || "...";
-            if (r3) r3.innerText = t.rules[2] || "...";
-        }
-        
-        // Buton ID'lerinitranslations.js ile eşitleyelim
-        const btnReset = document.getElementById('resetBtn');
-        const btnUndo = document.getElementById('undoBtn');
-        if (btnReset) btnReset.innerText = t.resetBtn || "RESTART";
-        if (btnUndo) btnUndo.innerText = t.undoBtn || "UNDO";
-    }
-
-    // 3. Oyun Motorunu Tetikle (Eğer hala başlamadıysa)
-    if (typeof initGame === 'function') {
-        initGame();
-        console.log("Oyun başarıyla başlatıldı.");
-    }
-};
+            // 3. OYUN MOTORUNU ÇALIŞTIR (Garantici Şalter)
+            if (typeof initGame === 'function') {
+                initGame();
+                console.log("Oyun başlatıldı.");
+            } else {
+                // Eğer hala yüklenmediyse 200ms bekle ve tekrar dene
+                setTimeout(() => {
+                    if (typeof initGame === 'function') initGame();
+                }, 200);
+            }
+        };
     </script>
 </body>
 </html>
