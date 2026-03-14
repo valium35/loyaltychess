@@ -146,5 +146,42 @@
             }
         };
     </script>
+    <script>
+    window.onload = function() {
+        // 1. Mevcut dil sistemini bir çalıştıralım
+        if (typeof applyLanguageToPage === 'function') {
+            applyLanguageToPage();
+        }
+
+        // 2. Küçük bir gecikme ekleyelim ki diğer scriptler işini bitirsin, 
+        // sonra biz gelip "son noktayı" koyalım.
+        setTimeout(function() {
+            const lang = localStorage.getItem('gameLang') || 'tr';
+            const t = LoyaltyDict[lang];
+            
+            const playerBtn = document.getElementById('player-mode-btn');
+            const botBtn = document.getElementById('bot-mode-btn');
+
+            if (lang === 'en') {
+                if (playerBtn) playerBtn.innerText = "⚔️ 2 PLAYERS";
+                if (botBtn) botBtn.innerText = "🤖 VS BOT";
+            } else {
+                if (playerBtn) playerBtn.innerText = "⚔️ 2 OYUNCU";
+                if (botBtn) botBtn.innerText = "🤖 BOT'A KARŞI";
+            }
+
+            // Buton ve status takviyeleri
+            if (t) {
+                const nextBtn = document.getElementById('next-btn');
+                const prevBtn = document.getElementById('prev-btn');
+                if (nextBtn) nextBtn.innerText = t.nextBtn;
+                if (prevBtn) prevBtn.innerText = t.backBtn;
+                
+                const statusBox = document.getElementById('status');
+                if (statusBox) statusBox.innerText = t.startMsg;
+            }
+        }, 50); // 50 milisaniye bekleme, gözle görülmez ama JS sırasını düzeltir.
+    };
+</script>
 </body>
 </html>
