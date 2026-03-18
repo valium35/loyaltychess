@@ -3,35 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chess Multiverse</title>
+    <title>Chess Multiverse - Choose Your Universe</title>
     <style>
-        body { background: #000; color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .hero-title { font-size: 3rem; color: #f1c40f; margin-bottom: 40px; letter-spacing: 5px; text-align: center; }
-        .selection-container { display: flex; gap: 40px; padding: 20px; }
-        .game-card {
-            width: 300px; padding: 40px; border: 2px solid #f1c40f; border-radius: 20px;
-            background: rgba(241, 196, 15, 0.05); text-align: center; cursor: pointer;
-            transition: 0.4s; text-decoration: none; color: inherit;
+        * { box-sizing: border-box; }
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #000; }
+
+        /* Üst Başlık */
+        .main-header {
+            position: absolute; top: 10%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 10; color: #f1c40f; font-size: 2.5rem; font-weight: 900;
+            letter-spacing: 5px; text-transform: uppercase; text-shadow: 0 0 20px rgba(0,0,0,0.8);
+            pointer-events: none; text-align: center; width: 100%;
         }
-        .game-card:hover { background: #f1c40f; color: #000; transform: scale(1.05); }
-        .foresight { border-color: #555; opacity: 0.6; cursor: not-allowed; }
-        .tag { font-size: 0.7rem; background: #e74c3c; padding: 3px 8px; border-radius: 5px; vertical-align: middle; }
+
+        .multiverse-container { display: flex; height: 100vh; width: 100vw; }
+
+        /* Ortak Panel Stili */
+        .universe-panel {
+            flex: 1; position: relative; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; transition: 0.6s ease-in-out;
+            text-decoration: none; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Arka Plan Resimleri */
+        .bg-image {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-size: cover; background-position: center;
+            filter: grayscale(60%) brightness(0.4); transition: 0.8s ease; z-index: 1;
+        }
+
+        /* Sol Taraf: Loyalty */
+        .loyalty .bg-image { background-image: url('logo1.jpg'); }
+        /* Sağ Taraf: Foresight */
+        .foresight .bg-image { background-image: url('logo2.jpg'); }
+
+        /* İçerik (Yazılar ve Butonlar) */
+        .content { position: relative; z-index: 2; text-align: center; pointer-events: none; }
+        .content h2 { font-size: 2rem; color: #fff; margin-bottom: 20px; letter-spacing: 3px; }
+
+        /* Buton Stili */
+        .btn {
+            padding: 15px 40px; background: rgba(241, 196, 15, 0.8); color: #121212;
+            font-weight: bold; border-radius: 50px; text-transform: uppercase;
+            letter-spacing: 2px; border: 2px solid transparent; transition: 0.3s;
+            pointer-events: auto; /* Tıklanabilir yap */
+        }
+
+        /* Hover Etkileri */
+        .universe-panel:hover .bg-image { filter: grayscale(0%) brightness(0.8) scale(1.05); }
+        .universe-panel:hover { flex: 1.2; box-shadow: 0 0 50px rgba(241, 196, 15, 0.3); }
+        .btn:hover { background: #fff; transform: scale(1.1); box-shadow: 0 0 20px #f1c40f; }
+
+        /* Kilitli Panel Etkisi (Foresight için) */
+        .locked { cursor: not-allowed; }
+        .locked .btn { background: #444; color: #888; border-color: #333; }
+        .locked:hover { flex: 1; } /* Genişlemesin */
+        .locked:hover .bg-image { filter: grayscale(100%) brightness(0.2); }
+
+        .tag-soon { font-size: 0.8rem; background: #e74c3c; padding: 4px 10px; border-radius: 4px; vertical-align: middle; margin-left: 10px; }
+
+        @media (max-width: 768px) {
+            .multiverse-container { flex-direction: column; }
+            .main-header { font-size: 1.5rem; top: 5%; }
+        }
     </style>
 </head>
 <body>
-    <h1 class="hero-title">CHESS MULTIVERSE</h1>
-    <div class="selection-container">
-        <a href="loyalty/index.html" class="game-card">
-            <h2>LOYALTY CHESS</h2>
-            <p>Betrayal is the only rule.</p>
-            <strong>ENTER ARENA</strong>
+
+    <div class="main-header">Choose Your Universe</div>
+
+    <div class="multiverse-container">
+        
+        <a href="loyalty/index.html" class="universe-panel loyalty">
+            <div class="bg-image"></div>
+            <div class="content">
+                <h2>LOYALTY CHESS</h2>
+                <div class="btn">Enter Arena</div>
+            </div>
         </a>
 
-        <div class="game-card foresight">
-            <h2>FORESIGHT CHESS <span class="tag">SOON</span></h2>
-            <p>See the future, master the board.</p>
-            <strong>LOCKED</strong>
+        <div class="universe-panel foresight locked">
+            <div class="bg-image"></div>
+            <div class="content">
+                <h2>FORESIGHT CHESS <span class="tag-soon">SOON</span></h2>
+                <div class="btn">LOCKED</div>
+            </div>
         </div>
+
     </div>
+
 </body>
 </html>
