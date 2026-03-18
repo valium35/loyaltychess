@@ -4,8 +4,8 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: white; display: flex; justify-content: center; align-items: center; 
     min-height: 100vh; 
-   background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)), 
-                      url('https://raw.githubusercontent.com/valium35/loyaltychess/refs/heads/logo.jpg');
+  background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)), 
+                  url('https://raw.githubusercontent.com/valium35/loyaltychess/refs/heads/main/loyalty/logo.jpg');
     background-size: cover; background-position: center; background-repeat: no-repeat;
     background-attachment: fixed; background-color: #111;
 }
