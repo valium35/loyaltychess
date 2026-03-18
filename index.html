@@ -28,18 +28,31 @@
 
         /* Arka Plan Resimleri */
         .bg-image {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-size: cover; background-position: center;
-            filter: grayscale(80%) brightness(0.3); transition: 0.8s ease; z-index: 1;
+            position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    /* Filtreleri temizledik, sadece hafif bir solukluk bıraktık ki yazılar kaybolmasın */
+    filter: brightness(0.9) grayscale(0%); 
+    transition: 0.8s ease;
+    z-index: 1;
         }
 
         /* Sol Taraf: Loyalty (Üstte Kalacak) */
-        .loyalty .bg-image { background-image: url('logo1.jpg'); }
+        .loyalty .bg-image {background-image: url('logo1.jpg'); }
         /* Sağ Taraf: Foresight (Altta Kalacak) */
         .foresight .bg-image { background-image: url('logo2.jpg'); }
 
         .content { position: relative; z-index: 2; text-align: center; pointer-events: none; }
-        .content h2 { font-size: clamp(1.2rem, 4vw, 2rem); color: #fff; margin-bottom: 20px; letter-spacing: 3px; text-shadow: 2px 2px 10px rgba(0,0,0,0.5); }
+        .content h2 { font-size: clamp(1.2rem, 4vw, 2rem); 
+    color: #000; /* Logoların beyazsa yazıyı siyah yapmak mantıklı olabilir */
+    margin-bottom: 20px; 
+    letter-spacing: 3px; 
+    font-weight: 900;
+    text-shadow: 1px 1px 5px rgba(255,255,255,0.8); /* Yazının altına hafif beyaz ışık */ }
 
         .btn {
             padding: 12px 35px; background: rgba(241, 196, 15, 0.9); color: #121212;
@@ -59,7 +72,8 @@
             
             .universe-panel { width: 100%; height: 50vh; } /* Her panel ekranın yarısını kaplar */
             
-            .universe-panel:hover { flex: 1.8; } /* Dokunulduğunda o taraf daha çok büyür */
+            .universe-panel:hover .bg-image { 
+    filter: brightness(1.1) scale(1.05); /* Üstüne gelince daha da aydınlanır */
             
             .main-header { top: 50%; font-size: 1.2rem; background: rgba(0,0,0,0.4); padding: 10px 0; }
         }
