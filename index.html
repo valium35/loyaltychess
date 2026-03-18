@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Multiverse</title>
+    <style>
+        body { background: #000; color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .hero-title { font-size: 3rem; color: #f1c40f; margin-bottom: 40px; letter-spacing: 5px; text-align: center; }
+        .selection-container { display: flex; gap: 40px; padding: 20px; }
+        .game-card {
+            width: 300px; padding: 40px; border: 2px solid #f1c40f; border-radius: 20px;
+            background: rgba(241, 196, 15, 0.05); text-align: center; cursor: pointer;
+            transition: 0.4s; text-decoration: none; color: inherit;
+        }
+        .game-card:hover { background: #f1c40f; color: #000; transform: scale(1.05); }
+        .foresight { border-color: #555; opacity: 0.6; cursor: not-allowed; }
+        .tag { font-size: 0.7rem; background: #e74c3c; padding: 3px 8px; border-radius: 5px; vertical-align: middle; }
+    </style>
+</head>
+<body>
+    <h1 class="hero-title">CHESS MULTIVERSE</h1>
+    <div class="selection-container">
+        <a href="loyalty/index.html" class="game-card">
+            <h2>LOYALTY CHESS</h2>
+            <p>Betrayal is the only rule.</p>
+            <strong>ENTER ARENA</strong>
+        </a>
+
+        <div class="game-card foresight">
+            <h2>FORESIGHT CHESS <span class="tag">SOON</span></h2>
+            <p>See the future, master the board.</p>
+            <strong>LOCKED</strong>
+        </div>
+    </div>
+</body>
+</html>
