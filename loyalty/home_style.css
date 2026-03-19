@@ -74,4 +74,32 @@ body {
     border-bottom: 1px solid #333;
 }
 .move-num { color: #888; width: 25px; }
-.white-move, .black-move { flex: 1; font-weight: bold; }
+.white-move, .black-move { flex: 1; font-weight: bold; }@media (max-width: 850px) {
+    .main-container {
+        flex-direction: column !important; /* Yan yana olan yapıyı ALT ALTA çevir */
+        align-items: center;
+        padding: 10px;
+    }
+
+    #chess-board {
+        width: 95vw !important; /* Tahtayı ekran genişliğine yay */
+        height: 95vw !important; /* Kare kalması için boyu da genişlik kadar yap */
+        max-width: 400px; /* Çok devasa telefonlarda aşırı büyümesin */
+        max-height: 400px;
+    }
+
+    .side-panel {
+        width: 100% !important; /* Paneli ekran genisliğine yay */
+        margin-top: 20px;
+        max-height: none; /* Mobilde scroll yerine uzasın gitsin */
+    }
+
+    .mode-container {
+        flex-direction: row; /* Mod butonları (Bot/Player) yan yana kalsın ama sığsın */
+        font-size: 0.7rem;
+    }
+    
+    .controls button {
+        padding: 15px; /* Parmakla basmak kolay olsun diye butonları büyüt */
+    }
+}
