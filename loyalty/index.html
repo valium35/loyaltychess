@@ -102,6 +102,28 @@
             .rules-container { grid-template-columns: 1fr; }
             h1 { font-size: 2.5rem; }
         }
+        .back-link {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    color: rgba(241, 196, 15, 0.6); /* Hafif şeffaf altın sarısı */
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    transition: 0.3s;
+    z-index: 100;
+    border: 1px solid rgba(241, 196, 15, 0.2);
+    padding: 8px 15px;
+    border-radius: 5px;
+}
+
+.back-link:hover {
+    color: #f1c40f;
+    border-color: #f1c40f;
+    background: rgba(241, 196, 15, 0.1);
+    transform: translateX(-5px); /* Hafif sola kayma efekti */
+}
     </style>
 </head>
 <body>
