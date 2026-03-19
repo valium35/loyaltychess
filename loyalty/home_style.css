@@ -1,45 +1,64 @@
-/* GENEL AYARLAR */
-body { 
-    margin: 0; padding: 0;
+/* GENEL SAYFA DÜZENİ */
+body {
+    margin: 0;
+    padding: 0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: white; display: flex; justify-content: center; align-items: center; 
-    min-height: 100vh; 
-  background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)), 
-                  url('https://raw.githubusercontent.com/valium35/loyaltychess/refs/heads/main/loyalty/logo.jpg');
-    background-size: cover; background-position: center; background-repeat: no-repeat;
-    background-attachment: fixed; background-color: #111;
+    background-color: #2c3e50;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
 }
 
-.main-container { 
-    display: flex; gap: 30px; padding: 25px; 
-    background: rgba(30, 30, 30, 0.9); border-radius: 20px; 
-    box-shadow: 0 20px 50px rgba(0,0,0,0.8); backdrop-filter: blur(5px);
+.main-container {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    align-items: flex-start;
 }
 
-.side-panel { display: flex; flex-direction: column; gap: 15px; width: 320px; }
-
-/* LOG VE SEMBOLLER */
-.log-container { background: #1a1a1a; border: 2px solid #333; border-radius: 8px; padding: 10px; }
-#move-history { height: 160px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 0.9em; color: #ddd; background: #111; padding: 8px; border-radius: 4px; }
-.log-entry span {
-    display: block !important;
-    margin: 8px !important;
-    width: 100%; /* Blok gibi davranması için genişlik verdik */
+/* SATRANÇ TAHTASI - ESNEK YAPI */
+#chess-board { 
+    display: grid; 
+    grid-template-columns: repeat(8, 1fr); /* Sabit 60px yerine 8 eşit parça */
+    grid-template-rows: repeat(8, 1fr); 
+    border: 8px solid #34495e; 
+    border-radius: 8px; 
+    overflow: hidden; 
+    width: 480px; /* Bilgisayarda ideal boyut */
+    height: 480px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
-.threat-mark { color: #f1c40f; font-weight: bold; } /* ! - Sarı */
-.ready-mark { color: #ff6600; font-weight: bold; }  /* † - Turuncu */
-.betrayal-mark { color: #ff3333; font-weight: bold; } /* ☠ - Kırmızı */
+.square { 
+    width: 100%; 
+    aspect-ratio: 1 / 1; /* Her zaman kare kalmasını sağlar */
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    position: relative; 
+}
 
-/* TAHTA */
-#chess-board { display: grid; grid-template-columns: repeat(8, 60px); grid-template-rows: repeat(8, 60px); border: 8px solid #34495e; border-radius: 8px; overflow: hidden; }
-.square { width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; position: relative; }
 .white { background: #ebecd0; }
 .black { background: #779556; }
 .active-law { background: rgba(241, 196, 15, 0.4) !important; }
 
-/* TAŞLAR */
-.piece { width: 100%; height: 100%; background-size: 85%; background-repeat: no-repeat; background-position: center; cursor: pointer; transition: transform 0.2s ease; }
+/* TAŞLAR - MOBİLDE NET GÖRÜNÜM */
+.piece { 
+    width: 100%; 
+    height: 100%; 
+    background-size: 85%; 
+    background-repeat: no-repeat; 
+    background-position: center; 
+    cursor: pointer; 
+    transition: transform 0.2s ease; 
+    z-index: 5;
+}
+
+.piece:hover { transform: scale(1.1); }
+
+/* TAŞ GÖRSELLERİ (WIKIMEDIA LINKLERİ) */
 .w-p { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'); }
 .b-p { background-image: url('https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg'); }
 .w-n { background-image: url('https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg'); }
@@ -53,53 +72,43 @@ body {
 .w-k { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg'); }
 .b-k { background-image: url('https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg'); }
 
-/* POPUP SİSTEMİ (KRİTİK) */
-.popup-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center;
-    z-index: 10000;
-}
-.popup-content {
-    background: #1a1a1a; border: 2px solid #f1c40f; border-left: 10px solid #f1c40f;
-    padding: 30px; border-radius: 15px; max-width: 400px; text-align: center;
-}
-.popup-btn {
-    margin-top: 20px; padding: 10px 30px; background: #f1c40f; border: none;
-    border-radius: 5px; font-weight: bold; cursor: pointer; color: #000;
-}
-.log-entry {
+/* YAN PANEL (SKOR, SIRALAMA VB.) */
+.side-panel {
+    background: #34495e;
+    padding: 20px;
+    border-radius: 8px;
+    width: 250px;
     display: flex;
-    gap: 10px;
-    padding: 4px;
-    border-bottom: 1px solid #333;
+    flex-direction: column;
+    gap: 15px;
 }
-.move-num { color: #888; width: 25px; }
-.white-move, .black-move { flex: 1; font-weight: bold; }@media (max-width: 850px) {
+
+/* MOBİL UYARLAMA (850px VE ALTI) */
+@media (max-width: 850px) {
     .main-container {
-        flex-direction: column !important; /* Yan yana olan yapıyı ALT ALTA çevir */
+        flex-direction: column; /* Yan paneli tahtanın altına atar */
         align-items: center;
         padding: 10px;
+        gap: 15px;
     }
 
     #chess-board {
-        width: 95vw !important; /* Tahtayı ekran genişliğine yay */
-        height: 95vw !important; /* Kare kalması için boyu da genişlik kadar yap */
-        max-width: 400px; /* Çok devasa telefonlarda aşırı büyümesin */
-        max-height: 400px;
+        width: 92vw; /* Telefon ekranının %92'si kadar genişlik */
+        height: 92vw; /* Kare formunu korur */
+        max-width: 450px;
+        border-width: 4px; /* Mobilde ince çerçeve daha zarif durur */
     }
 
     .side-panel {
-        width: 100% !important; /* Paneli ekran genisliğine yay */
-        margin-top: 20px;
-        max-height: none; /* Mobilde scroll yerine uzasın gitsin */
+        width: 92vw; /* Yan paneli de tahta genişliğine eşitler */
+        max-width: 450px;
     }
+}
 
-    .mode-container {
-        flex-direction: row; /* Mod butonları (Bot/Player) yan yana kalsın ama sığsın */
-        font-size: 0.7rem;
-    }
-    
-    .controls button {
-        padding: 15px; /* Parmakla basmak kolay olsun diye butonları büyüt */
+/* ÇOK KÜÇÜK TELEFONLAR İÇİN EKSTRA RÖTUŞ */
+@media (max-width: 360px) {
+    #chess-board {
+        width: 98vw;
+        height: 98vw;
     }
 }
