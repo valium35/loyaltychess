@@ -124,6 +124,22 @@
     background: rgba(241, 196, 15, 0.1);
     transform: translateX(-5px); /* Hafif sola kayma efekti */
 }
+        @media (max-width: 768px) {
+    .rules-container {
+        grid-template-columns: 1fr !important; /* Kartları yan yana değil, alt alta diz */
+        gap: 15px;
+        padding: 0 10px;
+    }
+    
+    h1 { font-size: 2rem !important; letter-spacing: 5px !important; }
+    
+    .btn-container {
+        flex-direction: column; /* Butonları alt alta yap */
+        width: 90%;
+    }
+    
+    .btn { width: 100%; text-align: center; }
+}
     </style>
 </head>
 <body>
