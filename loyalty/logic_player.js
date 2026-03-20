@@ -242,13 +242,21 @@ function draw() {
         
         if (selectedSquare === i) square.classList.add('active');
 
-        // GÖRSEL SÜZGEÇ: At dahil rakip taş alımlarını kırmızı yap
+        // 1. SEÇİLİ TAŞIN HAMLELERİ (Nokta veya Kırmızı Çerçeve)
         if (legalMoves.includes(i)) {
             if (layout[i] && !layout[i].startsWith(turn)) {
-                square.classList.add('possible-attack'); // KIRMIZI KARE
+                square.classList.add('possible-attack'); 
             } else {
-                square.classList.add('possible-move'); // NOKTA
+                square.classList.add('possible-move');
             }
+        }
+
+        // 2. İHANET IŞIĞI (Hain olan taşın altındaki sabit parlama)
+        // Burada currentNewTraitors'a bakıyoruz
+        if (typeof LoyaltyEngine !== 'undefined' && 
+            LoyaltyEngine.currentNewTraitors && 
+            LoyaltyEngine.currentNewTraitors.includes(i)) {
+            square.classList.add('threatened-square'); 
         }
 
         if (layout[i]) {
@@ -258,14 +266,8 @@ function draw() {
         }
         square.onclick = () => handleSquareClick(i);
         boardElement.appendChild(square);
-        
-        // Işığı yakma yeri burası, tam boardElement'e ekledikten sonra
-        if (typeof LoyaltyEngine !== 'undefined' && LoyaltyEngine.currentNewTraitors && LoyaltyEngine.currentNewTraitors.includes(i)) {
-            square.classList.add('threatened-square');
-        }
-    } // <-- For döngüsünün kapanışı
-} // <-- draw fonksiyonunun
-
+    } // For döngüsü burada bitmeli
+}
 function updateStatus() {
     const t = getT();
     const kingPos = findKing(turn);
@@ -274,6 +276,9 @@ function updateStatus() {
     let label = (turn === 'w' ? t.status : t.statusBlack);
     if (isCheck) label += (t.statusCheck || " (ŞAH!)"); 
     statusElement.innerText = label;
-}
+}// LoyaltyEngine'in bu fonksiyonlara erişebilmesi için pencereye (window) bağlıyoruz
+window.isSquareAttacked = isSquareAttacked;
+window.getRawMoves = getRawMoves;
+window.findKing = findKing;
 
 window.onload = initGame;
