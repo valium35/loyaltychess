@@ -6,6 +6,8 @@ let enPassantTarget = null;
 let hasMoved = {}; 
 let gameLog = [];
 let moveCount = 1;
+let preMoveThreats = [];  // Hamle yapılmadan önceki tehditlerin "fotoğrafı"
+let currentNewTraitors = []; // Sadece bu hamleyle doğan taze hainler
 
 const boardElement = document.getElementById('chess-board');
 const statusElement = document.getElementById('status');
@@ -110,9 +112,29 @@ function testMoveForSafety(from, to, color) {
 }
 
 function getLegalMoves(i) {
-    const piece = layout[i];
-    if (!piece) return [];
-    return getRawMoves(i).filter(move => testMoveForSafety(i, move, piece[0]));
+    // --- 1. FOTOĞRAF ÇEK (Hamle yapılmadan hemen önce) ---
+    // Rakibin şu anki tüm sahipsiz tehditlerini not alıyoruz
+    const opponentColor = turn === 'w' ? 'b' : 'w';
+    preMoveThreats = getAllUnprotectedThreats(opponentColor);
+
+    addToLog(selectedSquare, i); 
+    executeMove(selectedSquare, i);
+    
+    // Hamle yapıldıktan sonra turn (sıra) değiştiği için
+    // artık "turn" yeni rakibi, "prevPlayer" ise hamle yapanı temsil eder.
+    const prevPlayer = turn; 
+    turn = (turn === 'w' ? 'b' : 'w'); 
+
+    // --- 2. YENİ DURUMU TARA VE FARKI BUL ---
+    const allCurrentThreats = getAllUnprotectedThreats(turn);
+    
+    // Süzgeç: "Şu an listede olan ama az önce olmayanları" bul
+    currentNewTraitors = allCurrentThreats.filter(index => !preMoveThreats.includes(index));
+
+    selectedSquare = null;
+    draw();
+    updateStatus();
+    checkGameEnd();
 }
 
 function getRawMoves(i, onlyAttacks = false) {
@@ -259,6 +281,10 @@ function draw() {
     let legalMoves = [];
     if (selectedSquare !== null) {
         legalMoves = getLegalMoves(selectedSquare);
+        // draw() içindeki kare (square) oluşturma döngüsünde:
+if (currentNewTraitors.includes(i)) {
+    square.classList.add('threatened-square'); // Kırmızı parlama yanacak
+}
     }
 
     for (let i = 0; i < 64; i++) {
@@ -313,6 +339,43 @@ function updateStatus() {
         
         statusElement.innerText = label;
     }
+}function getAllUnprotectedThreats(targetColor) {
+    let list = [];
+    const attackerColor = targetColor === 'w' ? 'b' : 'w';
+    
+    for (let i = 0; i < 64; i++) {
+        const piece = layout[i];
+        // Kural: Piyon ve Vezir hariç (n: At, b: Fil, r: Kale)
+        if (piece && piece.startsWith(targetColor) && ['n', 'b', 'r'].includes(piece[2])) {
+            // 1. Bu kareye rakip saldırıyor mu?
+            if (isSquareAttacked(i, attackerColor)) {
+                // 2. Bu taş kendi arkadaşları tarafından KORUNMUYOR mu?
+                if (!isPieceProtected(i, targetColor)) {
+                    list.push(i);
+                }
+            }
+        }
+    }
+    return list;
+}
+
+// YARDIMCI: Koruma Kontrolü (X-Ray/Araya taş girme dahil)
+function isPieceProtected(index, color) {
+    const originalPiece = layout[index];
+    layout[index] = ''; // Taşı geçici kaldır (arkadaki korumayı görmek için)
+    let protected = false;
+    
+    for (let i = 0; i < 64; i++) {
+        if (layout[i] && layout[i].startsWith(color) && i !== index) {
+            // Eğer kendi taşlarından biri burayı hedefliyorsa korunuyordur
+            if (getRawMoves(i, true).includes(index)) {
+                protected = true;
+                break;
+            }
+        }
+    }
+    layout[index] = originalPiece; // Taşı geri koy
+    return protected;
 }
 
 
