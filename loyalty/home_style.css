@@ -89,6 +89,26 @@ body {
     display: flex;
     flex-direction: column;
     gap: 15px;
+}/* Gidebileceğin boş karelerin içindeki nokta */
+.possible-move::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: rgba(0, 0, 0, 0.15); /* Hafif koyu bir nokta */
+    border-radius: 50%;
+    z-index: 2;
+}
+
+/* Eğer gidebileceğin karede rakip taş varsa (Yeme hamlesi) */
+.possible-attack {
+    box-shadow: inset 0 0 15px rgba(231, 76, 60, 0.5) !important; /* Kırmızımsı bir iç gölge */
+    cursor: crosshair !important;
+}
+
+/* Seçili olan karenin kendi rengi */
+.square.active {
+    background-color: #f1c40f !important; /* Altın sarısı */
 }
 
 /* MOBİL UYARLAMA (850px VE ALTI) */
