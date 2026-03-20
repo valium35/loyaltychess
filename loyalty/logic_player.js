@@ -163,24 +163,24 @@ function handleSquareClick(i) {
     } else {
         const legalMoves = getLegalMoves(selectedSquare);
         if (legalMoves.includes(i)) {
+            
+            // --- GÖZLEMCİ: HAMLE ÖNCESİ FOTOĞRAF ---
+            if (typeof LoyaltyEngine !== 'undefined') {
+                const opponentColor = (turn === 'w' ? 'b' : 'w');
+                LoyaltyEngine.takeSnapshot(layout, opponentColor);
+            }
+
             addToLog(selectedSquare, i); 
             executeMove(selectedSquare, i);
+            
             selectedSquare = null;
-            turn = (turn === 'w' ? 'b' : 'w'); if (typeof LoyaltyEngine !== 'undefined') {
-        const opponentColor = turn === 'w' ? 'b' : 'w';
-        LoyaltyEngine.takeSnapshot(layout, opponentColor);
-    }
+            turn = (turn === 'w' ? 'b' : 'w'); // Sıra şimdi değişti
 
-    addToLog(selectedSquare, i); 
-    executeMove(selectedSquare, i);
-    
-    selectedSquare = null;
-    turn = (turn === 'w' ? 'b' : 'w'); 
+            // --- GÖZLEMCİ: HAMLE SONRASI KARŞILAŞTIRMA ---
+            if (typeof LoyaltyEngine !== 'undefined') {
+                LoyaltyEngine.findNewThreats(layout, turn);
+            }
 
-    // --- GÖZLEMCİ: HAMLE SONRASI KARŞILAŞTIRMA ---
-    if (typeof LoyaltyEngine !== 'undefined') {
-        LoyaltyEngine.findNewThreats(layout, turn);
-    }
             draw();
             updateStatus();
             checkGameEnd();
@@ -190,7 +190,6 @@ function handleSquareClick(i) {
         }
     }
 }
-
 function executeMove(from, to) {
     const piece = layout[from], type = piece[2], color = piece[0];
     if (type === 'p' && to === enPassantTarget) {
@@ -259,10 +258,13 @@ function draw() {
         }
         square.onclick = () => handleSquareClick(i);
         boardElement.appendChild(square);
-        if (typeof LoyaltyEngine !== 'undefined' && LoyaltyEngine.currentNewTraitors.includes(i)) {
-    square.classList.add('threatened-square'); // CSS'deki kırmızı parlama
-    }
-}
+        
+        // Işığı yakma yeri burası, tam boardElement'e ekledikten sonra
+        if (typeof LoyaltyEngine !== 'undefined' && LoyaltyEngine.currentNewTraitors && LoyaltyEngine.currentNewTraitors.includes(i)) {
+            square.classList.add('threatened-square');
+        }
+    } // <-- For döngüsünün kapanışı
+} // <-- draw fonksiyonunun
 
 function updateStatus() {
     const t = getT();
