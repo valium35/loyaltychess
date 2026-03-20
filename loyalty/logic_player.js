@@ -169,10 +169,19 @@ function getRawMoves(i, onlyAttacks = false) {
 // --- 5. OYUN AKIŞI ---
 function handleSquareClick(i) {
     if (selectedSquare === null) {
+        {
+        // NORMAL: Kendi taşınsa seç
         if (layout[i] && layout[i].startsWith(turn)) {
             selectedSquare = i;
             draw();
+        } 
+        // İHANET: Rakip taş ama "Hain Listesi"ndeyse seç!
+        else if (layout[i] && LoyaltyEngine.threatenedList.includes(i)) {
+            selectedSquare = i;
+            LoyaltyEngine.isBetrayalMode = true; // Motoru ihanet moduna al
+            draw();
         }
+        
     } else {
         const legalMoves = getLegalMoves(selectedSquare);
         if (legalMoves.includes(i)) {
@@ -180,6 +189,8 @@ function handleSquareClick(i) {
             executeMove(selectedSquare, i);
             
             selectedSquare = null;
+            const nextAttacker = turn; // Şu an hamle yapan, bir sonraki elin saldırganıdır
+LoyaltyEngine.scanBoard(layout, (turn === 'w' ? 'b' : 'w'));
             turn = (turn === 'w' ? 'b' : 'w'); 
             
             draw();
@@ -218,6 +229,13 @@ function executeMove(from, to) {
         const t = getT();
         let choice = prompt(t.popups?.promotionMsg || "Piyon Terfisi (q, r, b, n):", "q") || "q";
         layout[to] = color + '-' + (['q','r','b','n'].includes(choice.toLowerCase()) ? choice.toLowerCase() : 'q');
+        if (LoyaltyEngine.isBetrayalMode) {
+        // Taş hamlesini yaptı, şimdi onu tahtadan siliyoruz
+        setTimeout(() => {
+            LoyaltyEngine.executeFinalMission(layout, to);
+            draw();
+            updateStatus();
+        }, 300); // Yarım saniye sonra kaybolsun (Görsel efekt)
     }
 }
 
