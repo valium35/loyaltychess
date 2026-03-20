@@ -72,42 +72,18 @@
         </div>
     </div>
 
-    <script src="translations.js"></script>
-    <script src="loyalty_engine.js"></script>
+   <script src="translations.js"></script>
+    
     <script src="logic_player.js"></script>
+    
+    <script src="loyalty_engine.js"></script>
 
     <script>
-        // 1. DİLİ GLOBALDE TUTALIM (Her yer erişsin)
-        const currentLang = localStorage.getItem('gameLang') || 'tr';
-
-        // 2. STATUS GÜNCELLEME FONKSİYONUNU EZELİM (Global olarak)
-        // logic_player.js içindeki fonksiyonu bu tamamen geçersiz kılar.
-        window.updateStatus = function() {
-            const statusElement = document.getElementById('status');
-            if (!statusElement) return;
-
-            // 'turn' değişkeni logic_player.js içinde global olduğu için erişebiliriz
-            if (currentLang === 'en') {
-                let label = (turn === 'w' ? "WHITE'S TURN" : "BLACK'S TURN");
-                const kingPos = findKing(turn);
-                const opponent = turn === 'w' ? 'b' : 'w';
-                if (typeof isSquareAttacked === 'function' && isSquareAttacked(kingPos, opponent)) {
-                    label += " (CHECK!)";
-                }
-                statusElement.innerText = label;
-            } else {
-                let label = (turn === 'w' ? "SIRA BEYAZDA" : "SIRA SİYAHDA");
-                const kingPos = findKing(turn);
-                const opponent = turn === 'w' ? 'b' : 'w';
-                if (typeof isSquareAttacked === 'function' && isSquareAttacked(kingPos, opponent)) {
-                    label += " (ŞAH!)";
-                }
-                statusElement.innerText = label;
-            }
-        };
-
-        window.onload = function() {
-            // 3. STATİK METİNLERİ DÜZENLE
+        // Sayfa tamamen yüklendiğinde yapılacaklar
+        window.addEventListener('load', function() {
+            const currentLang = localStorage.getItem('gameLang') || 'tr';
+            
+            // Statik metinleri ve butonları dile göre ayarla
             const trElements = document.querySelectorAll('.lang-tr');
             const enElements = document.querySelectorAll('.lang-en');
             const resetBtn = document.getElementById('resetBtn');
@@ -127,13 +103,12 @@
                 document.getElementById('historyTitle').innerText = "⚔️ HAMLE KAYDI";
             }
 
-            // 4. OYUNU BAŞLAT
+            // OYUNU BAŞLAT
+            // logic_player.js içindeki initGame artık her şeyi (tahtayı çizme vb.) hallediyor
             if (typeof initGame === 'function') {
                 initGame();
-                // Tahta çizildikten sonra durumu bir kez daha manuel tetikle
-                window.updateStatus();
             }
-        };
+        });
     </script>
 </body>
 </html>
