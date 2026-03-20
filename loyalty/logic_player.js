@@ -130,15 +130,19 @@ function initGame() {
 }
 
 function handleSquareClick(i) {
-    if (selectedSquare === null) {
-        if (layout[i] && layout[i].startsWith(turn)) {
+   if (selectedSquare === null) {
+        if (!layout[i]) return; // Boş kareye tıkladıysan bir şey yapma
+
+        // DURUM A: Kendi taşımıza tıkladık (Normal satranç)
+        if (layout[i].startsWith(turn)) {
             selectedSquare = i;
             if (typeof LoyaltyEngine !== 'undefined') LoyaltyEngine.isBetrayalMode = false;
             draw();
         } 
+        // DURUM B: Rakip taşa tıkladık ama bu taş "Hain" listesinde (İhanet!)
         else if (typeof LoyaltyEngine !== 'undefined' && LoyaltyEngine.threatenedList.includes(i)) {
             selectedSquare = i;
-            LoyaltyEngine.isBetrayalMode = true;
+            LoyaltyEngine.isBetrayalMode = true; // İHANET MODUNU AÇTIK
             draw();
         }
     } else {
