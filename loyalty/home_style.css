@@ -112,6 +112,11 @@ body {
         max-width: 450px;
     }
 }
+/* Hain adayları için kırmızı parlama efekti */
+.traitor-risk {
+    box-shadow: inset 0 0 20px rgba(255, 0, 0, 0.6) !important;
+    cursor: help !important;
+}
 
 /* ÇOK KÜÇÜK TELEFONLAR İÇİN */
 @media (max-width: 360px) {
