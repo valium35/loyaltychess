@@ -1,5 +1,9 @@
+/**
+ * LoyaltyChess - İhanet ve Sadakat Motoru (Gözlemci Modülü)
+ * Sadece son hamleyle doğan "yeni" tehditleri takip eder.
+ */
 const LoyaltyEngine = {
-    previousThreats: [], // Hamle öncesi sahipsiz tehditler
+    previousThreats: [], // Hamle öncesi sahipsiz tehditlerin fotoğrafı
     currentNewTraitors: [], // Sadece bu hamleyle doğan taze hainler
 
     // 1. ADIM: FOTOĞRAF ÇEK (Hamle yapılmadan hemen önce çağrılır)
@@ -17,21 +21,22 @@ const LoyaltyEngine = {
         // Süzgeç: "Şu an listede olan ama az önce fotoğrafta olmayanları" bul
         this.currentNewTraitors = allCurrentThreats.filter(index => !this.previousThreats.includes(index));
         
-        console.log("YENİ DOĞAN HAİNLER:", this.currentNewTraitors);
+        console.log("YENİ DOĞAN HAİNLER TESPİT EDİLDİ:", this.currentNewTraitors);
     },
 
     // YARDIMCI: Tahtadaki tüm sahipsiz (At, Fil, Kale) tehditleri bulan motor
     getAllUnprotected: function(layout, targetColor) {
         let list = [];
-        const attackerColor = targetColor === 'w' ? 'b' : 'w';
+        const attackerColor = (targetColor === 'w' ? 'b' : 'w');
 
         for (let i = 0; i < 64; i++) {
             const piece = layout[i];
-            // Kural: Piyon ve Vezir hariç
+            // Kural: Piyon ve Vezir hariç (n: At, b: Fil, r: Kale)
             if (piece && piece.startsWith(targetColor) && ['n', 'b', 'r'].includes(piece[2])) {
-                // isSquareAttacked fonksiyonunu ana motordan ödünç alıyoruz
-                if (window.isSquareAttacked(i, attackerColor)) {
-                    // isPieceProtected fonksiyonunu aşağıda tanımladık
+                
+                // logic_player'dan ödünç alınan fonksiyonu güvenli çağırıyoruz
+                if (typeof window.isSquareAttacked === 'function' && window.isSquareAttacked(i, attackerColor)) {
+                    
                     if (!this.isPieceProtected(layout, i, targetColor)) {
                         list.push(i);
                     }
@@ -41,7 +46,7 @@ const LoyaltyEngine = {
         return list;
     },
 
-    // YARDIMCI: Koruma Kontrolü
+    // YARDIMCI: Koruma Kontrolü (Blokaj ve X-Ray dahil)
     isPieceProtected: function(layout, index, color) {
         const originalPiece = layout[index];
         layout[index] = ''; // X-Ray kontrolü için geçici kaldır
@@ -49,8 +54,8 @@ const LoyaltyEngine = {
         
         for (let i = 0; i < 64; i++) {
             if (layout[i] && layout[i].startsWith(color) && i !== index) {
-                // getRawMoves fonksiyonunu ana motordan ödünç alıyoruz
-                if (window.getRawMoves(i, true).includes(index)) {
+                // getRawMoves fonksiyonunu güvenli çağırıyoruz
+                if (typeof window.getRawMoves === 'function' && window.getRawMoves(i, true).includes(index)) {
                     protected = true;
                     break;
                 }
