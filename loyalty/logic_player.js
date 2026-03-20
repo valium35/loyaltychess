@@ -6,7 +6,7 @@ let enPassantTarget = null;
 let hasMoved = {}; 
 let gameLog = [];
 let moveCount = 1;
-
+let betrayedHistory = []; // İhanet riski taşıyan karelerin indeksleri (0-63)
 const boardElement = document.getElementById('chess-board');
 const statusElement = document.getElementById('status');
 const logElement = document.getElementById('move-history');
@@ -254,11 +254,37 @@ function checkGameEnd() {
 // --- 6. GÖRSELLEŞTİRME ---
 function draw() {
     boardElement.innerHTML = '';
+    
+    // Eğer bir taş seçiliyse, onun gidebileceği yerleri bir listeye alalım
+    let legalMoves = [];
+    if (selectedSquare !== null) {
+        legalMoves = getLegalMoves(selectedSquare);
+    }
+
     for (let i = 0; i < 64; i++) {
         const square = document.createElement('div');
         const isBlack = (Math.floor(i / 8) + (i % 8)) % 2 !== 0;
-        square.className = `square ${isBlack ? 'black' : 'white'} ${selectedSquare === i ? 'active' : ''}`;
         
+        // Temel sınıflar
+        square.className = `square ${isBlack ? 'black' : 'white'}`;
+        
+        // 1. Seçili kareyi boya
+        if (selectedSquare === i) {
+            square.classList.add('active');
+        }
+
+        // 2. Gidilebilecek kareleri işaretle
+        if (legalMoves.includes(i)) {
+            if (layout[i]) {
+                // Eğer karede taş varsa "saldırı" sınıfı ekle
+                square.classList.add('possible-attack');
+            } else {
+                // Boşsa "nokta" sınıfı ekle
+                square.classList.add('possible-move');
+            }
+        }
+
+        // Taşları yerleştir
         if (layout[i]) {
             const p = document.createElement('div');
             p.className = `piece ${layout[i]}`;
@@ -269,7 +295,6 @@ function draw() {
         boardElement.appendChild(square);
     }
 }
-
 function updateStatus() {
     const t = getT(); // Zaten hazırladığın yardımcı fonksiyon
     if (statusElement && t) {
