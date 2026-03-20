@@ -35,52 +35,77 @@ function getRawMoves(i, onlyAttacks = false) {
     if (!piece) return [];
     const color = piece[0], type = piece[2], { r, c } = getCoords(i);
     let moves = [];
+
+    // TAŞ HAREKET TANIMLARI
     const directions = {
-        'r': [[1,0],[-1,0],[0,1],[0,-1]], 
-        'b': [[1,1],[1,-1],[-1,1],[-1,-1]],
-        'q': [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]],
-        'n': [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]],
-        'k': [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]
+        'r': [[1,0], [-1,0], [0,1], [0,-1]], // KALE: Aşağı, Yukarı, Sağ, Sol
+        'b': [[1,1], [1,-1], [-1,1], [-1,-1]], // FİL: Çaprazlar
+        'q': [[1,0], [-1,0], [0,1], [0,-1], [1,1], [1,-1], [-1,1], [-1,-1]], // VEZİR: Hepsi
+        'n': [[2,1], [2,-1], [-2,1], [-2,-1], [1,2], [1,-2], [-1,2], [-1,-2]], // AT: L hamle
+        'k': [[1,0], [-1,0], [0,1], [0,-1], [1,1], [1,-1], [-1,1], [-1,-1]]  // ŞAH: Tek kare
     };
 
+    // KALE (r), FİL (b) VE VEZİR (q) İÇİN KAYMA MANTIĞI
     if (['r', 'b', 'q'].includes(type)) {
         directions[type].forEach(d => {
-            for(let j=1; j<8; j++) {
-                const target = getIndex(r + d[0]*j, c + d[1]*j);
-                if (target === null) break;
-                if (!layout[target]) moves.push(target);
-                else { 
-                    if (onlyAttacks || layout[target][0] !== color) moves.push(target); 
+            for (let j = 1; j < 8; j++) {
+                const targetR = r + d[0] * j;
+                const targetC = c + d[1] * j;
+                const target = getIndex(targetR, targetC);
+
+                if (target === null) break; // Tahta dışıysa dur
+
+                if (!layout[target]) {
+                    moves.push(target); // Boşsa ekle ve devam et
+                } else {
+                    // Eğer rakip taşsa ekle ve dur, kendi taşınsa sadece dur
+                    if (onlyAttacks || layout[target][0] !== color) {
+                        moves.push(target);
+                    }
                     break; 
                 }
             }
         });
-    } else if (type === 'n' || type === 'k') {
+    } 
+    // AT (n) VE ŞAH (k) İÇİN SIÇRAMA MANTIĞI
+    else if (type === 'n' || type === 'k') {
         directions[type].forEach(d => {
             const target = getIndex(r + d[0], c + d[1]);
-            if (target !== null && (onlyAttacks || !layout[target] || layout[target][0] !== color)) moves.push(target);
+            if (target !== null) {
+                if (onlyAttacks || !layout[target] || layout[target][0] !== color) {
+                    moves.push(target);
+                }
+            }
         });
-    } else if (type === 'p') {
+    } 
+    // PİYON (p) MANTIĞI
+    else if (type === 'p') {
         const dir = color === 'w' ? -1 : 1;
         if (!onlyAttacks) {
             const f1 = getIndex(r + dir, c);
             if (f1 !== null && !layout[f1]) {
                 moves.push(f1);
-                if (r === (color === 'w' ? 6 : 1) && !layout[getIndex(r + 2*dir, c)]) moves.push(getIndex(r + 2*dir, c));
+                // İlk hamlede 2 kare gitme
+                if (r === (color === 'w' ? 6 : 1)) {
+                    const f2 = getIndex(r + 2 * dir, c);
+                    if (!layout[f2]) moves.push(f2);
+                }
             }
         }
+        // Çapraz yeme
         [getIndex(r + dir, c - 1), getIndex(r + dir, c + 1)].forEach(diag => {
-            if (diag !== null && (onlyAttacks || (layout[diag] && layout[diag][0] !== color) || diag === enPassantTarget)) moves.push(diag);
+            if (diag !== null && (onlyAttacks || (layout[diag] && layout[diag][0] !== color) || diag === enPassantTarget)) {
+                moves.push(diag);
+            }
         });
     }
     return moves;
 }
 
-// Global Erişim (Engine için)
-window.isSquareAttacked = isSquareAttacked;
+// BU SATIRLARI MUTLAKA FONKSİYONUN ALTINA EKLE (Engine görsün)
 window.getRawMoves = getRawMoves;
+window.isSquareAttacked = isSquareAttacked;
 window.findKing = findKing;
-
 // --- 3. BAŞLATMA ---
 const initialSetup = {
     0: 'b-r', 1: 'b-n', 2: 'b-b', 3: 'b-q', 4: 'b-k', 5: 'b-b', 6: 'b-n', 7: 'b-r',
