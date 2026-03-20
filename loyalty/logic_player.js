@@ -166,7 +166,21 @@ function handleSquareClick(i) {
             addToLog(selectedSquare, i); 
             executeMove(selectedSquare, i);
             selectedSquare = null;
-            turn = (turn === 'w' ? 'b' : 'w'); 
+            turn = (turn === 'w' ? 'b' : 'w'); if (typeof LoyaltyEngine !== 'undefined') {
+        const opponentColor = turn === 'w' ? 'b' : 'w';
+        LoyaltyEngine.takeSnapshot(layout, opponentColor);
+    }
+
+    addToLog(selectedSquare, i); 
+    executeMove(selectedSquare, i);
+    
+    selectedSquare = null;
+    turn = (turn === 'w' ? 'b' : 'w'); 
+
+    // --- GÖZLEMCİ: HAMLE SONRASI KARŞILAŞTIRMA ---
+    if (typeof LoyaltyEngine !== 'undefined') {
+        LoyaltyEngine.findNewThreats(layout, turn);
+    }
             draw();
             updateStatus();
             checkGameEnd();
@@ -245,6 +259,8 @@ function draw() {
         }
         square.onclick = () => handleSquareClick(i);
         boardElement.appendChild(square);
+        if (typeof LoyaltyEngine !== 'undefined' && LoyaltyEngine.currentNewTraitors.includes(i)) {
+    square.classList.add('threatened-square'); // CSS'deki kırmızı parlama
     }
 }
 
