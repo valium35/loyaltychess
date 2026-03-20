@@ -27,6 +27,11 @@ const initialSetup = {
     56: 'w-r', 57: 'w-n', 58: 'w-b', 59: 'w-q', 60: 'w-k', 61: 'w-b', 62: 'w-n', 63: 'w-r'
 };
 
+// GLOBAL ERİŞİM İÇİN FONKSİYONLARI PENCEREYE BAĞLIYORUZ (Engine'in görmesi için şart)
+window.isSquareAttacked = isSquareAttacked;
+window.getRawMoves = getRawMoves;
+window.findKing = findKing;
+
 function initGame() {
     layout.fill('');
     Object.keys(initialSetup).forEach(i => layout[i] = initialSetup[i]);
@@ -34,6 +39,13 @@ function initGame() {
     gameLog = [];
     moveCount = 1;
     turn = 'w';
+    
+    // Engine'i sıfırla
+    if (typeof LoyaltyEngine !== 'undefined') {
+        LoyaltyEngine.threatenedList = [];
+        LoyaltyEngine.isBetrayalMode = false;
+    }
+
     if (logElement) logElement.innerHTML = '';
     draw();
     updateStatus();
@@ -94,8 +106,8 @@ function getLegalMoves(i) {
     const piece = layout[i];
     if (!piece) return [];
     
-    // Eğer bu bir ihanet hamlesiyse şah çekememe kontrolünü engine'den yap
-    if (LoyaltyEngine.isBetrayalMode) {
+    // İhanet kontrolü (Engine yüklüyse)
+    if (typeof LoyaltyEngine !== 'undefined' && LoyaltyEngine.isBetrayalMode) {
         return getRawMoves(i).filter(move => LoyaltyEngine.canBetrayerMoveHere(layout, i, move, turn));
     }
     
@@ -147,14 +159,12 @@ function getRawMoves(i, onlyAttacks = false) {
 // --- 5. OYUN AKIŞI ---
 function handleSquareClick(i) {
     if (selectedSquare === null) {
-        // NORMAL: Kendi taşınsa seç
         if (layout[i] && layout[i].startsWith(turn)) {
             selectedSquare = i;
-            LoyaltyEngine.isBetrayalMode = false;
+            if (typeof LoyaltyEngine !== 'undefined') LoyaltyEngine.isBetrayalMode = false;
             draw();
         } 
-        // İHANET: Rakip taş ama "Hain Listesi"ndeyse seç!
-        else if (layout[i] && LoyaltyEngine.threatenedList.includes(i)) {
+        else if (typeof LoyaltyEngine !== 'undefined' && LoyaltyEngine.threatenedList.includes(i)) {
             selectedSquare = i;
             LoyaltyEngine.isBetrayalMode = true;
             draw();
@@ -166,16 +176,19 @@ function handleSquareClick(i) {
             executeMove(selectedSquare, i);
             
             selectedSquare = null;
-            // Hamle bitince tahtayı tara
-            LoyaltyEngine.scanBoard(layout, (turn === 'w' ? 'b' : 'w'));
-            turn = (turn === 'w' ? 'b' : 'w'); 
             
+            // Sıra değişmeden tarama yap (Engine varsa)
+            if (typeof LoyaltyEngine !== 'undefined') {
+                LoyaltyEngine.scanBoard(layout, (turn === 'w' ? 'b' : 'w'));
+            }
+
+            turn = (turn === 'w' ? 'b' : 'w'); 
             draw();
             updateStatus();
             checkGameEnd();
         } else {
             selectedSquare = (layout[i] && layout[i].startsWith(turn)) ? i : null;
-            LoyaltyEngine.isBetrayalMode = false;
+            if (typeof LoyaltyEngine !== 'undefined') LoyaltyEngine.isBetrayalMode = false;
             draw();
         }
     }
@@ -203,14 +216,13 @@ function executeMove(from, to) {
     layout[to] = layout[from];
     layout[from] = '';
 
-    // Terfi kontrolü
     if (type === 'p' && (Math.floor(to/8) === 0 || Math.floor(to/8) === 7)) {
         let choice = prompt("Piyon Terfisi (q, r, b, n):", "q") || "q";
         layout[to] = color + '-' + (['q','r','b','n'].includes(choice.toLowerCase()) ? choice.toLowerCase() : 'q');
     }
 
     // İHANET SONRASI VEDA
-    if (LoyaltyEngine.isBetrayalMode) {
+    if (typeof LoyaltyEngine !== 'undefined' && LoyaltyEngine.isBetrayalMode) {
         setTimeout(() => {
             LoyaltyEngine.executeFinalMission(layout, to);
             draw();
@@ -245,8 +257,8 @@ function draw() {
         const isBlack = (Math.floor(i / 8) + (i % 8)) % 2 !== 0;
         square.className = `square ${isBlack ? 'black' : 'white'} ${selectedSquare === i ? 'active' : ''}`;
         
-        // Hain adayı ise görsel uyarı (isteğe bağlı)
-        if (LoyaltyEngine.threatenedList.includes(i)) {
+        // Engine yüklüyse hain adayı görsel uyarısı
+        if (typeof LoyaltyEngine !== 'undefined' && LoyaltyEngine.threatenedList && LoyaltyEngine.threatenedList.includes(i)) {
             square.style.boxShadow = "inset 0 0 10px rgba(231, 76, 60, 0.8)";
         }
 
@@ -270,4 +282,5 @@ function updateStatus() {
     statusElement.innerText = label;
 }
 
-window.onload = initGame;
+// Dosya yüklendiğinde başlat
+initGame();
