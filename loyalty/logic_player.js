@@ -11,14 +11,12 @@ const boardElement = document.getElementById('chess-board');
 const statusElement = document.getElementById('status');
 const logElement = document.getElementById('move-history');
 
-// Dil desteği için yardımcı fonksiyon
 function getT() {
     const lang = localStorage.getItem('gameLang') || 'tr';
     if (typeof LoyaltyDict !== 'undefined' && LoyaltyDict[lang]) {
         return LoyaltyDict[lang];
     }
-    // Fallback (Sözlük yüklenmemişse hata vermemesi için)
-    return { status: "Sıra Beyazda", statusBlack: "Sıra Siyahda", popups: { alertTitle: "UYARI" } };
+    return { status: "Sıra Beyazda", statusBlack: "Sıra Siyahda", statusCheck: " (ŞAH!)", popups: { alertTitle: "UYARI" } };
 }
 
 // --- 2. BAŞLATMA ---
@@ -30,23 +28,16 @@ const initialSetup = {
 };
 
 function initGame() {
-    // 1. Önce verileri sıfırla
     layout.fill('');
     Object.keys(initialSetup).forEach(i => layout[i] = initialSetup[i]);
     hasMoved = { 'w-k': false, 'b-k': false, 'w-r-56': false, 'w-r-63': false, 'b-r-0': false, 'b-r-7': false };
     gameLog = [];
     moveCount = 1;
     turn = 'w';
-    
-    // 2. Log panelini temizle
     if (logElement) logElement.innerHTML = '';
-    
-    // 3. KRİTİK NOKTA: Önce dili giydiriyoruz (HTML'deki yer tutucuları doldurur)
     if (typeof window.applyPlayerLanguage === 'function') {
         window.applyPlayerLanguage();
     }
-    
-    // 4. Sonra tahtayı çiz ve durum yazısını (Sıra Beyazda vs.) güncelle
     draw();
     updateStatus();
 }
@@ -72,18 +63,12 @@ function isSquareAttacked(targetIndex, attackerColor) {
 
 function addToLog(from, to) {
     const moveText = `${getCoordsLabel(from)}-${getCoordsLabel(to)}`;
-    const t = getT();
-    const lang = localStorage.getItem('gameLang') || 'tr';
-    
     if (turn === 'w') {
-        const movePair = { index: moveCount, white: moveText, black: "" };
-        gameLog.push(movePair);
-        
+        gameLog.push({ index: moveCount, white: moveText, black: "" });
         if (logElement) {
             const div = document.createElement('div');
             div.className = 'log-entry';
             div.id = `move-pair-${moveCount}`;
-            // Dile göre "Beyaz" veya "White" ibaresi istersen buraya ekleyebilirsin
             div.innerHTML = `<span class="move-num">${moveCount}.</span> <span class="white-move">${moveText}</span> <span class="black-move">...</span>`;
             logElement.prepend(div);
         }
@@ -91,13 +76,12 @@ function addToLog(from, to) {
         if (gameLog.length > 0) {
             gameLog[gameLog.length - 1].black = moveText;
             const lastDiv = document.getElementById(`move-pair-${moveCount}`);
-            if (lastDiv) {
-                lastDiv.querySelector('.black-move').innerText = moveText;
-            }
+            if (lastDiv) lastDiv.querySelector('.black-move').innerText = moveText;
             moveCount++;
         }
     }
 }
+
 // --- 4. HAREKET MANTIĞI ---
 function testMoveForSafety(from, to, color) {
     const originalFrom = layout[from], originalTo = layout[to];
@@ -139,7 +123,10 @@ function getRawMoves(i, onlyAttacks = false) {
     } else if (type === 'n' || type === 'k') {
         directions[type].forEach(d => {
             const target = getIndex(r + d[0], c + d[1]);
-            if (target !== null && (onlyAttacks || !layout[target] || layout[target][0] !== color)) moves.push(target);
+            // AT VE ŞAH DÜZELTMESİ: Kare boşsa VEYA rakipse VEYA sadece saldırı bakılıyorsa ekle
+            if (target !== null) {
+                if (onlyAttacks || !layout[target] || layout[target][0] !== color) moves.push(target);
+            }
         });
         if (type === 'k' && !onlyAttacks && !hasMoved[color+'-k']) {
             const opponent = color === 'w' ? 'b' : 'w';
@@ -178,10 +165,8 @@ function handleSquareClick(i) {
         if (legalMoves.includes(i)) {
             addToLog(selectedSquare, i); 
             executeMove(selectedSquare, i);
-            
             selectedSquare = null;
             turn = (turn === 'w' ? 'b' : 'w'); 
-            
             draw();
             updateStatus();
             checkGameEnd();
@@ -194,26 +179,20 @@ function handleSquareClick(i) {
 
 function executeMove(from, to) {
     const piece = layout[from], type = piece[2], color = piece[0];
-    
     if (type === 'p' && to === enPassantTarget) {
         layout[getIndex(Math.floor(from/8), to % 8)] = '';
     }
-    
     if (type === 'k' && Math.abs((from % 8) - (to % 8)) === 2) {
         const rFrom = (to % 8 === 6) ? getIndex(Math.floor(to/8), 7) : getIndex(Math.floor(to/8), 0);
         const rTo = (to % 8 === 6) ? getIndex(Math.floor(to/8), 5) : getIndex(Math.floor(to/8), 3);
         layout[rTo] = layout[rFrom]; layout[rFrom] = '';
     }
-
     if (type === 'k') hasMoved[color + '-k'] = true;
     if (type === 'r') hasMoved[color + '-r-' + from] = true;
-
     enPassantTarget = (type === 'p' && Math.abs(Math.floor(from/8) - Math.floor(to/8)) === 2) ? 
                       getIndex((Math.floor(from/8) + Math.floor(to/8)) / 2, from % 8) : null;
-
     layout[to] = layout[from];
     layout[from] = '';
-
     if (type === 'p' && (Math.floor(to/8) === 0 || Math.floor(to/8) === 7)) {
         const t = getT();
         let choice = prompt(t.popups?.promotionMsg || "Piyon Terfisi (q, r, b, n):", "q") || "q";
@@ -226,118 +205,57 @@ function checkGameEnd() {
     const kingPos = findKing(turn);
     const opponent = turn === 'w' ? 'b' : 'w';
     const isUnderAttack = isSquareAttacked(kingPos, opponent);
-    
     let hasAnyMove = false;
     for (let i = 0; i < 64; i++) {
         if (layout[i] && layout[i].startsWith(turn)) {
-            if (getLegalMoves(i).length > 0) {
-                hasAnyMove = true;
-                break;
-            }
+            if (getLegalMoves(i).length > 0) { hasAnyMove = true; break; }
         }
     }
-
     if (!hasAnyMove) {
-        const lang = localStorage.getItem('gameLang') || 'tr';
-        const winner = (turn === 'w' ? (lang === 'en' ? "BLACK" : "SİYAH") : (lang === 'en' ? "WHITE" : "BEYAZ"));
-        
-        if (isUnderAttack) {
-            const checkmateMsg = lang === 'en' ? `CHECKMATE! ${winner} WINS.` : `ŞAH MAT! ${winner} KAZANDI.`;
-            setTimeout(() => alert(checkmateMsg), 200);
-        } else {
-            const drawMsg = lang === 'en' ? "DRAW (STALEMATE)! No moves left." : "BERABERE (PAT)! Yapacak hamle kalmadı.";
-            setTimeout(() => alert(drawMsg), 200);
-        }
+        const winner = (turn === 'w' ? "SİYAH" : "BEYAZ");
+        alert(isUnderAttack ? "ŞAH MAT! " + winner + " KAZANDI." : "BERABERE!");
     }
 }
 
 // --- 6. GÖRSELLEŞTİRME ---
 function draw() {
     boardElement.innerHTML = '';
-    
-    // Eğer bir taş seçiliyse, onun gidebileceği yerleri bir listeye alalım
-    let legalMoves = [];
-    if (selectedSquare !== null) {
-        legalMoves = getLegalMoves(selectedSquare);
-    }
+    let legalMoves = (selectedSquare !== null) ? getLegalMoves(selectedSquare) : [];
 
     for (let i = 0; i < 64; i++) {
         const square = document.createElement('div');
         const isBlack = (Math.floor(i / 8) + (i % 8)) % 2 !== 0;
-        
-        // Temel sınıflar
         square.className = `square ${isBlack ? 'black' : 'white'}`;
         
-        // 1. Seçili kareyi boya
-        if (selectedSquare === i) {
-            square.classList.add('active');
-        }
+        if (selectedSquare === i) square.classList.add('active');
 
-        // 2. Gidilebilecek kareleri işaretle
+        // GÖRSEL SÜZGEÇ: At dahil rakip taş alımlarını kırmızı yap
         if (legalMoves.includes(i)) {
-            if (layout[i]) {
-                // Eğer karede taş varsa "saldırı" sınıfı ekle
-                square.classList.add('possible-attack');
+            if (layout[i] && !layout[i].startsWith(turn)) {
+                square.classList.add('possible-attack'); // KIRMIZI KARE
             } else {
-                // Boşsa "nokta" sınıfı ekle
-                square.classList.add('possible-move');
+                square.classList.add('possible-move'); // NOKTA
             }
         }
 
-        // Taşları yerleştir
         if (layout[i]) {
             const p = document.createElement('div');
             p.className = `piece ${layout[i]}`;
             square.appendChild(p);
         }
-        
         square.onclick = () => handleSquareClick(i);
         boardElement.appendChild(square);
     }
 }
+
 function updateStatus() {
-    const t = getT(); // Zaten hazırladığın yardımcı fonksiyon
-    if (statusElement && t) {
-        const kingPos = findKing(turn);
-        const opponent = turn === 'w' ? 'b' : 'w';
-        const isCheck = isSquareAttacked(kingPos, opponent);
-        
-        // Temel metin (Sıra Beyazda / Sıra Siyahda)
-        let label = (turn === 'w' ? t.status : t.statusBlack);
-        
-        // Eğer şah varsa sözlükteki (ŞAH!) veya (CHECK!) metnini ekle
-        if (isCheck) {
-            label += (t.statusCheck || " (ŞAH!)"); 
-        }
-        
-        statusElement.innerText = label;
-    }
-}
-function triggerBetrayalPopup(ruleIndex) {
     const t = getT();
-    const popup = document.getElementById('betrayal-popup');
-    if (!popup) return;
-
-    // Pop-up içeriğini dile göre doldur
-    document.getElementById('alert-title').innerText = t.popups.alertTitle;
-    document.getElementById('popup-law-label').innerText = t.popups.lawLabel;
-    document.getElementById('popup-confirm-btn').innerText = t.popups.confirmBtn;
-    
-    // Hangi kural ihlal edildiyse/tetiklendiyse onu göster
-    document.getElementById('popup-rule').innerText = t.rules[ruleIndex];
-    
-    // Mesajı göster (Örn: "Taş taraf değiştirdi!")
-    // Bu mesajı translations.js içine eklediğin bir alandan çekebilirsin
-    document.getElementById('popup-msg').innerText = t.popups.betrayalOccured || "İhanet Yasası İşledi!";
-    
-    popup.style.display = 'flex';
+    const kingPos = findKing(turn);
+    const opponent = turn === 'w' ? 'b' : 'w';
+    const isCheck = isSquareAttacked(kingPos, opponent);
+    let label = (turn === 'w' ? t.status : t.statusBlack);
+    if (isCheck) label += (t.statusCheck || " (ŞAH!)"); 
+    statusElement.innerText = label;
 }
 
-function closePopup() {
-    document.getElementById('betrayal-popup').style.display = 'none';
-}
-if (document.readyState === 'complete') {
-    initGame();
-} else {
-    window.addEventListener('load', initGame);
-}
+window.onload = initGame;
