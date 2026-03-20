@@ -254,11 +254,37 @@ function checkGameEnd() {
 // --- 6. GÖRSELLEŞTİRME ---
 function draw() {
     boardElement.innerHTML = '';
+    
+    // Eğer bir taş seçiliyse, onun gidebileceği yerleri bir listeye alalım
+    let legalMoves = [];
+    if (selectedSquare !== null) {
+        legalMoves = getLegalMoves(selectedSquare);
+    }
+
     for (let i = 0; i < 64; i++) {
         const square = document.createElement('div');
         const isBlack = (Math.floor(i / 8) + (i % 8)) % 2 !== 0;
-        square.className = `square ${isBlack ? 'black' : 'white'} ${selectedSquare === i ? 'active' : ''}`;
         
+        // Temel sınıflar
+        square.className = `square ${isBlack ? 'black' : 'white'}`;
+        
+        // 1. Seçili kareyi boya
+        if (selectedSquare === i) {
+            square.classList.add('active');
+        }
+
+        // 2. Gidilebilecek kareleri işaretle
+        if (legalMoves.includes(i)) {
+            if (layout[i]) {
+                // Eğer karede taş varsa "saldırı" sınıfı ekle
+                square.classList.add('possible-attack');
+            } else {
+                // Boşsa "nokta" sınıfı ekle
+                square.classList.add('possible-move');
+            }
+        }
+
+        // Taşları yerleştir
         if (layout[i]) {
             const p = document.createElement('div');
             p.className = `piece ${layout[i]}`;
@@ -288,25 +314,7 @@ function updateStatus() {
         statusElement.innerText = label;
     }
 }
-function triggerBetrayalPopup(ruleIndex) {
-    const t = getT();
-    const popup = document.getElementById('betrayal-popup');
-    if (!popup) return;
 
-    // Pop-up içeriğini dile göre doldur
-    document.getElementById('alert-title').innerText = t.popups.alertTitle;
-    document.getElementById('popup-law-label').innerText = t.popups.lawLabel;
-    document.getElementById('popup-confirm-btn').innerText = t.popups.confirmBtn;
-    
-    // Hangi kural ihlal edildiyse/tetiklendiyse onu göster
-    document.getElementById('popup-rule').innerText = t.rules[ruleIndex];
-    
-    // Mesajı göster (Örn: "Taş taraf değiştirdi!")
-    // Bu mesajı translations.js içine eklediğin bir alandan çekebilirsin
-    document.getElementById('popup-msg').innerText = t.popups.betrayalOccured || "İhanet Yasası İşledi!";
-    
-    popup.style.display = 'flex';
-}
 
 function closePopup() {
     document.getElementById('betrayal-popup').style.display = 'none';
