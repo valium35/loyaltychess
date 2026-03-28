@@ -20,10 +20,9 @@ function getT() {
     return { status: "Sıra Beyazda", statusBlack: "Sıra Siyahda", statusCheck: " (ŞAH!)", popups: { alertTitle: "UYARI" } };
 }
 
-// --- LOG SİSTEMİ (ÇİFTLİ NOTASYON: 1. e4 e5) ---
+// --- LOG SİSTEMİ ---
 function addToLog(notation, isBetrayal = false) {
     if (!logElement) return;
-
     if (turn === 'w') {
         const entry = document.createElement('div');
         entry.className = 'log-entry';
@@ -39,7 +38,6 @@ function addToLog(notation, isBetrayal = false) {
             moveCount++; 
         }
     }
-    if (logElement.children.length > 30) logElement.removeChild(logElement.lastChild);
 }
 
 // --- CEBİRSEL NOTASYON ÜRETİCİ ---
@@ -48,15 +46,13 @@ function getNotation(from, to, isCapture) {
     if (!piece) return "";
     const type = piece[2].toUpperCase();
     const targetLabel = getCoordsLabel(to);
-    
     if (type === 'P') {
         if (isCapture) {
             const fromLabel = getCoordsLabel(from);
             return `${fromLabel[0]}x${targetLabel}`;
         }
-        return `${getCoordsLabel(from)} ${targetLabel}`;
+        return `${targetLabel}`;
     }
-    
     const moveSymbol = isCapture ? 'x' : '';
     return `${type}${moveSymbol}${targetLabel}`;
 }
@@ -73,15 +69,9 @@ function initGame() {
     layout.fill('');
     Object.keys(initialSetup).forEach(i => layout[i] = initialSetup[i]);
     hasMoved = { 'w-k': false, 'b-k': false, 'w-r-56': false, 'w-r-63': false, 'b-r-0': false, 'b-r-7': false };
-    gameLog = [];
     moveCount = 1;
     turn = 'w';
     window.betrayalHistory.clear();
-    if (logElement) {
-        logElement.innerHTML = '';
-        const readyMsg = localStorage.getItem('gameLang') === 'en' ? "System Ready" : "Sistem Hazır";
-        logElement.innerHTML = `<div class="log-entry" style="color:#777; font-style:italic;">> ${readyMsg}</div>`;
-    }
     draw();
     updateStatus();
 }
@@ -111,46 +101,55 @@ function getLegalMoves(i) {
     const piece = layout[i];
     if (!piece) return [];
     const pieceColor = piece[0], pieceType = piece[2];
-    const canBetray = ['n', 'b', 'r'].includes(pieceType);
-    if (turn !== pieceColor && !canBetray) return [];
-    const isBetrayal = (turn !== pieceColor) && canBetray;
-    let rawMoves = getRawMoves(i, isBetrayal);
+    const isTraitorPossible = typeof LoyaltyEngine !== 'undefined' && LoyaltyEngine.currentNewTraitors && LoyaltyEngine.currentNewTraitors.includes(i);
+    
+    if (turn !== pieceColor && !isTraitorPossible) return [];
+    
+    let rawMoves = getRawMoves(i, false);
 
     return rawMoves.filter(move => {
         const targetPiece = layout[move];
         const { r: fromR, c: fromC } = getCoords(i);
         const { r: toR, c: toC } = getCoords(move);
+        const isBetrayalAction = (turn !== pieceColor) && isTraitorPossible;
 
+        // Piyon Süzgeci
         if (pieceType === 'p') {
             const isDiagonal = (fromC !== toC);
             if (isDiagonal && !targetPiece && move !== enPassantTarget) return false;
             if (!isDiagonal && targetPiece) return false;
         }
 
+        // Dost taş alma engeli
         if (targetPiece) {
-            if (isBetrayal) {
+            if (isBetrayalAction) {
                 if (targetPiece.startsWith(turn)) return false; 
-                if (!targetPiece.startsWith(pieceColor)) return false; 
             } else {
                 if (targetPiece.startsWith(pieceColor)) return false; 
             }
         }
-        if (isBetrayal && targetPiece && targetPiece[2] === 'k') return false;
+        
+        // Şah alma engeli
+        if (isBetrayalAction && targetPiece && targetPiece[2] === 'k') return false;
 
+        // Simülasyon
         const originalFrom = layout[i], originalTo = layout[move];
         layout[move] = originalFrom; layout[i] = '';
-        const kingPos = findKing(turn);
         const opponent = (turn === 'w' ? 'b' : 'w');
-        const safe = (kingPos === -1) ? true : !isSquareAttacked(kingPos, opponent);
-        
-        let createsCheck = false;
-        if (isBetrayal && safe) {
+        const kingPos = findKing(turn);
+        const selfSafe = (kingPos === -1) ? true : !isSquareAttacked(kingPos, opponent);
+
+        // İHANET KISITLAMASI: Şah çekemez / Açarak şah çekemez
+        let traitorViolation = false;
+        if (isBetrayalAction && selfSafe) {
             const oppKingPos = findKing(opponent);
-            if (oppKingPos !== -1 && isSquareAttacked(oppKingPos, turn)) createsCheck = true;
+            if (oppKingPos !== -1 && isSquareAttacked(oppKingPos, turn)) {
+                traitorViolation = true;
+            }
         }
 
         layout[i] = originalFrom; layout[move] = originalTo;
-        return safe && !createsCheck;
+        return selfSafe && !traitorViolation;
     });
 }
 
@@ -174,7 +173,7 @@ function getRawMoves(i, onlyAttacks = false) {
                 if (target === null) break;
                 if (!layout[target]) moves.push(target);
                 else { 
-                    if (onlyAttacks || layout[target][0] !== color) moves.push(target); 
+                    moves.push(target); 
                     break; 
                 }
             }
@@ -182,9 +181,7 @@ function getRawMoves(i, onlyAttacks = false) {
     } else if (type === 'n' || type === 'k') {
         directions[type].forEach(d => {
             const target = getIndex(r + d[0], c + d[1]);
-            if (target !== null) {
-                if (onlyAttacks || !layout[target] || layout[target][0] !== color) moves.push(target);
-            }
+            if (target !== null) moves.push(target);
         });
         
         if (type === 'k' && !onlyAttacks && !hasMoved[color+'-k']) {
@@ -204,23 +201,44 @@ function getRawMoves(i, onlyAttacks = false) {
             const f1 = getIndex(r + dir, c);
             if (f1 !== null && !layout[f1]) {
                 moves.push(f1);
-                if (r === (color === 'w' ? 6 : 1) && !layout[getIndex(r + 2*dir, c)]) moves.push(getIndex(r + 2*dir, c));
+                if (r === (color === 'w' ? 6 : 1)) {
+                    const f2 = getIndex(r + 2 * dir, c);
+                    if (f2 !== null && !layout[f2]) moves.push(f2);
+                }
             }
         }
         [getIndex(r + dir, c - 1), getIndex(r + dir, c + 1)].forEach(diag => {
-            if (diag !== null && (onlyAttacks || (layout[diag] && layout[diag][0] !== color) || diag === enPassantTarget)) moves.push(diag);
+            if (diag !== null) moves.push(diag);
         });
     }
     return moves;
 }
+window.getRawMoves = getRawMoves;
 
 // --- 5. OYUN AKIŞI ---
 function handleSquareClick(i) {
     const piece = layout[i];
-    const isTraitor = typeof LoyaltyEngine !== 'undefined' && LoyaltyEngine.currentNewTraitors && LoyaltyEngine.currentNewTraitors.includes(i);
+    const lang = localStorage.getItem('gameLang') || 'tr';
+    const potentialTraitors = typeof LoyaltyEngine !== 'undefined' ? LoyaltyEngine.getAllUnprotected(layout, turn) : [];
+    const isTraitorPossible = typeof LoyaltyEngine !== 'undefined' && LoyaltyEngine.currentNewTraitors && LoyaltyEngine.currentNewTraitors.includes(i);
 
     if (selectedSquare === null) {
-        if (piece && (piece.startsWith(turn) || isTraitor)) {
+        // RAKİP TAŞINA TIKLANDIĞINDA POP-UP KONTROLÜ
+        if (piece && !piece.startsWith(turn) && potentialTraitors.includes(i)) {
+            const traitorMoves = getLegalMoves(i);
+            if (traitorMoves.length === 0) {
+                const title = lang === 'tr' ? "⚖️ HÜKÜM ENGELLENDİ" : "⚖️ JUDGMENT BLOCKED";
+                const msg = lang === 'tr' 
+                    ? "Bu taş ihanet edemez! Çünkü ihanet hamlesi doğrudan veya açarak ŞAH çekilmesine neden oluyor. İhanet eden el krala dokunamaz!" 
+                    : "This piece cannot betray! All moves result in a direct or discovered CHECK. The traitor's hand cannot touch the King!";
+                const law = lang === 'tr' ? "YASA: İhanet hamlesi şah çekme ile sonuçlanamaz." : "LAW: A betrayal move cannot result in a check.";
+                
+                if (typeof showPop === 'function') showPop(title, msg, law, "#f1c40f");
+                return;
+            }
+        }
+
+        if (piece && (piece.startsWith(turn) || isTraitorPossible)) {
             selectedSquare = i;
             draw();
         }
@@ -246,7 +264,7 @@ function handleSquareClick(i) {
             updateStatus();
             checkGameEnd();
         } else {
-            selectedSquare = (piece && (piece.startsWith(turn) || isTraitor)) ? i : null;
+            selectedSquare = (piece && (piece.startsWith(turn) || isTraitorPossible)) ? i : null;
             draw();
         }
     }
@@ -256,37 +274,36 @@ function handleSquareClick(i) {
 function executeBetrayalMove(from, to) {
     const piece = layout[from];
     const isCapture = layout[to] !== '';
-    const notation = getNotation(from, to, isCapture);
+    const notation = "!" + getNotation(from, to, isCapture);
     const pieceType = piece.split('-')[1].toUpperCase();
     const lang = localStorage.getItem('gameLang') || 'tr';
     
-    // 1. POP-UP MESAJINI HAZIRLA
+    const pieceEl = document.querySelector(`[data-index="${from}"] .piece`);
+    if (pieceEl) {
+        pieceEl.classList.add('traitor-piece');
+        pieceEl.classList.add('betrayal-effect');
+    }
+
     let title = lang === 'tr' ? "🔥 İHANET TESPİT EDİLDİ!" : "🔥 BETRAYAL DETECTED!";
     let msg = lang === 'tr' 
         ? `Sistem Uyarısı: ${pieceType} saf değiştirdi!\n` +
           `Hamle: ${notation}\n` +
-          `KARAR: İhaneti cezalandırıldı ve oyundan ihraç edildi!`
+          `KARAR: İhaneti cezalandırıldı!`
         : `System Alert: ${pieceType} switched sides!\n` +
           `Move: ${notation}\n` +
-          `VERDICT: Punished for treason and removed from game!`;
+          `VERDICT: Punished for treason!`;
     
     let law = lang === 'tr' ? "3. YASA: İhanet eden taş hamle sonrası oyundan silinir." : "LAW 3: Traitors are removed from the board after their move.";
 
-    // Pop-up fonksiyonunu çağır (Globalde showPop varsa)
-    if (typeof showPop === 'function') {
-        showPop(title, msg, law, "#ff3333");
-    }
+    if (typeof showPop === 'function') showPop(title, msg, law, "#ff3333");
 
-    // 2. LOGA İNFAZ NOTU DÜŞ
     addToLog(notation, true);
 
-    // 3. TAHTA İŞLEMLERİ
     layout[to] = layout[from];
     layout[from] = '';
     selectedSquare = null;
     draw();
     
-    // Hainin silinmesi (Son Görev İnfazı)
     setTimeout(() => {
         layout[to] = ''; 
         const movedColor = turn;
@@ -309,18 +326,23 @@ function executeMove(from, to) {
     addToLog(notation, false);
 
     if (type === 'p' && to === enPassantTarget) {
-        layout[getIndex(Math.floor(from/8), to % 8)] = '';
+        const epRemoveIndex = getIndex(Math.floor(from/8), to % 8);
+        layout[epRemoveIndex] = '';
     }
+
     if (type === 'k' && Math.abs((from % 8) - (to % 8)) === 2) {
         const rPos = Math.floor(to/8);
         const rFrom = (to % 8 === 6) ? getIndex(rPos, 7) : getIndex(rPos, 0);
         const rTo = (to % 8 === 6) ? getIndex(rPos, 5) : getIndex(rPos, 3);
         layout[rTo] = layout[rFrom]; layout[rFrom] = '';
     }
+
     if (type === 'k') hasMoved[color + '-k'] = true;
     if (type === 'r') hasMoved[color + '-r-' + from] = true;
+
     enPassantTarget = (type === 'p' && Math.abs(Math.floor(from/8) - Math.floor(to/8)) === 2) ? 
                       getIndex((Math.floor(from/8) + Math.floor(to/8)) / 2, from % 8) : null;
+
     layout[to] = layout[from];
     layout[from] = '';
     
@@ -333,7 +355,6 @@ function executeMove(from, to) {
 function checkGameEnd() {
     const kingPos = findKing(turn);
     const opponent = turn === 'w' ? 'b' : 'w';
-    const isUnderAttack = isSquareAttacked(kingPos, opponent);
     let hasAnyMove = false;
     for (let i = 0; i < 64; i++) {
         if (layout[i] && layout[i].startsWith(turn)) {
@@ -341,17 +362,16 @@ function checkGameEnd() {
         }
     }
     if (!hasAnyMove) {
-        const winner = (turn === 'w' ? "BLACK" : "WHITE");
         const lang = localStorage.getItem('gameLang') || 'tr';
-        const msg = lang === 'tr' ? `BİTTİ: ${winner === 'BLACK' ? 'SİYAH' : 'BEYAZ'}` : `FINISH: ${winner}`;
-        addToLog(msg);
-        alert(isUnderAttack ? "ŞAH MAT!" : "STALEMATE!");
+        alert(lang === 'tr' ? "OYUN BİTTİ!" : "GAME OVER!");
     }
 }
 
 function draw() {
     boardElement.innerHTML = '';
     let legalMoves = (selectedSquare !== null) ? getLegalMoves(selectedSquare) : [];
+    const isSelectedTraitor = selectedSquare !== null && layout[selectedSquare] && !layout[selectedSquare].startsWith(turn);
+
     for (let i = 0; i < 64; i++) {
         const square = document.createElement('div');
         const isBlack = (Math.floor(i / 8) + (i % 8)) % 2 !== 0;
@@ -365,11 +385,14 @@ function draw() {
             square.classList.add('threatened-square');
         }
         if (legalMoves.includes(i)) {
-            square.classList.add(layout[i] ? 'possible-attack' : 'possible-move');
+            square.classList.add(layout[i] || i === enPassantTarget ? 'possible-attack' : 'possible-move');
         }
         if (layout[i]) {
             const p = document.createElement('div');
             p.className = `piece ${layout[i]}`;
+            if (selectedSquare === i && isSelectedTraitor) {
+                p.classList.add('traitor-piece');
+            }
             square.appendChild(p);
         }
         square.onclick = () => handleSquareClick(i);
