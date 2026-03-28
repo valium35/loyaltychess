@@ -1,6 +1,6 @@
 /**
  * logic_bot.js
- * LoyaltyChess: Bot Atölyesi Sürümü (RESTORE EDİLDİ - FULL MANTIK)
+ * LoyaltyChess: Bot Atölyesi Sürümü (TAMİR EDİLDİ & AKILLANDIRILDI)
  */
 
 // --- 1. DEĞİŞKENLER VE DURUM ---
@@ -189,7 +189,7 @@ function getRawMoves(i, onlyAttacks = false) {
     return moves;
 }
 
-// --- BOT ZEKA PARAMETRELERİ (TABLOLAR) ---
+// --- 5. BOT ZEKA PARAMETRELERİ ---
 const pieceValues = { 'p': 10, 'n': 32, 'b': 33, 'r': 50, 'q': 90, 'k': 20000 };
 const knightTable = [-10, -5, -5, -5, -5, -5, -5, -10, -5, 0, 0, 5, 5, 0, 0, -5, -5, 5, 10, 15, 15, 10, 5, -5, -5, 5, 15, 20, 20, 15, 5, -5, -5, 5, 15, 20, 20, 15, 5, -5, -5, 5, 10, 15, 15, 10, 5, -5, -5, 0, 0, 0, 0, 0, 0, -5, -10, -5, -5, -5, -5, -5, -5, -10];
 const pawnTable = [0, 0, 0, 0, 0, 0, 0, 0, 5, 10, 10, -20, -20, 10, 10, 5, 5, -5, -10, 0, 0, -10, -5, 5, 0, 0, 0, 20, 20, 0, 0, 0, 5, 5, 10, 25, 25, 10, 5, 5, 10, 10, 20, 30, 30, 20, 10, 10, 50, 50, 50, 50, 50, 50, 50, 50, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -201,32 +201,53 @@ const kingTable = [50, 60, 30, 0, 0, 30, 60, 50, 30, 30, 0, 0, 0, 0, 30, 30, -10
 function evaluateBoard(tempLayout) {
     let score = 0;
     const moodSwing = (Math.random() * 0.4) + 0.8; 
+    const totalPieces = tempLayout.filter(p => p !== '').length;
+    const isEndgame = totalPieces < 12;
+
     for (let i = 0; i < 64; i++) {
         const piece = tempLayout[i];
         if (!piece) continue;
         const color = piece[0], type = piece[2];
         let val = pieceValues[type];
         let posBonus = 0;
-        if (type === 'n') posBonus = (color === 'b' ? knightTable[i] : knightTable[63 - i]);
-        else if (type === 'p') posBonus = (color === 'b' ? pawnTable[i] : pawnTable[63 - i]);
-        else if (type === 'b') posBonus = (color === 'b' ? bishopTable[i] : bishopTable[63 - i]);
-        else if (type === 'r') posBonus = (color === 'b' ? rookTable[i] : rookTable[63 - i]);
-        else if (type === 'q') posBonus = (color === 'b' ? queenTable[i] : queenTable[63 - i]);
-        else if (type === 'k') posBonus = (color === 'b' ? kingTable[i] : kingTable[63 - i]);
+
+        if (type === 'k' && isEndgame) {
+            posBonus = (color === 'b' ? -kingTable[i] : -kingTable[63 - i]) + 50;
+        } else {
+            if (type === 'n') posBonus = (color === 'b' ? knightTable[i] : knightTable[63 - i]);
+            else if (type === 'p') posBonus = (color === 'b' ? pawnTable[i] : pawnTable[63 - i]);
+            else if (type === 'b') posBonus = (color === 'b' ? bishopTable[i] : bishopTable[63 - i]);
+            else if (type === 'r') posBonus = (color === 'b' ? rookTable[i] : rookTable[63 - i]);
+            else if (type === 'q') posBonus = (color === 'b' ? queenTable[i] : queenTable[63 - i]);
+            else if (type === 'k') posBonus = (color === 'b' ? kingTable[i] : kingTable[63 - i]);
+        }
 
         let total = (val * 10 * moodSwing) + posBonus;
 
-        // Merkez hakimiyeti ve Koruma zinciri
+        const oppColor = (color === 'w' ? 'b' : 'w');
+        const oppKing = findKing(oppColor);
+        if (oppKing !== -1 && isSquareAttacked(oppKing, color)) {
+            total += 95; 
+        }
+
         const center = [27, 28, 35, 36];
         if (center.includes(i)) total += (color === 'b' ? 40 : -20);
-        if (color === 'b' && isSquareAttacked(i, 'b')) total += 15;
+        if (isSquareAttacked(i, color)) total += 20; 
+
+        // İhanet Farkındalığı
+        if (typeof LoyaltyEngine !== 'undefined') {
+            const isUnprotected = LoyaltyEngine.allAttacks.includes(i);
+            if (isUnprotected) {
+                total += (color === 'b' ? -150 : 100);
+            }
+        }
 
         score += (color === 'b' ? total : -total);
     }
     return score;
 }
 
-// --- MINIMAX & ALPHA-BETA ---
+// --- 6. MINIMAX & ALPHA-BETA ---
 function minimax(depth, alpha, beta, isMaximizingPlayer) {
     if (depth === 0) return evaluateBoard(layout);
     let moves = getAllLegalMovesForColor(isMaximizingPlayer ? 'b' : 'w');
@@ -257,13 +278,23 @@ function minimax(depth, alpha, beta, isMaximizingPlayer) {
 
 function minimaxRoot(depth, color) {
     let moves = getAllLegalMovesForColor(color);
-    moves.sort((a, b) => (layout[b.to] ? 10 : 0) - (layout[a.to] ? 10 : 0) + (Math.random() - 0.5));
+    moves.sort((a, b) => {
+        let scoreA = layout[a.to] ? pieceValues[layout[a.to][2]] : 0;
+        let scoreB = layout[b.to] ? pieceValues[layout[b.to][2]] : 0;
+        return (scoreB - scoreA) + (Math.random() - 0.5);
+    });
+
     let bestMove = null, bestValue = -Infinity;
     for (let move of moves) {
+        const moveStr = `${move.from}-${move.to}`;
+        const isRepeating = gameHistory.slice(-4).includes(moveStr);
+        let repeatPenalty = isRepeating ? 200 : 0;
+
         const oldF = layout[move.from], oldT = layout[move.to];
         layout[move.to] = layout[move.from]; layout[move.from] = '';
-        let boardValue = minimax(depth - 1, -Infinity, Infinity, false);
+        let boardValue = minimax(depth - 1, -Infinity, Infinity, false) - repeatPenalty;
         layout[move.from] = oldF; layout[move.to] = oldT;
+
         if (boardValue > bestValue) {
             bestValue = boardValue;
             bestMove = move;
@@ -272,16 +303,30 @@ function minimaxRoot(depth, color) {
     return bestMove;
 }
 
-// --- BOT VE OYUNCU ETKİLEŞİMİ ---
-function makeBotMove() {
-    console.log("🤖 Bot Database ve Strateji Analiz Ediyor...");
-    const historyKey = gameHistory.join(',');
-    const bookMoves = (typeof OpeningDatabase !== 'undefined') ? OpeningDatabase[historyKey] : null;
+// --- 7. DATABASE & BOT ETKİLEŞİMİ ---
+function selectWeightedMove(moves) {
+    const totalWeight = moves.reduce((sum, m) => sum + (m.w || 0), 0);
+    let random = Math.random() * totalWeight;
+    for (const move of moves) {
+        if (random < (move.w || 0)) return move;
+        random -= (move.w || 0);
+    }
+    return moves[0];
+}
 
-    if (bookMoves && bookMoves.length > 0) {
-        const move = bookMoves[Math.floor(Math.random() * bookMoves.length)];
-        executeGameMove(move.from, move.to);
-        return;
+function makeBotMove() {
+    console.log("🤖 Bot Strateji Analiz Ediyor...");
+    const historyKey = gameHistory.join(',');
+    
+    // Açılış Veritabanı Kontrolü
+    if (gameHistory.length <= 30) {
+        const bookMoves = (typeof OpeningDatabase !== 'undefined') ? OpeningDatabase[historyKey] : null;
+        if (bookMoves && bookMoves.length > 0) {
+            const move = selectWeightedMove(bookMoves);
+            console.log(`📚 Database Hamlesi: ${getCoordsLabel(move.from)} -> ${getCoordsLabel(move.to)}`);
+            executeGameMove(move.from, move.to);
+            return;
+        }
     }
 
     let bestMove = minimaxRoot(3, 'b');
@@ -289,6 +334,9 @@ function makeBotMove() {
 }
 
 function executeGameMove(from, to) {
+    if (typeof LoyaltyEngine !== 'undefined') {
+        LoyaltyEngine.takeSnapshot(layout, turn);
+    }
     executeMove(from, to);
     selectedSquare = null;
     finishTurn();
@@ -297,8 +345,6 @@ function executeGameMove(from, to) {
 function executeMove(from, to) {
     const piece = layout[from], type = piece[2], color = piece[0];
     addToLog(getNotation(from, to, layout[to] !== ''), false);
-    
-    // Geçmişi kaydet (Database için şart)
     gameHistory.push(`${from}-${to}`);
 
     if (type === 'p' && to === enPassantTarget) layout[getIndex(Math.floor(from/8), to % 8)] = '';
@@ -321,13 +367,24 @@ function executeMove(from, to) {
 }
 
 function finishTurn() {
+    const playerWhoJustMoved = turn;
+    if (typeof LoyaltyEngine !== 'undefined') {
+        LoyaltyEngine.findNewThreats(layout, playerWhoJustMoved);
+    }
+
     turn = (turn === 'w' ? 'b' : 'w');
+
+    if (typeof LoyaltyEngine !== 'undefined') {
+        LoyaltyEngine.updateAllAttacks(layout, turn);
+    }
+
     draw(); 
     updateStatus(); 
     checkGameEnd();
     if (turn === 'b') setTimeout(makeBotMove, 1000);
 }
 
+// --- 8. OYUNCU ETKİLEŞİMİ & ÇİZİM ---
 function getAllLegalMovesForColor(color) {
     let moves = [];
     for (let i = 0; i < 64; i++) {
@@ -369,16 +426,23 @@ function checkGameEnd() {
 
 function draw() {
     boardElement.innerHTML = '';
+    const threatenedSquares = (typeof LoyaltyEngine !== 'undefined') ? LoyaltyEngine.allAttacks : [];
+    const newTraitors = (typeof LoyaltyEngine !== 'undefined') ? LoyaltyEngine.currentNewTraitors : [];
     let legalMoves = (selectedSquare !== null) ? getLegalMoves(selectedSquare) : [];
+
     for (let i = 0; i < 64; i++) {
         const square = document.createElement('div');
         const isBlack = (Math.floor(i / 8) + (i % 8)) % 2 !== 0;
         square.className = `square ${isBlack ? 'black' : 'white'}`;
         square.dataset.index = i;
+
         if (selectedSquare === i) square.classList.add('active');
+        if (threatenedSquares.includes(i)) square.classList.add('threatened-square');
+        if (newTraitors.includes(i)) square.classList.add('traitor-alert');
         if (legalMoves.includes(i)) {
             square.classList.add(layout[i] ? 'possible-attack' : 'possible-move');
         }
+
         if (layout[i]) {
             const p = document.createElement('div'); 
             p.className = `piece ${layout[i]}`;
