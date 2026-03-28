@@ -376,25 +376,54 @@ function draw() {
         const square = document.createElement('div');
         const isBlack = (Math.floor(i / 8) + (i % 8)) % 2 !== 0;
         square.className = `square ${isBlack ? 'black' : 'white'}`;
+        square.dataset.index = i; // Animasyonlar için index şart
+        
         if (selectedSquare === i) square.classList.add('active');
         
+        // 1. TEHDİT VE İHANET GÖRSELLEŞTİRME
         if (typeof LoyaltyEngine !== 'undefined' && LoyaltyEngine.allAttacks && LoyaltyEngine.allAttacks.includes(i)) {
             square.classList.add('raw-threat');
         }
-        if (typeof LoyaltyEngine !== 'undefined' && LoyaltyEngine.currentNewTraitors && LoyaltyEngine.currentNewTraitors.includes(i)) {
+        
+        const isTraitorPossible = typeof LoyaltyEngine !== 'undefined' && LoyaltyEngine.currentNewTraitors && LoyaltyEngine.currentNewTraitors.includes(i);
+        if (isTraitorPossible) {
             square.classList.add('threatened-square');
         }
+
+        // 2. HAMLE İŞARETÇİLERİ
         if (legalMoves.includes(i)) {
             square.classList.add(layout[i] || i === enPassantTarget ? 'possible-attack' : 'possible-move');
         }
+
+        // 3. TAŞLARIN ÇİZİMİ VE TERSTEN TRİGER OPERASYONU
         if (layout[i]) {
             const p = document.createElement('div');
             p.className = `piece ${layout[i]}`;
+
+            // --- KULAĞI TERSTEN TUTAN AKILLI İMLEÇ BÖLÜMÜ ---
+            // Eğer rakip taşıysa ve hain adayıysa (threatened-square aktifse)
+            if (!layout[i].startsWith(turn) && isTraitorPossible) {
+                const traitorMoves = getLegalMoves(i);
+                
+                if (traitorMoves.length === 0) {
+                    // Taş hain ama "Açarak Şah" yüzünden kilitliyse:
+                    p.style.cursor = 'not-allowed'; // İmleci yasak yap
+                    p.title = (localStorage.getItem('gameLang') === 'en') 
+                        ? "Judgment Suspended: Move results in Discovered Check!" 
+                        : "Hüküm Askıda: Hamle açarak şah çekilmesine neden oluyor!";
+                    
+                    // Görsel olarak biraz sönükleştirerek "kilitli" olduğunu hissettir
+                    p.style.filter = "grayscale(80%) brightness(0.8)";
+                }
+            }
+            // ----------------------------------------------
+
             if (selectedSquare === i && isSelectedTraitor) {
                 p.classList.add('traitor-piece');
             }
             square.appendChild(p);
         }
+
         square.onclick = () => handleSquareClick(i);
         boardElement.appendChild(square);
     }

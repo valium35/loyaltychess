@@ -33,6 +33,12 @@ const LoyaltyDict = {
             alertTitle: "⚠️ UYARI",
             confirmBtn: "ANLADIM",
             lawLabel: "KURAL:",
+            judgmentBlockedTitle: "⚖️ HÜKÜM ENGELLENDİ",
+            judgmentBlockedMsg: "Bu hain taşın tüm yolları kapalı! Hareket ettiği an Kral tehlikeye gireceği için (Açarak Şah) yasalar bu hamleyi yasaklıyor.",
+            judgmentBlockedLaw: "YASA: İhanet hamlesi Şah/Mat ile sonuçlanamaz.",
+            betrayalDetectedTitle: "🔥 İHANET TESPİT EDİLDİ!",
+            betrayalDetectedMsg: "Sistem Uyarısı: Bazı taşlar korunmadığı için saf değiştirdi! Onları artık kendi taşın gibi kullanabilirsin.",
+            betrayalLaw: "2. YASA: Korunmayan taş ihanete uğrar.",
             step5Title: "⚠️ TAZE TEHDİT",
             step5Msg: "Beyaz Fil b5'e gelerek c6'daki At'ı doğrudan tehdit etti!",
             step6Title: "🔥 İHANET!",
@@ -71,6 +77,12 @@ const LoyaltyDict = {
             alertTitle: "⚠️ ALERT",
             confirmBtn: "GOT IT",
             lawLabel: "LAW:",
+            judgmentBlockedTitle: "⚖️ JUDGMENT BLOCKED",
+            judgmentBlockedMsg: "This traitor is blocked! Moving it would put the King in danger (Discovered Check). The law forbids this move.",
+            judgmentBlockedLaw: "LAW: Betrayal moves cannot result in Check.",
+            betrayalDetectedTitle: "🔥 BETRAYAL DETECTED!",
+            betrayalDetectedMsg: "System Alert: Some pieces switched sides because they were left unprotected! You can now use them as your own.",
+            betrayalLaw: "LAW 2: Unprotected pieces are subject to betrayal.",
             step5Title: "⚠️ FRESH THREAT",
             step5Msg: "White Bishop moved to b5, threatening the Knight on c6!",
             step6Title: "🔥 BETRAYAL!",
@@ -132,3 +144,7 @@ function applyLanguageToPage() {
 
 // Sayfa yüklendiğinde dili uygula
 document.addEventListener('DOMContentLoaded', applyLanguageToPage);
+function getT() {
+    const lang = localStorage.getItem('gameLang') || 'tr';
+    return LoyaltyDict[lang];
+}
