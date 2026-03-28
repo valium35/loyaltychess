@@ -105,6 +105,22 @@ function getLegalMoves(i) {
     
     if (turn !== pieceColor && !isTraitorPossible) return [];
     
+    // --- 1. ÖN KONTROL: İhanet Eden Taş Halihazırda Şah Çekiyor mu? ---
+    if (isTraitorPossible && turn !== pieceColor) {
+        const opponent = (turn === 'w' ? 'b' : 'w');
+        const oppKingPos = findKing(opponent);
+        
+        // Eğer bu taş ŞU AN rakip şaha saldırıyorsa, ihanet edemez!
+        // (Çünkü ihanet hamlesi Şah çekme ile sonuçlanamaz)
+        if (oppKingPos !== -1) {
+            // getRawMoves(i, true) bu taşın saldırı menzilini verir
+            const attacks = getRawMoves(i, true);
+            if (attacks.includes(oppKingPos)) {
+                return []; // Bu taş kilitlendi, hiçbir yere gidemez (ihanet edemez)
+            }
+        }
+    }
+
     let rawMoves = getRawMoves(i, false);
 
     return rawMoves.filter(move => {
@@ -132,23 +148,28 @@ function getLegalMoves(i) {
         // Şah alma engeli
         if (isBetrayalAction && targetPiece && targetPiece[2] === 'k') return false;
 
-        // Simülasyon
+        // --- SİMÜLASYON ---
         const originalFrom = layout[i], originalTo = layout[move];
-        layout[move] = originalFrom; layout[i] = '';
+        layout[move] = originalFrom; 
+        layout[i] = '';
+        
         const opponent = (turn === 'w' ? 'b' : 'w');
         const kingPos = findKing(turn);
         const selfSafe = (kingPos === -1) ? true : !isSquareAttacked(kingPos, opponent);
 
-        // İHANET KISITLAMASI: Şah çekemez / Açarak şah çekemez
+        // --- İHANET KISITLAMASI: Şah çekemez / Açarak şah çekemez ---
         let traitorViolation = false;
         if (isBetrayalAction && selfSafe) {
             const oppKingPos = findKing(opponent);
+            // Hamle bittikten sonra rakip şah saldırı altında mı? (Doğrudan veya Açarak)
             if (oppKingPos !== -1 && isSquareAttacked(oppKingPos, turn)) {
                 traitorViolation = true;
             }
         }
 
-        layout[i] = originalFrom; layout[move] = originalTo;
+        layout[i] = originalFrom; 
+        layout[move] = originalTo;
+        
         return selfSafe && !traitorViolation;
     });
 }
@@ -376,54 +397,25 @@ function draw() {
         const square = document.createElement('div');
         const isBlack = (Math.floor(i / 8) + (i % 8)) % 2 !== 0;
         square.className = `square ${isBlack ? 'black' : 'white'}`;
-        square.dataset.index = i; // Animasyonlar için index şart
-        
         if (selectedSquare === i) square.classList.add('active');
         
-        // 1. TEHDİT VE İHANET GÖRSELLEŞTİRME
         if (typeof LoyaltyEngine !== 'undefined' && LoyaltyEngine.allAttacks && LoyaltyEngine.allAttacks.includes(i)) {
             square.classList.add('raw-threat');
         }
-        
-        const isTraitorPossible = typeof LoyaltyEngine !== 'undefined' && LoyaltyEngine.currentNewTraitors && LoyaltyEngine.currentNewTraitors.includes(i);
-        if (isTraitorPossible) {
+        if (typeof LoyaltyEngine !== 'undefined' && LoyaltyEngine.currentNewTraitors && LoyaltyEngine.currentNewTraitors.includes(i)) {
             square.classList.add('threatened-square');
         }
-
-        // 2. HAMLE İŞARETÇİLERİ
         if (legalMoves.includes(i)) {
             square.classList.add(layout[i] || i === enPassantTarget ? 'possible-attack' : 'possible-move');
         }
-
-        // 3. TAŞLARIN ÇİZİMİ VE TERSTEN TRİGER OPERASYONU
         if (layout[i]) {
             const p = document.createElement('div');
             p.className = `piece ${layout[i]}`;
-
-            // --- KULAĞI TERSTEN TUTAN AKILLI İMLEÇ BÖLÜMÜ ---
-            // Eğer rakip taşıysa ve hain adayıysa (threatened-square aktifse)
-            if (!layout[i].startsWith(turn) && isTraitorPossible) {
-                const traitorMoves = getLegalMoves(i);
-                
-                if (traitorMoves.length === 0) {
-                    // Taş hain ama "Açarak Şah" yüzünden kilitliyse:
-                    p.style.cursor = 'not-allowed'; // İmleci yasak yap
-                    p.title = (localStorage.getItem('gameLang') === 'en') 
-                        ? "Judgment Suspended: Move results in Discovered Check!" 
-                        : "Hüküm Askıda: Hamle açarak şah çekilmesine neden oluyor!";
-                    
-                    // Görsel olarak biraz sönükleştirerek "kilitli" olduğunu hissettir
-                    p.style.filter = "grayscale(80%) brightness(0.8)";
-                }
-            }
-            // ----------------------------------------------
-
             if (selectedSquare === i && isSelectedTraitor) {
                 p.classList.add('traitor-piece');
             }
             square.appendChild(p);
         }
-
         square.onclick = () => handleSquareClick(i);
         boardElement.appendChild(square);
     }
