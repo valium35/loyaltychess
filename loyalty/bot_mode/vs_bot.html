@@ -46,7 +46,8 @@
 
             <div class="controls">
                 <button onclick="location.reload()" id="restart-btn">---</button>
-                <button onclick="alert('SOON!')" id="undo-btn">---</button>
+                <button id="undo-btn" onclick="undoMove()">Geri Al</button>
+                <button onclick="redoMove()">⏩ İleri</button>
             </div>
 
             <div class="full-rules-panel">
@@ -87,8 +88,8 @@
 
     
 <script src="../translations.js"></script>
-<script src="../loyalty_engine.js"></script>
 <script src="../logic_alert.js"></script>
+<script src="BotLoyaltyEngine.js"></script>
 <script src="database.js"></script>.
 <script src="logic_bot.js"></script>
 
