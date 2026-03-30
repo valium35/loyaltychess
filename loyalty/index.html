@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LoyaltyChess - Welcome</title>
+    <style>
+        /* ARKA PLAN VE ANA DÜZEN */
+        body { 
+            background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)), 
+                          url('https://raw.githubusercontent.com/valium35/loyaltychess/refs/heads/main/loyalty/logo.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            background-color: #121212;
+            color: white; 
+            text-align: center; 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: flex-start;
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            padding-top: 50px;
+            overflow-x: hidden;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .reveal { opacity: 0; animation: fadeInUp 0.8s ease-out forwards; }
+
+        h1 { 
+            font-size: 3.5rem; 
+            letter-spacing: 10px; 
+            color: #f1c40f; 
+            margin-bottom: 5px;
+            font-weight: 900;
+            text-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            animation-delay: 0.3s;
+        }
+        h1 span { color: #ffffff; font-weight: 300; }
+
+        .tagline { 
+            font-size: 1.1rem; 
+            color: #aaa; 
+            margin-bottom: 30px; 
+            animation-delay: 0.5s; 
+        }
+
+        .rules-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 1000px;
+            margin-bottom: 40px;
+            padding: 0 20px;
+            animation-delay: 0.8s;
+        }
+
+        .rule-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(241, 196, 15, 0.2);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }
+        .rule-card:hover { transform: translateY(-5px); border-color: #f1c40f; }
+        .rule-card h3 { color: #f1c40f; margin-top: 0; font-size: 1rem; text-transform: uppercase; }
+        .rule-card p { font-size: 0.85rem; color: #ddd; margin: 0; line-height: 1.4; text-align: left; }
+
+        .btn-container {
+            display: flex; 
+            gap: 20px; 
+            margin-bottom: 50px;
+            animation-delay: 1.1s;
+        }
+
+        .btn { 
+            padding: 15px 35px; 
+            background: #f1c40f; 
+            color: #121212; 
+            text-decoration: none; 
+            font-weight: bold; 
+            border: none;
+            border-radius: 50px; 
+            font-size: 1rem; 
+            transition: all 0.3s ease; 
+            box-shadow: 0 10px 20px rgba(241, 196, 15, 0.2);
+            cursor: pointer;
+        }
+
+        .btn:hover { background: #ffffff; transform: scale(1.05); }
+
+        .back-link {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: rgba(241, 196, 15, 0.6);
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            transition: 0.3s;
+            z-index: 100;
+            border: 1px solid rgba(241, 196, 15, 0.2);
+            padding: 8px 15px;
+            border-radius: 5px;
+        }
+
+        @media (max-width: 850px) {
+            .rules-container { grid-template-columns: 1fr; }
+            h1 { font-size: 2.5rem; }
+            .btn-container { flex-direction: column; width: 90%; }
+            .btn { width: 100%; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <a href="../index.html" class="back-link">← MULTIVERSE</a>
+
+    <h1 id="main-title" class="reveal">LOYALTY<span>CHESS</span></h1>
+    <p id="main-tagline" class="tagline reveal">The only arena where betrayal is a legal move.</p>
+    
+    <div class="rules-container reveal">
+        <div class="rule-card">
+            <h3 id="h-rule-1-title">⚡ 1. Active Threat</h3>
+            <p id="h-rule-1-desc">Yükleniyor...</p>
+        </div>
+        <div class="rule-card">
+            <h3 id="h-rule-2-title">🔄 2. The Choice</h3>
+            <p id="h-rule-2-desc">Yükleniyor...</p>
+        </div>
+        <div class="rule-card">
+            <h3 id="h-rule-3-title">💨 3. Final Mission</h3>
+            <p id="h-rule-3-desc">Yükleniyor...</p>
+        </div>
+    </div>
+    
+    <div class="btn-container reveal">
+        <button onclick="startWithLang('tr')" class="btn">TÜRKÇE OYNA 🇹🇷</button>
+        <button onclick="startWithLang('en')" class="btn">PLAY ENGLISH 🇺🇸</button>
+    </div>
+
+    <script src="translations.js"></script>
+
+    <script>
+        function applyLanguage() {
+            // translations.js içindeki LoyaltyDict'i kontrol et
+            if (typeof LoyaltyDict === 'undefined') {
+                console.error("Hata: LoyaltyDict bulunamadı! translations.js dosyasını kontrol et.");
+                return;
+            }
+            
+            const lang = localStorage.getItem('gameLang') || 'tr';
+            const t = LoyaltyDict[lang];
+
+            if (t && t.rules) {
+                // Kuralları index sayfasına basıyoruz (h-rule-x-desc ID'lerini kullanarak)
+                for (let i = 0; i < 3; i++) {
+                    const el = document.getElementById(`h-rule-${i+1}-desc`);
+                    if (el && t.rules[i]) {
+                        el.innerText = t.rules[i];
+                    }
+                }
+            }
+        }
+
+        function startWithLang(lang) {
+            localStorage.setItem('gameLang', lang);
+            applyLanguage();
+            
+            // Yarım saniye sonra home.html'e yönlendir
+            setTimeout(() => {
+                window.location.href = 'home.html'; 
+            }, 300);
+        }
+
+        // Sayfa her açıldığında dili uygula
+        window.onload = applyLanguage;
+    </script>
+</body>
+</html>

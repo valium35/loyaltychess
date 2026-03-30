@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoyaltyChess - PvP</title>
+    <link rel="stylesheet" href="home_style.css">
+</head>
+<body>
+    <div class="main-container">
+        <div id="chess-board"></div>
+        <div class="side-panel">
+            <div id="status" class="log-container" style="text-align:center; font-weight:bold; color:#f1c40f;">Başlıyor...</div>
+            <div class="log-container">
+                <h3 style="color:#f1c40f; text-align:center; margin-top:0;">⚔️ LOYALTY LOG</h3>
+                <div id="move-history"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="betrayal-popup" class="popup-overlay">
+        <div class="popup-content">
+            <h2 class="alert-title">⚠️ ALERT</h2>
+            <p id="popup-msg">...</p>
+            <div style="font-size:0.8rem; color:#aaa; margin:10px 0;">
+                <strong>KURAL:</strong> <span id="popup-rule">...</span>
+            </div>
+            <button onclick="closePopup()" class="popup-btn">ANLADIM</button>
+        </div>
+    </div>
+
+    <script src="logic_alerts.js"></script>
+    <script src="logic_player.js"></script>
+</body>
+</html>

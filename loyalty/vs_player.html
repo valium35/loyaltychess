@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8">
+    <title>LoyaltyChess - Player vs Player</title>
+    <link rel="stylesheet" href="home_style.css">
+    <style>
+        .controls { display: flex; gap: 10px; margin-bottom: 20px; }
+        .controls button {
+            flex: 1; padding: 12px; cursor: pointer; font-weight: bold;
+            border-radius: 8px; border: 1px solid #f1c40f;
+            background: rgba(241, 196, 15, 0.05); color: #f1c40f;
+            transition: 0.3s; text-transform: uppercase; font-size: 0.8rem;
+        }
+        .controls button:hover:not(:disabled) { background: #f1c40f; color: #121212; }
+        .controls button:disabled { opacity: 0.2; cursor: not-allowed; }
+
+        .full-rules-panel {
+            background: rgba(255, 255, 255, 0.03); border-radius: 12px;
+            padding: 15px; border: 1px solid rgba(255, 255, 255, 0.1);
+            max-height: 400px; overflow-y: auto; margin-top: 10px;
+        }
+        .law-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .law-item strong { display: block; color: #ffffff; font-size: 0.9rem; margin-bottom: 5px; }
+        .law-item span { display: block; color: #aaa; font-size: 0.8rem; line-height: 1.4; }
+        
+        /* Renk Rehberi Noktaları */
+        .legend-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+        .dot.blue { background-color: rgba(0, 150, 255, 0.8); box-shadow: 0 0 5px #0096ff; }
+        .dot.red { background-color: rgba(255, 0, 0, 0.8); box-shadow: 0 0 5px #ff0000; }
+        .dot.yellow { background-color: #f1c40f; box-shadow: 0 0 5px #f1c40f; }
+        
+        .log-entry { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div id="chess-board"></div>
+
+        <div class="side-panel">
+            <div id="status" class="log-container" style="text-align:center; font-weight:bold; color:#f1c40f; font-size: 1.1rem; padding: 15px;">
+                Yükleniyor...
+            </div>
+
+            <div class="controls">
+                <button onclick="location.reload()" id="restart-btn">---</button>
+                <button onclick="alert('SOON!')" id="undo-btn">---</button>
+            </div>
+
+            <div class="full-rules-panel">
+                <h3 id="panel-title" style="color:#f1c40f; margin-top:0;">📜 3 TEMEL YASA</h3>
+                <div class="law-item"><strong>⚡ 1. AKTİF TEHDİT</strong><span id="rule-1-desc">...</span></div>
+                <div class="law-item"><strong>🔄 2. SEÇİM</strong><span id="rule-2-desc">...</span></div>
+                <div class="law-item"><strong>💨 3. SON GÖREV</strong><span id="rule-3-desc">...</span></div>
+                <div id="restrictions-list"></div>
+            </div>
+        </div> 
+
+        <div class="side-panel alert-panel">
+            <div class="log-container">
+                <h3 id="legend-title" style="color:#f1c40f; text-align:center; margin-top:0; border-bottom: 1px solid #333; padding-bottom: 10px; font-size:0.9rem;">🎨 RENK REHBERİ</h3>
+                <div class="legend-item"><span class="dot blue"></span> <small id="leg-blue">Mavi: Taze Tehdit</small></div>
+                <div class="legend-item"><span class="dot red"></span> <small id="leg-red">Kırmızı: İhanet!</small></div>
+                <div class="legend-item"><span class="dot yellow"></span> <small id="leg-yellow">Sarı: Aktif Taş</small></div>
+            </div>
+
+            <div class="log-container" style="flex: 1; overflow-y: auto; margin-top: 10px;">
+                <h3 id="history-title" style="color:#f1c40f; text-align:center; margin-top:0; border-bottom: 1px solid #333; padding-bottom: 10px;">⚔️ LOYALTY LOG</h3>
+                <div id="move-history">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="betrayal-popup" class="popup-overlay" style="display:none;">
+        <div class="popup-content">
+            <h2 id="alert-title" class="alert-title">⚠️ ALERT</h2>
+            <p id="popup-msg">...</p>
+            <div class="popup-rule-box" style="margin: 10px 0; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 5px;">
+                <strong id="popup-law-label">KURAL:</strong> <span id="popup-rule">...</span>
+            </div>
+            <button id="popup-confirm-btn" onclick="document.getElementById('betrayal-popup').style.display='none'" class="popup-btn">Tamam</button>
+        </div>
+    </div>
+
+    <script src="translations.js"></script>
+    <script src="loyalty_engine.js"></script>
+    <script src="logic_player.js"></script>
+
+    <script>
+        window.onload = function() {
+            // Dil sitemini çalıştır
+            if (typeof applyLanguageToPage === 'function') applyLanguageToPage();
+
+            // Oyunu başlat
+            if (typeof initGame === 'function') {
+                initGame();
+                if (typeof updateStatus === 'function') updateStatus();
+            }
+        };
+        // POP-UP'I GÖRÜNÜR YAPAN ANA FONKSİYON
+        function showPop(title, msg, rule, color) {
+    const popupOverlay = document.getElementById('betrayal-popup');
+    if (popupOverlay) {
+        // Başlığı ayarla
+        const titleEl = document.getElementById('alert-title');
+        if (titleEl) {
+            titleEl.innerText = title;
+            titleEl.style.color = color || "#ff3333";
+        }
+        
+        // Mesajı ayarla
+        const msgEl = document.getElementById('popup-msg');
+        if (msgEl) msgEl.innerText = msg;
+        
+        // Kural metnini ayarla
+        const ruleEl = document.getElementById('popup-rule');
+        if (ruleEl) ruleEl.innerText = rule;
+
+        // Pop-up'ı aç
+        popupOverlay.style.display = 'flex';
+    } else {
+        console.error("Hata: betrayal-popup ID'si bulunamadı!");
+    }
+}
+
+// POP-UP'I KAPATAN FONKSİYON
+function closePopup() {
+    const popupOverlay = document.getElementById('betrayal-popup');
+    if (popupOverlay) popupOverlay.style.display = 'none';
+}
+    </script>
+</body>
+</html>
