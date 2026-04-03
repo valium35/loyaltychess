@@ -8,16 +8,26 @@ export const BotController = {
     init() {
         window.addEventListener('moveExecuted', () => {
             console.log("BotController: Hamle yapıldı haberi geldi. Sıra şu an:", GameCore.turn);
+            // Sadece sıra siyahtaysa (b) botu uyandır
             if (GameCore.turn === 'b') {
                 this.thinkAndAct();
             }
         });
     },
 
-    // 2. DÜŞÜN VE HAMLE YAP (Gecikmeli ki gerçekçi olsun)
+    // 2. DÜŞÜN VE HAMLE YAP
     thinkAndAct() {
+        // Oyun bitti mi kontrolü
+        const status = GameCore.checkGameOver();
+        if (status) {
+            console.log("BOT: Oyun bitti, durum:", status);
+            // İstersen burada bir alert veya UI mesajı verebilirsin
+            return; 
+        }
+
         console.log("LoyaltyBrain düşünüyor...");
         
+        // 1 saniye gecikme ekliyoruz ki bot pat diye oynamasın
         setTimeout(() => {
             const bestMove = AI.getBestMove();
             
@@ -25,9 +35,10 @@ export const BotController = {
                 // Hamleyi Core'da yap
                 const moveData = GameCore.execute(bestMove.from, bestMove.to);
                 
-                // Hamle bitti haberini fırlat (Renderer bu sayede tahtayı güncelleyecek)
+                // Hamle sonrası UI ve diğer sistemlerin haberi olsun diye event fırlatıyoruz
+                window.dispatchEvent(new CustomEvent('moveExecuted', { detail: moveData }));
                 EventSystem.add({ type: 'moveExecuted', detail: moveData });
             }
-        }, 1000); // 1 saniye düşünme süresi
+        }, 1000); 
     }
 };

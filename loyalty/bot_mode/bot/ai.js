@@ -9,7 +9,7 @@ export const AI = {
         // Tahtayı tara, siyah (b) taşlarını bul
         for (let i = 0; i < 64; i++) {
             if (GameCore.board[i] && GameCore.board[i].startsWith('b')) {
-                const moves = GameCore.getPieceMoves(i);
+                const moves = GameCore.getLegalMoves(i);
                 moves.forEach(target => {
                     allPossibleMoves.push({ from: i, to: target });
                 });

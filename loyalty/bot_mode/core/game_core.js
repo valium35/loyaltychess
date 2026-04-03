@@ -36,19 +36,28 @@ export const GameCore = {
     getIndex(r, c) { return (r < 0 || r > 7 || c < 0 || c > 7) ? null : r * 8 + c; },
 
     // 2. TEHDİT KONTROLÜ
-    isSquareAttacked(idx, attackerColor) {
+    isSquareAttacked(idx, attackerColor, boardState = this.board) {
+        if (idx === null || idx < 0) return false;
         for (let i = 0; i < 64; i++) {
-            const piece = this.board[i];
+            const piece = boardState[i];
             if (piece && piece.startsWith(attackerColor)) {
-                // onlyAttacks=true göndererek sonsuz döngüyü (şah şahı korur mu?) engelliyoruz
-                const moves = this.getPieceMoves(i, this.board, true);
+                // Sadece saldırı menzilini kontrol et
+                const moves = this.getPieceMoves(i, boardState, true); 
                 if (moves.includes(idx)) return true;
             }
         }
         return false;
     },
 
-    // 3. TAŞ HAREKETLERİ
+    // 3. ŞAH KONTROLÜ
+    isCheck(color, boardState = this.board) {
+        const kingIdx = boardState.findIndex(p => p === color + '-k');
+        if (kingIdx === -1) return false;
+        const enemyColor = (color === 'w') ? 'b' : 'w';
+        return this.isSquareAttacked(kingIdx, enemyColor, boardState);
+    },
+
+    // 4. TAŞ HAREKETLERİ
     getPieceMoves(idx, boardState = this.board, onlyAttacks = false) {
         const piece = boardState[idx];
         if (!piece) return [];
@@ -87,21 +96,23 @@ export const GameCore = {
                     if (target !== null && (!boardState[target] || boardState[target][0] !== color)) moves.push(target);
                 });
                 
-                // ROK KONTROLÜ
                 if (!onlyAttacks) {
                     const row = color === 'w' ? 56 : 0;
-                    // Kısa Rok
-                    if (!this.hasMoved[color+'-k'] && !this.hasMoved[color+'-r-'+(row+7)]) {
-                        if (this.board[row+5] === '' && this.board[row+6] === '') {
-                            if (!this.isSquareAttacked(row+4, enemy) && !this.isSquareAttacked(row+5, enemy) && !this.isSquareAttacked(row+6, enemy)) {
+                    // Rok kontrolü sırasında şahın tehdit altında olmaması ve geçtiği karelerin güvenli olması gerekir
+                    if (!this.hasMoved[color+'-k']) {
+                        // Kısa Rok
+                        if (!this.hasMoved[color+'-r-'+(row+7)] && boardState[row+5] === '' && boardState[row+6] === '') {
+                            if (!this.isSquareAttacked(row+4, enemy, boardState) && 
+                                !this.isSquareAttacked(row+5, enemy, boardState) && 
+                                !this.isSquareAttacked(row+6, enemy, boardState)) {
                                 moves.push(row+6);
                             }
                         }
-                    }
-                    // Uzun Rok
-                    if (!this.hasMoved[color+'-k'] && !this.hasMoved[color+'-r-'+row]) {
-                        if (this.board[row+1] === '' && this.board[row+2] === '' && this.board[row+3] === '') {
-                            if (!this.isSquareAttacked(row+4, enemy) && !this.isSquareAttacked(row+2, enemy) && !this.isSquareAttacked(row+3, enemy)) {
+                        // Uzun Rok
+                        if (!this.hasMoved[color+'-r-'+row] && boardState[row+1] === '' && boardState[row+2] === '' && boardState[row+3] === '') {
+                            if (!this.isSquareAttacked(row+4, enemy, boardState) && 
+                                !this.isSquareAttacked(row+2, enemy, boardState) && 
+                                !this.isSquareAttacked(row+3, enemy, boardState)) {
                                 moves.push(row+2);
                             }
                         }
@@ -110,6 +121,7 @@ export const GameCore = {
                 break;
             case 'p':
                 const dir = color === 'w' ? -1 : 1;
+                // Düz ilerleme
                 if (!onlyAttacks) {
                     const f1 = this.getIndex(r + dir, c);
                     if (f1 !== null && !boardState[f1]) {
@@ -119,13 +131,17 @@ export const GameCore = {
                         if (r === startRow && !boardState[f2] && !boardState[f1]) moves.push(f2);
                     }
                 }
-                // Piyon Saldırıları ve En Passant
+                // Çapraz saldırı ve En Passant
                 [this.getIndex(r + dir, c - 1), this.getIndex(r + dir, c + 1)].forEach(diag => {
                     if (diag !== null) {
                         const targetPiece = boardState[diag];
-                        if (targetPiece && targetPiece[0] !== color) moves.push(diag);
-                        else if (diag === this.enPassantSquare) moves.push(diag);
-                        else if (onlyAttacks) moves.push(diag);
+                        // KRİTİK: onlyAttacks modunda çapraz kare boş olsa bile saldırı menzilindedir
+                        if (onlyAttacks) {
+                            moves.push(diag);
+                        } else {
+                            if (targetPiece && targetPiece[0] !== color) moves.push(diag);
+                            else if (diag === this.enPassantSquare) moves.push(diag);
+                        }
                     }
                 });
                 break;
@@ -133,24 +149,47 @@ export const GameCore = {
         return moves;
     },
 
+    // 5. YASAL HAMLE FİLTRESİ
     getLegalMoves(idx) {
         const piece = this.board[idx];
         if (!piece || piece[0] !== this.turn) return [];
-        return this.getPieceMoves(idx); 
+
+        const possibleMoves = this.getPieceMoves(idx);
+        const legalMoves = [];
+
+        possibleMoves.forEach(to => {
+            // SİMÜLASYON
+            const originalTo = this.board[to];
+            const originalFrom = this.board[idx];
+            
+            this.board[to] = originalFrom;
+            this.board[idx] = '';
+
+            // Hamle sonrası şah güvende mi?
+            if (!this.isCheck(this.turn, this.board)) {
+                legalMoves.push(to);
+            }
+
+            // Geri yükle
+            this.board[idx] = originalFrom;
+            this.board[to] = originalTo;
+        });
+        return legalMoves;
     },
 
+    // 6. HAMLE İNFAZI
     execute(from, to) {
-        const piece = this.board[from];
+        let piece = this.board[from];
         if (!piece) return null;
         const moveData = { from, to, piece, captured: this.board[to] };
 
-        // 1. En Passant İnfazı
+        // En Passant Silme
         if (piece.endsWith('-p') && from % 8 !== to % 8 && this.board[to] === '') {
             const capturedPawnIdx = (this.turn === 'w') ? to + 8 : to - 8;
             this.board[capturedPawnIdx] = ''; 
         }
 
-        // 2. Rok İnfazı
+        // Rok Kale Taşıma
         if (piece.endsWith('-k') && Math.abs(from - to) === 2) {
             const isShort = to > from;
             const rFrom = isShort ? (this.turn === 'w' ? 63 : 7) : (this.turn === 'w' ? 56 : 0);
@@ -159,7 +198,7 @@ export const GameCore = {
             this.board[rFrom] = '';
         }
 
-        // 3. hasMoved Takibi
+        // hasMoved Güncelleme
         if (piece === 'w-k') this.hasMoved['w-k'] = true;
         if (piece === 'b-k') this.hasMoved['b-k'] = true;
         if (from === 56) this.hasMoved['w-r-56'] = true;
@@ -167,18 +206,35 @@ export const GameCore = {
         if (from === 0) this.hasMoved['b-r-0'] = true;
         if (from === 7) this.hasMoved['b-r-7'] = true;
 
-        // 4. En Passant Hedefi Belirle
+        // En Passant Hedefi & Piyon Terfisi (Otomatik Vezir)
         this.enPassantSquare = null; 
-        if (piece.endsWith('-p') && Math.abs(from - to) === 16) {
-            this.enPassantSquare = (from + to) / 2;
+        if (piece.endsWith('-p')) {
+            if (Math.abs(from - to) === 16) this.enPassantSquare = (from + to) / 2;
+            const targetRow = (this.turn === 'w') ? 0 : 7;
+            if (Math.floor(to / 8) === targetRow) {
+                piece = (this.turn === 'w') ? 'w-q' : 'b-q';
+            }
         }
 
-        // 5. Tahtayı Güncelle
         this.board[to] = piece;
         this.board[from] = '';
         this.turn = (this.turn === 'w' ? 'b' : 'w');
         this.lastMove = { from, to, piece };
 
         return moveData;
+    },
+
+    // 7. OYUN SONU KONTROLÜ
+    checkGameOver() {
+        const color = this.turn;
+        const hasMove = this.board.some((p, idx) => {
+            if (p && p.startsWith(color)) return this.getLegalMoves(idx).length > 0;
+            return false;
+        });
+
+        if (!hasMove) {
+            return this.isCheck(color) ? "MAT" : "PAT";
+        }
+        return null;
     }
 };
