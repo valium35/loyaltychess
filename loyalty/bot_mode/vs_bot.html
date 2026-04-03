@@ -91,10 +91,11 @@
 
 
 
-<script src="logic_bot_v2.js"></script>
 
-    <script>
-        window.onload = function() {
+  <script type="module" src="game_manager.js"></script>  
+   <script>
+
+       /* window.onload = function() {
             // Dil sitemini çalıştır
             if (typeof applyLanguageToPage === 'function') applyLanguageToPage();
 
@@ -103,7 +104,7 @@
                 initGame();
                 if (typeof updateStatus === 'function') updateStatus();
             }
-        };
+        };*/
         // POP-UP'I GÖRÜNÜR YAPAN ANA FONKSİYON
         function showPop(title, msg, rule, color) {
     const popupOverlay = document.getElementById('betrayal-popup');
