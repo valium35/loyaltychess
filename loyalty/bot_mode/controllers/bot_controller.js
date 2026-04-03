@@ -6,10 +6,12 @@ import { AI } from '../bot/ai.js';
 export const BotController = {
     // 1. SIRA SİYAHA GEÇTİ Mİ DİNLE
     init() {
-        window.addEventListener('moveExecuted', () => {
-            console.log("BotController: Hamle yapıldı haberi geldi. Sıra şu an:", GameCore.turn);
-            // Sadece sıra siyahtaysa (b) botu uyandır
-            if (GameCore.turn === 'b') {
+        // 'moveExecuted' yerine 'moveFinished' dinliyoruz (EventSystem'den gelen temiz sinyal)
+        window.addEventListener('moveFinished', () => {
+            console.log("BotController: Sıra kontrol ediliyor. Sıra:", GameCore.turn);
+            
+            // Sıra siyahtaysa ve oyun bitmediyse botu uyandır
+            if (GameCore.turn === 'b' && !GameCore.checkGameOver()) {
                 this.thinkAndAct();
             }
         });
@@ -17,27 +19,38 @@ export const BotController = {
 
     // 2. DÜŞÜN VE HAMLE YAP
     thinkAndAct() {
-        // Oyun bitti mi kontrolü
-        const status = GameCore.checkGameOver();
-        if (status) {
-            console.log("BOT: Oyun bitti, durum:", status);
-            // İstersen burada bir alert veya UI mesajı verebilirsin
-            return; 
-        }
+        // Güvenlik: Oyun bittiyse (Mat/Pat) hiçbir şey yapma
+        if (GameCore.checkGameOver()) return;
 
-        console.log("LoyaltyBrain düşünüyor...");
-        
-        // 1 saniye gecikme ekliyoruz ki bot pat diye oynamasın
+        // 🟢 ŞEFE HABER VER: "Düşünüyorum..." yazısını yaktır
+        window.dispatchEvent(new CustomEvent('botThinking'));
+
+        // 3. DÜŞÜNME SÜRESİ (1 Saniye Gecikme)
         setTimeout(() => {
+            // Hamle yapmadan hemen önce oyunun bitip bitmediğine son bir kez bak
+            const isGameOver = GameCore.checkGameOver();
+            if (isGameOver) return;
+
             const bestMove = AI.getBestMove();
             
             if (bestMove) {
-                // Hamleyi Core'da yap
+                // Hamleyi Core'da işlet (Piyon terfisi dahil her şey burada olur)
                 const moveData = GameCore.execute(bestMove.from, bestMove.to);
                 
-                // Hamle sonrası UI ve diğer sistemlerin haberi olsun diye event fırlatıyoruz
-                window.dispatchEvent(new CustomEvent('moveExecuted', { detail: moveData }));
-                EventSystem.add({ type: 'moveExecuted', detail: moveData });
+                // Color garantisi (Log sistemi için)
+                if (!moveData.color) moveData.color = 'b'; 
+
+                console.log("BOT: Hamle yapıldı:", moveData);
+
+                // ❗ KRİTİK: Burada dispatchEvent YAPMIYORUZ! 
+                // Sadece EventSystem'e ekliyoruz. 
+                // EventSystem logu yazar, tahtayı çizer ve 'moveFinished' diyerek döngüyü tamamlar.
+                if (typeof EventSystem !== 'undefined' && EventSystem.add) {
+                    EventSystem.add({ 
+                        type: 'moveExecuted', 
+                        detail: moveData 
+                    });
+                }
             }
         }, 1000); 
     }
