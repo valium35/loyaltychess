@@ -4,11 +4,17 @@ import { Renderer } from './ui/renderer.js';
 import { PlayerController } from './controllers/player_controller.js';
 import { BotController } from './controllers/bot_controller.js';
 import { EventSystem } from './core/event_system.js';
+import { AI } from './bot/ai.js'; // ⬅️ 1. AI modülünü buraya ekledik
 
 export const GameManager = {
-    init() {
+    async init() { // ⬅️ 2. 'async' kelimesini ekledik (dosya yüklenmesini beklemek için)
         console.log("LoyaltyChess Başlatılıyor...");
         
+        // 🚀 3. BOTUN HAFIZASINI YÜKLE (Kritik Hamle!)
+        // Oyun başlamadan önce JSON dosyalarını (açılış kitabı ve ağırlıklar) okuyoruz.
+        await AI.initialize(); 
+        console.log("🧠 Botun hafızası ve usta verileri hazır!");
+
         GameCore.init();
         PlayerController.init();
         BotController.init();
@@ -21,32 +27,22 @@ export const GameManager = {
     },
 
     setupListeners() {
-        // 1. Görsel Güncelleme Tetikleyicisi (Noktalar ve Seçimler)
+        // ... (Senin mevcut listener kodların buraya gelecek, bir değişiklik yok)
         window.addEventListener('triggerRender', (e) => {
-            // e.detail güvenli okuma (Optional Chaining kullanarak)
             const selected = e.detail?.selected !== undefined ? e.detail.selected : null;
             const moves = e.detail?.moves !== undefined ? e.detail.moves : [];
-            
-            console.log("Rendering Board... Selected:", selected, "Moves:", moves.length);
-            
-            // Renderer'ı her zaman güvenli parametrelerle çağır
             Renderer.render(selected, moves);
         });
 
-        // 2. Hamle Tamamen Bittiğinde (Log yazıldı, her şey hazır)
-        // EventSystem'den gelecek 'moveFinished' sinyalini dinleyelim
         window.addEventListener('moveFinished', (e) => {
-            console.log("Move Finished. Updating status...");
             this.updateStatus(false); 
         });
 
-        // 3. Bot düşünmeye başladığında
         window.addEventListener('botThinking', () => {
             this.updateStatus(true); 
         });
     },
 
-    // 🟢 DURUM GÜNCELLEME MERKEZİ
     updateStatus(isThinking = false) {
         const statusEl = document.getElementById('status');
         if (!statusEl) return;

@@ -1,0 +1,13 @@
+# Klasör bazlı engelleme
+ml_lab/
+loyalty/bot_mode/ml_lab/
+
+# Uzantı bazlı (Nerede olursa olsun engeller)
+*.pgn
+*.json
+*.py
+*.weights.json
+
+# Özel dosyalar
+opening_book.json
+games.pgn
