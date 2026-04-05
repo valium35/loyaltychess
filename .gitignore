@@ -1,13 +1,6 @@
-# Klasör bazlı engelleme
-ml_lab/
-loyalty/bot_mode/ml_lab/
-
-# Uzantı bazlı (Nerede olursa olsun engeller)
-*.pgn
-*.json
-*.py
-*.weights.json
-
-# Özel dosyalar
-opening_book.json
+# Sadece dev dosyayı ve Python araçlarını engelle
 games.pgn
+*.pgn
+bookbuilder.py
+optimizer.py
+node_modules/
