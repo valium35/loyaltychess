@@ -5,7 +5,6 @@ export const AI = {
     mlWeights: [],
     pieceValues: { 'p': 100, 'n': 320, 'b': 330, 'r': 500, 'q': 900, 'k': 20000 },
 
-    // Buradaki virgül ve parantez hatasını düzelttim:
     async initialize() {
         try {
             const [bookRes, weightsRes] = await Promise.all([
@@ -21,36 +20,51 @@ export const AI = {
     },
 
     getBestMove() {
-        // --- 📘 AÇILIŞ KİTABI KONTROLÜ ---
-        GameCore.isSimulating = true; // Hafızayı dondur
+        GameCore.isSimulating = true; // Simülasyon modunu aç
+
+        // --- 📘 1. ADIM: AÇILIŞ KİTABI (Sıra Kontrollü) ---
         const currentFen = this.getSimpleFen();
         if (this.openingBook[currentFen]) {
             const bookMoveUCI = this.openingBook[currentFen];
-            console.log("KİTAP HAMLESİ YAPILIYOR:", bookMoveUCI);
+            console.log("📚 Kitap hamlesi yapılıyor:", bookMoveUCI);
+            GameCore.isSimulating = false; 
             return this.uciToMove(bookMoveUCI);
         }
 
-        // --- 🧠 MİNİMAX HESAPLAMA ---
+        // --- 🧠 2. ADIM: MİNİMAX HESAPLAMA (Kaos Faktörü Ekli) ---
         const depth = 3;
-        let bestMove = null;
+        let candidates = []; // En iyi hamleler havuzu
         let bestValue = -Infinity;
         const moves = this.getAllLegalMoves('b');
 
+        // Hamleleri önceliklendir (Budamayı hızlandırır)
         moves.sort((a, b) => this.movePriority(b) - this.movePriority(a));
 
         for (const move of moves) {
             const backup = this.backupState();
             GameCore.execute(move.from, move.to);
+            
+            // Minimax'ı çağır (Sıra beyazda olduğu için false)
             const boardValue = this.minimax(depth - 1, -Infinity, Infinity, false);
+            
             this.restoreState(backup);
 
+            // 🎲 KAOS FAKTÖRÜ: En iyi hamleleri bir havuzda topla
             if (boardValue > bestValue) {
                 bestValue = boardValue;
-                bestMove = move;
+                candidates = [move]; // Yeni bir zirve bulundu, havuzu sıfırla
+            } else if (boardValue === bestValue) {
+                candidates.push(move); // Aynı kalitede başka bir hamle, havuza ekle
             }
         }
-        GameCore.isSimulating = false; // Hafızayı çöz
-        return bestMove;
+
+        GameCore.isSimulating = false; // Simülasyonu kapat
+
+        // Havuzdaki en iyi hamleler arasından rastgele birini seç (Monotonluğu kırar)
+        if (candidates.length === 0) return null;
+        const finalMove = candidates[Math.floor(Math.random() * candidates.length)];
+        console.log(`🤖 Hamle seçildi. Aday sayısı: ${candidates.length} | Skor: ${bestValue}`);
+        return finalMove;
     },
 
     minimax(depth, alpha, beta, isMaximizing) {
@@ -93,6 +107,8 @@ export const AI = {
 
     evaluateBoard() {
         let score = 0;
+        const turn = GameCore.turn;
+
         for (let i = 0; i < 64; i++) {
             const piece = GameCore.board[i];
             if (!piece) continue;
@@ -103,11 +119,21 @@ export const AI = {
 
             let val = this.pieceValues[type] || 0;
 
+            // 👸 VEZİR SİGORTASI: Vezir tehlikedeyse devasa ceza puanı ver
+            if (type === 'q') {
+                const opponent = (color === 'w' ? 'b' : 'w');
+                if (GameCore.isSquareAttacked(i, opponent)) {
+                    val -= 15000; // Vezir gitmişse oyun bitmiştir mantığı
+                }
+            }
+
+            // ML Sezgileri (Konum Avantajı)
             if (this.mlWeights.length > 0) {
                 const weight = (color === 'b') ? this.mlWeights[r][c] : this.mlWeights[7-r][c];
                 val += weight * 70; 
             }
 
+            // Temel Koruma Kontrolü
             const isAttacked = GameCore.isSquareAttacked(i, color === 'b' ? 'w' : 'b');
             if (isAttacked) {
                 const isDefended = GameCore.isSquareAttacked(i, color);
@@ -125,6 +151,7 @@ export const AI = {
             score += (color === 'b' ? val : -val);
         }
 
+        // Mobilite Bonusu
         const bMoves = this.getAllLegalMoves('b').length;
         const wMoves = this.getAllLegalMoves('w').length;
         score += (bMoves - wMoves) * 10;
@@ -155,7 +182,8 @@ export const AI = {
             if (empty > 0) rowStr += empty;
             rows.push(rowStr);
         }
-        return rows.join('/');
+        // 🚨 FEN SONUNA SIRA EKLEME: Kitabın doğru çalışması için şart.
+        return rows.join('/') + " " + GameCore.turn;
     },
 
     uciToMove(uci) {
@@ -182,7 +210,8 @@ export const AI = {
             turn: GameCore.turn,
             enPassant: GameCore.enPassantSquare,
             hasMoved: JSON.parse(JSON.stringify(GameCore.hasMoved)),
-            history: [...GameCore.history]
+            history: [...GameCore.history],
+            threatHistory: [...GameCore.threatHistory] // Sabıka kaydını da yedekle
         };
     },
 
@@ -192,5 +221,6 @@ export const AI = {
         GameCore.enPassantSquare = backup.enPassant;
         GameCore.hasMoved = backup.hasMoved;
         GameCore.history = backup.history;
+        GameCore.threatHistory = backup.threatHistory;
     }
 };

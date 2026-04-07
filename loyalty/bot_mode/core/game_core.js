@@ -6,11 +6,12 @@ export const GameCore = {
     turn: 'w',
     enPassantSquare: null,
     hasMoved: {},
-    history: [], 
+    history: [],
     lastMove: null,
     isBetrayalPhase: false,
     betrayalPieceIdx: null,
-    threatHistory: Array(64).fill(null), 
+    threatHistory: Array(64).fill(null),
+    activeBetrayals: [],
     isSimulating: false,
 
     init() {
@@ -18,16 +19,16 @@ export const GameCore = {
         this.board = Array(64).fill('');
 
         layout.forEach((type, i) => {
-            this.board[i] = `b-${type}`;          
-            this.board[i + 8] = 'b-p';             
-            this.board[i + 48] = 'w-p';            
-            this.board[i + 56] = `w-${type}`;      
+            this.board[i] = `b-${type}`;
+            this.board[i + 8] = 'b-p';
+            this.board[i + 48] = 'w-p';
+            this.board[i + 56] = `w-${type}`;
         });
 
-        this.hasMoved = { 
-            'w-k': false, 'b-k': false, 
-            'w-r-56': false, 'w-r-63': false, 
-            'b-r-0': false, 'b-r-7': false 
+        this.hasMoved = {
+            'w-k': false, 'b-k': false,
+            'w-r-56': false, 'w-r-63': false,
+            'b-r-0': false, 'b-r-7': false
         };
 
         this.turn = 'w';
@@ -37,6 +38,7 @@ export const GameCore = {
         this.isBetrayalPhase = false;
         this.betrayalPieceIdx = null;
         this.threatHistory = Array(64).fill(null);
+        this.activeBetrayals = [];
         this.isSimulating = false;
 
         console.log("🚀 LoyaltyChess: Motor ve Sabıka Kaydı hazır.");
@@ -50,7 +52,7 @@ export const GameCore = {
         for (let i = 0; i < 64; i++) {
             const piece = boardState[i];
             if (piece && piece.startsWith(attackerColor)) {
-                const moves = this.getPieceMoves(i, boardState, true); 
+                const moves = this.getPieceMoves(i, boardState, true);
                 if (moves.includes(idx)) return true;
             }
         }
@@ -64,71 +66,80 @@ export const GameCore = {
         return this.isSquareAttacked(kingIdx, enemyColor, boardState);
     },
 
-    getPieceMoves(idx, boardState = this.board, onlyAttacks = false) {
-        const piece = boardState[idx];
-        if (!piece) return [];
-        const [color, type] = piece.split('-');
-        const { r, c } = this.getCoords(idx);
-        let moves = [];
+  getPieceMoves(idx, boardState = this.board, onlyAttacks = false) {
+    const piece = boardState[idx];
+    if (!piece) return [];
+    const [color, type] = piece.split('-');
+    
+    // 🚩 İHANET KİMLİK KONTROLÜ: 
+    // Eğer taşın rengi mevcut sıradan farklıysa (Hain ise), 
+    // "Dost" rengi, oynatan kişinin rengi gibi kabul edilmeli.
+    const isBetraying = (color !== this.turn && !this.isSimulating);
+    const friendlyColor = isBetraying ? (color === 'w' ? 'b' : 'w') : color;
 
-        const slidingMoves = (dirs) => {
-            dirs.forEach(d => {
-                for (let j = 1; j < 8; j++) {
-                    const target = this.getIndex(r + d[0] * j, c + d[1] * j);
-                    if (target === null) break;
-                    const targetPiece = boardState[target];
-                    if (!targetPiece) {
-                        moves.push(target);
-                    } else {
-                        if (onlyAttacks) moves.push(target);
-                        else if (targetPiece[0] !== color) moves.push(target);
-                        break; 
-                    }
+    const { r, c } = this.getCoords(idx);
+    let moves = [];
+
+    const slidingMoves = (dirs) => {
+        dirs.forEach(d => {
+            for (let j = 1; j < 8; j++) {
+                const target = this.getIndex(r + d[0] * j, c + d[1] * j);
+                if (target === null) break;
+                const targetPiece = boardState[target];
+                if (!targetPiece) {
+                    moves.push(target);
+                } else {
+                    if (onlyAttacks) moves.push(target);
+                    // 🛡️ Hain taş artık kendi rengini (color) değil, 
+                    // yeni efendisinin dostlarını (friendlyColor) "dost" sayar.
+                    else if (targetPiece[0] !== friendlyColor) moves.push(target);
+                    break;
+                }
+            }
+        });
+    };
+
+    switch (type) {
+        case 'r': slidingMoves([[1, 0], [-1, 0], [0, 1], [0, -1]]); break;
+        case 'b': slidingMoves([[1, 1], [1, -1], [-1, 1], [-1, -1]]); break;
+        case 'q': slidingMoves([[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]); break;
+        case 'n':
+            [[2, 1], [2, -1], [-2, 1], [-2, -1], [1, 2], [1, -2], [-1, 2], [-1, -2]].forEach(d => {
+                const target = this.getIndex(r + d[0], c + d[1]);
+                if (target !== null && (onlyAttacks || !boardState[target] || boardState[target][0] !== friendlyColor)) moves.push(target);
+            });
+            break;
+        case 'k':
+            [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(d => {
+                const target = this.getIndex(r + d[0], c + d[1]);
+                if (target !== null && (onlyAttacks || !boardState[target] || boardState[target][0] !== friendlyColor)) moves.push(target);
+            });
+            // Hain şah olamaz ama güvenlik için: Rok kısıtlaması normal şah içindir.
+            if (!onlyAttacks && !this.isCheck(color, boardState) && !isBetraying) {
+                if (this.canCastle(color, 'short', boardState)) moves.push(color === 'w' ? 62 : 6);
+                if (this.canCastle(color, 'long', boardState)) moves.push(color === 'w' ? 58 : 2);
+            }
+            break;
+        case 'p':
+            const dir = color === 'w' ? -1 : 1;
+            [this.getIndex(r + dir, c - 1), this.getIndex(r + dir, c + 1)].forEach(diag => {
+                if (diag !== null) {
+                    if (onlyAttacks || (boardState[diag] && boardState[diag][0] !== friendlyColor) || diag === this.enPassantSquare) moves.push(diag);
                 }
             });
-        };
-
-        switch (type) {
-            case 'r': slidingMoves([[1, 0], [-1, 0], [0, 1], [0, -1]]); break;
-            case 'b': slidingMoves([[1, 1], [1, -1], [-1, 1], [-1, -1]]); break;
-            case 'q': slidingMoves([[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]); break;
-            case 'n':
-                [[2, 1], [2, -1], [-2, 1], [-2, -1], [1, 2], [1, -2], [-1, 2], [-1, -2]].forEach(d => {
-                    const target = this.getIndex(r + d[0], c + d[1]);
-                    if (target !== null && (onlyAttacks || !boardState[target] || boardState[target][0] !== color)) moves.push(target);
-                });
-                break;
-            case 'k':
-                [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(d => {
-                    const target = this.getIndex(r + d[0], c + d[1]);
-                    if (target !== null && (onlyAttacks || !boardState[target] || boardState[target][0] !== color)) moves.push(target);
-                });
-                if (!onlyAttacks && !this.isCheck(color, boardState)) {
-                    if (this.canCastle(color, 'short', boardState)) moves.push(color === 'w' ? 62 : 6);
-                    if (this.canCastle(color, 'long', boardState)) moves.push(color === 'w' ? 58 : 2);
+            if (!onlyAttacks) {
+                const f1 = this.getIndex(r + dir, c);
+                if (f1 !== null && !boardState[f1]) {
+                    moves.push(f1);
+                    const startRow = color === 'w' ? 6 : 1;
+                    const f2 = this.getIndex(r + 2 * dir, c);
+                    if (r === startRow && !boardState[f2] && !boardState[f1]) moves.push(f2);
                 }
-                break;
-            case 'p':
-                const dir = color === 'w' ? -1 : 1;
-                [this.getIndex(r + dir, c - 1), this.getIndex(r + dir, c + 1)].forEach(diag => {
-                    if (diag !== null) {
-                        if (onlyAttacks || (boardState[diag] && boardState[diag][0] !== color) || diag === this.enPassantSquare) moves.push(diag);
-                    }
-                });
-                if (!onlyAttacks) {
-                    const f1 = this.getIndex(r + dir, c);
-                    if (f1 !== null && !boardState[f1]) {
-                        moves.push(f1);
-                        const startRow = color === 'w' ? 6 : 1;
-                        const f2 = this.getIndex(r + 2 * dir, c);
-                        if (r === startRow && !boardState[f2] && !boardState[f1]) moves.push(f2);
-                    }
-                }
-                break;
-        }
-        return moves;
-    },
-
+            }
+            break;
+    }
+    return moves;
+},
     canCastle(color, side, boardState) {
         if (this.hasMoved[`${color}-k`]) return false;
         const row = color === 'w' ? 7 : 0;
@@ -143,78 +154,81 @@ export const GameCore = {
         return true;
     },
 
-    getLegalMoves(idx) {
-        const piece = this.board[idx];
-        if (!piece) return [];
-        const [color] = piece.split('-');
-        const betrayalStatus = BetrayalJudge.getSquareStatus(this, idx);
-        const isBetrayable = (betrayalStatus === 2);
-        const isMyTurn = (color === this.turn);
+   getLegalMoves(idx) {
+    const piece = this.board[idx];
+    if (!piece) return [];
+    const [color, type] = piece.split('-');
+    const betrayalStatus = BetrayalJudge.getSquareStatus(this, idx);
+    const isBetrayable = (betrayalStatus === 2);
+    const isMyTurn = (color === this.turn);
 
-        if (!isMyTurn && !isBetrayable) return [];
+    // Ne sırası ne de hainlik durumu yoksa hareket edemez.
+    if (!isMyTurn && !isBetrayable) return [];
 
-        const isBetrayalPath = !isMyTurn;
+    return this.getPieceMoves(idx).filter(to => {
+        // 🚨 KISITLAMA: İhanet eden taş ROK yapamaz!
+        // Eğer bu bir hain kalesiyse ve 2 kare gitmeye (rok) çalışıyorsa engelle.
+        if (!isMyTurn && isBetrayable && type === 'r' && Math.abs(idx - to) === 2) return false;
 
-        return this.getPieceMoves(idx).filter(to => {
-            const testBoard = [...this.board];
-            if (!isMyTurn && isBetrayable) {
-                testBoard[idx] = ''; testBoard[to] = '';
-            } else {
-                testBoard[to] = testBoard[idx]; testBoard[idx] = '';
-            }
-            if (this.isCheck(this.turn, testBoard)) return false;
-            if (!isMyTurn && isBetrayable && this.isCheck(color, testBoard)) return false;
-            return true;
-        });
-    },
-
-    // GameCore.js içinde olması gereken en temel updateThreatHistory
-// core/game_core.js içindeki updateThreatHistory fonksiyonu
-updateThreatHistory() {
-    if (this.isSimulating) return; // Bot hayal kurarken gerçek sabıka kaydını bozmasın
-
-    // Noter her kareyi tek tek geziyor
-    for (let i = 0; i < 64; i++) {
-        const piece = this.board[i];
-
-        // Boş karede suç olmaz, kaydı sil
-        if (!piece) {
-            this.threatHistory[i] = null;
-            continue;
-        }
-
-        const [color, type] = piece.split('-');
-
-        // 🚨 KISITLAMA KONTROLÜ: BetrayalJudge'ın anayasasına bakıyoruz.
-        // Sadece At (n), Fil (b) ve Kale (r) sabıka alabilir.
-        if (!BetrayalJudge.betrayableTypes.includes(type)) {
-            this.threatHistory[i] = null;
-            continue;
-        }
-
-        const opponent = (color === 'w' ? 'b' : 'w');
-        const isCurrentlyAttacked = this.isSquareAttacked(i, opponent);
-
-        if (isCurrentlyAttacked) {
-            // Eğer saldırı VARSA ve daha önce kaydedilmemişse, ŞİMDİ kaydet.
-            if (this.threatHistory[i] === null) {
-                this.threatHistory[i] = this.history.length;
-                console.log(`📝 NOTER: ${this.indexToCoord(i)} için tehdit başladı. Hamle: ${this.history.length}`);
-            }
+        const testBoard = [...this.board];
+        if (!isMyTurn && isBetrayable) {
+            // İhanet hamlesi: İki taş da yok olur.
+            testBoard[idx] = ''; testBoard[to] = '';
         } else {
-            // Saldırı bittiği an sabıka kaydı silinir (Tövbe/Reset mantığı buradan başlar)
-            this.threatHistory[i] = null;
+            // Normal hamle.
+            testBoard[to] = testBoard[idx]; testBoard[idx] = '';
         }
-    }
-    
-    // 🔴 KRİTİK: activeBetrayals listesini Judge'ın kararına göre CANLI dolduruyoruz.
-    this.activeBetrayals = [];
-    for (let i = 0; i < 64; i++) {
-        if (BetrayalJudge.getSquareStatus(this, i) === 2) {
-            this.activeBetrayals.push(i);
-        }
-    }
+
+        // Şah kontrolleri
+        if (this.isCheck(this.turn, testBoard)) return false;
+        if (!isMyTurn && isBetrayable && this.isCheck(color, testBoard)) return false;
+        
+        return true;
+    });
 },
+
+    updateThreatHistory() {
+        if (this.isSimulating) return;
+
+        for (let i = 0; i < 64; i++) {
+            const piece = this.board[i];
+
+            if (!piece) {
+                this.threatHistory[i] = null;
+                continue;
+            }
+
+            const [color, type] = piece.split('-');
+
+            if (!BetrayalJudge.betrayableTypes.includes(type)) {
+                this.threatHistory[i] = null;
+                continue;
+            }
+
+            const opponent = (color === 'w' ? 'b' : 'w');
+            const isCurrentlyAttacked = this.isSquareAttacked(i, opponent);
+
+            if (isCurrentlyAttacked) {
+                if (this.threatHistory[i] === null) {
+                    this.threatHistory[i] = this.history.length;
+                    console.log(`📝 NOTER: ${this.indexToCoord(i)} için tehdit dosyası açıldı. Hamle: ${this.history.length}`);
+                }
+            } else {
+                this.threatHistory[i] = null;
+            }
+        }
+
+        this.activeBetrayals = [];
+        for (let i = 0; i < 64; i++) {
+            if (BetrayalJudge.getSquareStatus(this, i) === 2) {
+                this.activeBetrayals.push(i);
+            }
+        }
+
+        if (this.activeBetrayals.length > 0) {
+            console.log("🔥 İNFAZ LİSTESİ GÜNCEL:", this.activeBetrayals.map(idx => this.indexToCoord(idx)));
+        }
+    },
 
     handleSpecialRules(from, to, color, type, promotionPiece) {
         let finalPiece = `${color}-${type}`;
@@ -237,8 +251,9 @@ updateThreatHistory() {
     },
 
     execute(from, to, promotionPiece = null) {
-        let originalPiece = this.board[from];
+        const originalPiece = this.board[from];
         if (!originalPiece) return null;
+
         const [color, type] = originalPiece.split('-');
         const capturedPiece = this.board[to];
         const isBetrayal = (color !== this.turn);
@@ -250,6 +265,7 @@ updateThreatHistory() {
         if (isBetrayal) {
             this.board[to] = ''; 
             this.board[from] = '';
+            console.log(`⚔️ İHANET İNFAZI: ${this.indexToCoord(from)} -> ${this.indexToCoord(to)} (İki taş da silindi)`);
         } else {
             this.board[to] = finalPiece;
             this.board[from] = '';
@@ -260,17 +276,14 @@ updateThreatHistory() {
             piece: finalPiece,
             color,
             isBetrayal,
+            captured: capturedPiece,
             fromSq: this.indexToCoord(from),
             toSq: this.indexToCoord(to)
         };
 
-        // 1. Önce hamleyi geçmişe ekle (Length burada artar)
         this.history.push(moveData);
-
-        // 2. Hafızayı güncelle (Senin yönteminle güncel sayıyı kaydeder)
         this.updateThreatHistory();
 
-        // --- 📊 DEBUG TABLOSU ---
         const threatStatus = this.threatHistory
             .map((startAt, idx) => ({ 
                 square: this.indexToCoord(idx), 
@@ -281,11 +294,10 @@ updateThreatHistory() {
             .filter(item => item.startedAtMove !== null);
 
         if (threatStatus.length > 0) {
-            console.log(`--- Hamle Sonu | Toplam Hamle: ${this.history.length} ---`);
+            console.log(`--- 🏁 Hamle Sonu | Sabıka Kayıtları (Toplam: ${this.history.length}) ---`);
             console.table(threatStatus);
         }
 
-        // 3. Sırayı değiştir
         this.turn = (this.turn === 'w' ? 'b' : 'w');
         this.lastMove = moveData;
         return moveData;

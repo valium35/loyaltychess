@@ -16,6 +16,10 @@ export const BetrayalJudge = {
         const [color, type] = piece.split('-');
         if (!this.betrayableTypes.includes(type)) return 0;
 
+        // 🛡️ KISITLAMA: Şah çekiliyorsa (Check), ihanet mekanizması durur.
+        // Oyuncu Şah'ı kurtarmak zorunda olduğu için diğer taşlar "hain" sayılamaz.
+        if (core.isCheck(color)) return 0;
+
         const opponent = (color === 'w' ? 'b' : 'w');
 
         // 1. ADIM: Şu an bir tehdit var mı? (Rakip bu taşı istiyor mu?)
@@ -26,7 +30,7 @@ export const BetrayalJudge = {
         const isProtected = core.isSquareAttacked(idx, color);
 
         // --- ⚖️ İHANET KARARI (Sabıka Kontrolü) ---
-        // GameCore'da kaydedilen hamle sayısı (Sıfırıncı veya mevcut hamle)
+        // GameCore'da kaydedilen hamle sayısı
         const threatStartedAtMove = core.threatHistory[idx];
 
         // Kural 1: Eğer taş korunuyorsa, ne kadar zaman geçerse geçsin daima MAVİ kalır.
