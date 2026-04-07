@@ -1,5 +1,6 @@
-/* GENEL SAYFA DÜZENİ VE ARKA PLAN */
-/* GENEL SAYFA DÜZENİ */
+/* ============================================================
+   GENEL SAYFA DÜZENİ VE ARKA PLAN
+   ============================================================ */
 body {
     margin: 0;
     padding: 0;
@@ -10,23 +11,25 @@ body {
     background-attachment: fixed;
     color: white;
     display: flex;
-    justify-content: flex-start; /* Sola yaslı başlar */
+    justify-content: flex-start;
     align-items: center;
     min-height: 100vh;
-    overflow-x: auto; /* Sığmazsa sağa kaysın */
+    overflow-x: auto;
 }
 
 .main-container {
     display: flex !important;
     flex-direction: row !important;
     align-items: flex-start !important;
-    gap: 20px !important; /* Paneller arası sabit boşluk */
+    gap: 20px !important;
     padding: 20px !important;
-    width: auto !important; /* İçeriğe göre genişlesin */
-    min-width: 1200px; /* Üç panelin toplam genişliği (480+350+350+boşluklar) */
+    width: auto !important;
+    min-width: 1200px;
 }
 
-/* 1. TAHTA BETONU */
+/* ============================================================
+   1. TAHTA VE KARELER
+   ============================================================ */
 #chess-board { 
     display: grid !important; 
     grid-template-columns: repeat(8, 1fr) !important; 
@@ -39,29 +42,66 @@ body {
     background-color: rgba(0,0,0,0.2);
 }
 
-/* 2. VE 3. PANEL BETONU */
-.side-panel {
-    background: #34495e;
-    padding: 20px;
-    border-radius: 8px;
-    width: 350px !important; 
-    flex: 0 0 350px !important; 
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 15px !important;
-    max-height: 90vh;
-    overflow-y: auto;
+.square { 
+    width: 100%; 
+    aspect-ratio: 1 / 1; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    position: relative; 
+    transition: background-color 0.3s ease;
 }
 
-/* --- DİĞER TÜM STİLLER AYNI KALIYOR --- */
-.square { width: 100%; aspect-ratio: 1 / 1; display: flex; justify-content: center; align-items: center; position: relative; }
 .white { background: #ebecd0; }
 .black { background: #779556; }
-.active-law { background: rgba(241, 196, 15, 0.4) !important; }
 
-.piece { width: 100%; height: 100%; background-size: 85%; background-repeat: no-repeat; background-position: center; cursor: pointer; transition: transform 0.2s ease; z-index: 5;}
+/* --- DURUM RENKLERİ (ÖNCELİKLİ) --- */
+
+/* 🟡 SON HAMLE (LAST MOVE) */
+.square.last-move {
+    background-color: rgba(241, 196, 15, 0.4) !important; 
+    box-shadow: inset 0 0 10px rgba(241, 196, 15, 0.5) !important;
+}
+
+/* 🟠 İHANET İPUCU (BETRAYAL HINT) */
+.square.betrayal-hint {
+    background-color: rgba(231, 76, 60, 0.5) !important;
+    border: 2px dashed #ff0000 !important;
+    animation: betrayal-pulse 2.5s infinite ease-in-out !important;
+    box-sizing: border-box;
+}
+
+/* 🔵 SEÇİLİ KARE (ACTIVE) */
+.square.active {
+    background-color: #f1c40f !important;
+    box-shadow: 0 0 20px rgba(241, 196, 15, 0.8) !important;
+    z-index: 10 !important;
+}
+
+/* ============================================================
+   2. TAŞLAR VE EFEKTLER
+   ============================================================ */
+.piece { 
+    width: 100%; 
+    height: 100%; 
+    background-size: 85%; 
+    background-repeat: no-repeat; 
+    background-position: center; 
+    cursor: pointer; 
+    transition: transform 0.2s ease, filter 0.3s ease; 
+    z-index: 5;
+}
+
 .piece:hover { transform: scale(1.1); }
 
+/* İHANET EDEN TAŞIN KIZIL PARLAMA EFEKTİ */
+.traitor-piece {
+    animation: pulse-red 2.5s infinite alternate ease-in-out !important;
+    filter: drop-shadow(0 0 15px #ff0000) !important;
+    cursor: crosshair !important;
+}
+
+/* --- TAŞ GÖRSELLERİ --- */
 .w-p { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'); }
 .b-p { background-image: url('https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg'); }
 .w-n { background-image: url('https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg'); }
@@ -75,11 +115,93 @@ body {
 .w-k { background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg'); }
 .b-k { background-image: url('https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg'); }
 
-.possible-move::after { content: ''; position: absolute; width: 20px; height: 20px; background: rgba(0, 0, 0, 0.15); border-radius: 50%; z-index: 2; }
-.possible-attack { box-shadow: inset 0 0 15px rgba(231, 76, 60, 0.5) !important; cursor: crosshair !important; }
-.square.active { background-color: #f1c40f !important; }
+/* ============================================================
+   3. YARDIMCI GÖRSELLER (NOKTALAR, PANELLER)
+   ============================================================ */
+.valid-move-dot {
+    width: 15px;
+    height: 15px;
+    background-color: rgba(241, 196, 15, 0.4);
+    border-radius: 50%;
+    position: absolute;
+    pointer-events: none;
+    box-shadow: 0 0 10px rgba(241, 196, 15, 0.2);
+}
 
-/* MOBİLDE ESKİ HALİNE DÖNÜŞ (Üst üste binerler) */
+.square:has(.piece) .valid-move-dot {
+    width: 45px;
+    height: 45px;
+    background: transparent;
+    border: 4px solid rgba(255, 50, 50, 0.3);
+}
+
+.side-panel {
+    background: #34495e;
+    padding: 20px;
+    border-radius: 8px;
+    width: 350px !important; 
+    flex: 0 0 350px !important; 
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 15px !important;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.panel-subtitle {
+    color: #f1c40f;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-align: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed rgba(241, 196, 15, 0.3);
+}/* MAVİ: Korunan Tehdit (Sert Mavi) */
+.square.raw-threat {
+    background-color: #0077ff !important; /* Direkt Mavi */
+    border: 2px solid white !important;
+    box-sizing: border-box;
+}
+
+/* KOYU KIRMIZI: Korumasız Tehdit (Sert Kırmızı) */
+.square.threatened-square {
+    background-color: #8b0000 !important; /* Direkt Koyu Kırmızı */
+    border: 2px solid yellow !important;
+    animation: betrayal-pulse 1s infinite alternate !important; /* Daha hızlı nabız */
+    box-sizing: border-box;
+    z-index: 2;
+}
+
+/* Nabız animasyonunu da sertleştirelim */
+@keyframes betrayal-pulse {
+    from { filter: brightness(1); }
+    to { filter: brightness(1.8); }
+}
+
+/* ============================================================
+   4. ANİMASYONLAR
+   ============================================================ */
+@keyframes pulse-red {
+    from { filter: saturate(300%) brightness(0.8) drop-shadow(0 0 5px #ff0000); }
+    to { filter: saturate(600%) brightness(1.2) drop-shadow(0 0 25px #ff3300); }
+}
+
+@keyframes betrayal-pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+@keyframes betrayal-fade {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); filter: brightness(3); }
+    100% { transform: scale(0); opacity: 0; }
+}
+
+/* ============================================================
+   5. MOBİL UYUMLULUK
+   ============================================================ */
 @media (max-width: 1200px) {
     .main-container {
         flex-direction: column !important;
@@ -89,175 +211,4 @@ body {
     }
     #chess-board { width: 90vw !important; height: 90vw !important; flex: 0 0 auto !important; }
     .side-panel { width: 90vw !important; flex: 0 0 auto !important; }
-}/* POP-UP'I ANA İSKELEDEN (CONTAINER) BAĞIMSIZLAŞTIRMA */
-.popup-overlay {
-    display: none; 
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    width: 100vw !important;
-    /* Yüksekliği kısıtlamak için padding'i düşürdük */
-    padding: 8px 0 !important; 
-    background: rgba(0, 0, 0, 0.9) !important;
-    border-top: 2px solid #f1c40f !important; /* Çizgiyi de incelttik */
-    z-index: 999999 !important;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 -5px 20px rgba(0,0,0,0.6);
-}
-
-.popup-content {
-    width: 95% !important;
-    max-width: 1300px;
-    margin: 0 auto !important;
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center;
-    justify-content: space-between;
-    /* Elemanlar arası boşluğu koru ama yüksekliği zorlama */
-    gap: 15px; 
-}/* Yazı boyutlarını küçülttük */
-.alert-title { 
-    margin: 0; 
-    font-size: 0.9rem !important; /* Daha küçük başlık */
-    color: #ff3333; 
-    white-space: nowrap;
-    font-weight: 900;
-}
-
-#popup-msg { 
-    flex: 2; 
-    margin: 0; 
-    font-size: 0.85rem !important; /* Okunaklı ama küçük mesaj */
-    color: #ddd; 
-    text-align: left;
-    line-height: 1.2;
-}
-
-.popup-rule-box {
-    flex: 1;
-    background: rgba(241, 196, 15, 0.05);
-    padding: 5px 10px !important; /* Kutu içindeki boşluğu azalttık */
-    border-left: 2px solid #f1c40f;
-    font-size: 0.75rem !important; /* Kural yazısı minik */
-    color: #f1c40f;
-}
-
-/* Butonu da kibarlaştırdık */
-.popup-btn {
-    width: auto !important;
-    padding: 6px 20px !important; /* Daha dar buton */
-    background: #f1c40f;
-    color: #000;
-    border: none;
-    border-radius: 4px;
-    font-weight: bold;
-    font-size: 0.75rem !important;
-    cursor: pointer;
-    text-transform: uppercase;
-}
-}.panel-subtitle {
-    color: #f1c40f; /* Altın sarısı */
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    text-align: center;
-    margin-top: 0;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 1px dashed rgba(241, 196, 15, 0.3);
-    opacity: 0.8;
-}
-
-/.fixed-panel-header {
-    width: 100%;
-    border-bottom: 1px dashed rgba(241, 196, 15, 0.4);
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-}
-
-.panel-subtitle {
-    color: #f1c40f;
-    font-size: 0.9rem;
-    margin: 0;
-    text-align: center;
-    letter-spacing: 2px;
-}
-.legend-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-.dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
-.dot.blue { background-color: rgba(0, 150, 255, 0.8); box-shadow: 0 0 5px #0096ff; }
-.dot.red { background-color: rgba(255, 0, 0, 0.8); box-shadow: 0 0 5px #ff0000; }
-.dot.yellow { background-color: #f1c40f; box-shadow: 0 0 5px #f1c40f; }
-
-.log-entry { 
-    padding: 5px 0; 
-    border-bottom: 1px solid rgba(255,255,255,0.05); 
-    animation: fadeIn 0.3s ease;
-}
-@keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
-@keyframes betrayal-fade {
-    0% { filter: brightness(1) contrast(1); transform: scale(1); }
-    50% { filter: brightness(5) saturate(0); transform: scale(1.2) rotate(5deg); }
-    100% { filter: brightness(0); opacity: 0; transform: scale(0); }
-}
-
-.piece.betrayal-effect {
-    animation: betrayal-fade 0.6s forwards;
-}
-
-.threatened-square { background-color: rgba(52, 152, 219, 0.7) !important; box-shadow: inset 0 0 20px #ff0000 !important; position: relative; animation: betrayal-pulse 1.5s infinite ease-in-out; z-index: 5;}
-@keyframes betrayal-pulse { 0% { opacity: 0.7; transform: scale(1); } 50% { opacity: 1; transform: scale(1.02); } 100% { opacity: 0.7; transform: scale(1); } }
-.threatened-square::after { content: "⚠️"; position: absolute; top: 2px; right: 2px; font-size: 12px; text-shadow: 0 0 5px red; }
-.raw-threat { background-color: rgba(0, 150, 255, 0.4) !important; box-shadow: inset 0 0 15px #0077ff !important; border: 1px dashed #0077ff !important; }
-
-/* İHANET EDEN TAŞIN KIZIL PARLAMA EFEKTİ */
-.traitor-piece {
-    filter: sepia(100%) saturate(300%) hue-rotate(-50deg) brightness(0.8) drop-shadow(0 0 10px #ff0000) !important;
-    transition: all 0.3s ease;
-    cursor: crosshair !important;
-    animation: pulse-red 1s infinite alternate;
-}
-
-@keyframes pulse-red {
-    from { filter: sepia(100%) saturate(500%) hue-rotate(-50deg) brightness(0.7) drop-shadow(0 0 5px #ff0000); }
-    to { filter: sepia(100%) saturate(800%) hue-rotate(-50deg) brightness(1.2) drop-shadow(0 0 20px #ff3300); }
-}/* Gidilebilir kare noktası */
-.valid-move-dot {
-    width: 15px;
-    height: 15px;
-    background-color: rgba(241, 196, 15, 0.4); /* Şık bir sarı saydamlık */
-    border-radius: 50%;
-    position: absolute;
-    pointer-events: none; /* Tıklamayı engellemesin */
-    box-shadow: 0 0 10px rgba(241, 196, 15, 0.2);
-}
-
-/* Eğer karede rakip taş varsa noktayı halka yapalım (Opsiyonel) */
-.square:has(.piece) .valid-move-dot {
-    width: 45px;
-    height: 45px;
-    background: transparent;
-    border: 4px solid rgba(255, 50, 50, 0.3); /* Hedef rakip ise kırmızı halka */
-}.promotion-modal {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.9);
-    padding: 20px;
-    border: 2px solid #f1c40f;
-    border-radius: 10px;
-    display: flex;
-    gap: 15px;
-    z-index: 1000;
-    box-shadow: 0 0 30px rgba(0,0,0,0.5);
-}
-.promo-option {
-    width: 60px;
-    height: 60px;
-    cursor: pointer;
-    transition: transform 0.2s;
-}
-.promo-option:hover {
-    transform: scale(1.2);
-    background: rgba(255, 255, 255, 0.1);
 }

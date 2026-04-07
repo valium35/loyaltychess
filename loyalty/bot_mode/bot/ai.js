@@ -22,6 +22,7 @@ export const AI = {
 
     getBestMove() {
         // --- 📘 AÇILIŞ KİTABI KONTROLÜ ---
+        GameCore.isSimulating = true; // Hafızayı dondur
         const currentFen = this.getSimpleFen();
         if (this.openingBook[currentFen]) {
             const bookMoveUCI = this.openingBook[currentFen];
@@ -48,6 +49,7 @@ export const AI = {
                 bestMove = move;
             }
         }
+        GameCore.isSimulating = false; // Hafızayı çöz
         return bestMove;
     },
 

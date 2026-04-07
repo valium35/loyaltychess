@@ -1,5 +1,4 @@
 // core/event_system.js - TEK YETKİLİ SİNİR SİSTEMİ
-
 export const EventSystem = {
     queue: [],
     isProcessing: false,
@@ -7,7 +6,6 @@ export const EventSystem = {
 
     // 1. Olay Ekleme
     add(event) {
-        // Çakışmayı önlemek için: Eğer aynı hamle zaten kuyruktaysa ekleme (Opsiyonel Güvenlik)
         this.queue.push(event);
         this.processNext();
     },
@@ -26,42 +24,55 @@ export const EventSystem = {
     async handleEvent(event) {
         switch (event.type) {
             case 'triggerRender':
-                // Sadece seçim noktaları için
                 window.dispatchEvent(new CustomEvent('triggerRender', { detail: event.detail }));
                 break;
 
             case 'moveExecuted':
-    // 1. Önce Logu yaz (Tek seferlik)
-    this.updateLog(event.detail);
-    
-    // 2. Tahtayı çiz
-    window.dispatchEvent(new CustomEvent('triggerRender'));
-    
-    // 3. ❗ BOTU VE DİĞERLERİNİ UYANDIR (BotController burayı dinliyor)
-    // Artık controller'larda bunu manuel fırlatmana gerek kalmayacak
-    window.dispatchEvent(new CustomEvent('moveFinished', { detail: event.detail }));
-    
-    await new Promise(resolve => setTimeout(resolve, 50));
-    break;
+                // 1. Logu (Notasyonu) yaz
+                this.updateLog(event.detail);
+                
+                // 2. Tahtayı çiz ve Tehdit Renklerini (Judge) tetikle
+                window.dispatchEvent(new CustomEvent('triggerRender', { 
+                    detail: { selected: null, moves: [] } 
+                }));
+                
+                // 3. Botu ve Oyun Sonu Kontrolünü Uyandır
+                window.dispatchEvent(new CustomEvent('moveFinished', { detail: event.detail }));
+                
+                await new Promise(resolve => setTimeout(resolve, 50));
+                break;
         }
     },
 
-    // 🟢 NOTASYON ÜRETİCİ
+    // 🟢 NOTASYON ÜRETİCİ (Hata Korumalı)
     generateNotation(moveData) {
+        // SAVUNMA HATTI: Eğer veri eksik gelirse oyun çökmesin
+        if (!moveData || !moveData.piece) return "??";
+        const fromSq = moveData.fromSq || "";
+        const toSq = moveData.toSq || "";
+
         const pieceMap = { 'p': '', 'n': 'N', 'b': 'B', 'r': 'R', 'q': 'Q', 'k': 'K' };
         const pieceParts = moveData.piece.split('-');
         const pieceType = pieceParts[1] || pieceParts[0];
         let pChar = pieceMap[pieceType] || '';
 
+        // Rok Notasyonu
         if (pieceType === 'k' && Math.abs(moveData.from - moveData.to) === 2) {
             return moveData.to > moveData.from ? "O-O" : "O-O-O";
         }
 
+        // Taş Alma Notasyonu
         if (moveData.captured) {
-            if (pieceType === 'p') return moveData.fromSq[0] + 'x' + moveData.toSq;
-            return pChar + 'x' + moveData.toSq;
+            // Piyon ile taş alma: 'exd5' gibi
+            if (pieceType === 'p' && fromSq) {
+                return fromSq[0] + 'x' + toSq; 
+            }
+            // Diğer taşlarla alma: 'Bxf3' gibi
+            return pChar + 'x' + toSq;
         }
-        return pChar + moveData.toSq;
+
+        // Standart hamle: 'e4', 'Nf3' gibi
+        return pChar + toSq;
     },
 
     // 🟢 MATRİKS LOG (Senkronize ve Tekil)
@@ -72,12 +83,10 @@ export const EventSystem = {
         const notation = this.generateNotation(moveData);
         const isWhite = moveData.color === 'w';
         
-        // Mevcut hamle numarası için satırı bul
         const rowId = `move-row-${this.moveCounter}`;
         let rowEl = document.getElementById(rowId);
 
         if (isWhite) {
-            // Beyaz oynadıysa HER ZAMAN yeni satır aç
             rowEl = document.createElement('div');
             rowEl.id = rowId;
             rowEl.className = 'log-entry';
@@ -96,7 +105,6 @@ export const EventSystem = {
             
             historyEl.prepend(rowEl);
         } else {
-            // Siyah oynadıysa mevcut satırı güncelle
             if (rowEl) {
                 const blackSlot = rowEl.querySelector('.black-slot');
                 if (blackSlot) {
@@ -104,7 +112,6 @@ export const EventSystem = {
                     blackSlot.style.color = "#fff";
                     blackSlot.style.fontWeight = "bold";
                 }
-                // Siyah işini bitirdi, bir sonraki numaraya geç
                 this.moveCounter++;
             }
         }

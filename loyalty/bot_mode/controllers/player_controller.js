@@ -1,7 +1,7 @@
 // controllers/player_controller.js - OYUNCU KUMANDASI
 import { GameCore } from '../core/game_core.js';
 import { EventSystem } from '../core/event_system.js';
-import { Renderer } from '../ui/renderer.js'; // Renderer'ı ekledik
+import { Renderer } from '../ui/renderer.js';
 
 export const PlayerController = {
     selectedSquare: null,
@@ -13,52 +13,61 @@ export const PlayerController = {
     },
 
     handleInput(idx) {
-        // Sıra beyazda değilse veya oyun bittiyse işlem yapma
         if (GameCore.turn !== 'w' || GameCore.checkGameOver()) return;
 
         const piece = GameCore.board[idx];
+        const legalMovesForThisSquare = GameCore.getLegalMoves(idx);
 
-        // --- 1. SEÇİM MODU (Kendi taşımıza tıklarsak) ---
-        if (piece && piece.startsWith('w')) {
+        // --- 1. SEÇİM MODU (Kendi taşımız VEYA İhanet Eden taş) ---
+        // Kilit buradaydı; artık sadece 'w'ye bakmıyoruz, hamle vizesi var mı ona bakıyoruz.
+        if (legalMovesForThisSquare.length > 0 && this.selectedSquare === null) {
             this.selectedSquare = idx;
-            const legalMoves = GameCore.getLegalMoves(idx);
             
             EventSystem.add({ 
                 type: 'triggerRender', 
-                detail: { selected: idx, moves: legalMoves } 
+                detail: { selected: idx, moves: legalMovesForThisSquare } 
             });
             return;
         }
 
-        // --- 2. HAMLE MODU (Bir taş seçiliyse ve hedef kareye tıklandıysa) ---
+        // --- 2. HAMLE MODU ---
         if (this.selectedSquare !== null) {
             const legalMoves = GameCore.getLegalMoves(this.selectedSquare);
 
             if (legalMoves.includes(idx)) {
                 const movingPiece = GameCore.board[this.selectedSquare];
-                const targetRow = 0; // Beyaz piyonlar için 0. satır (a8-h8 arası)
+                // İhanet hamlesi mi? (Seçtiğim taş 'b' ile başlıyorsa evet)
+                const isBetrayal = movingPiece.startsWith('b');
 
-                // 🔴 TERFİ KONTROLÜ (Piyon son sıraya ulaştı mı?)
-                if (movingPiece === 'w-p' && Math.floor(idx / 8) === targetRow) {
-                    // Modal açılınca seçimi bekle
+                // 🔴 TERFİ KONTROLÜ (Sadece kendi piyonun için geçerli)
+                if (movingPiece === 'w-p' && Math.floor(idx / 8) === 0) {
                     Renderer.showPromotionModal('w', (promotedPiece) => {
                         const moveData = GameCore.execute(this.selectedSquare, idx, promotedPiece);
                         this.selectedSquare = null;
                         EventSystem.add({ type: 'moveExecuted', detail: moveData });
                     });
                 } else {
-                    // ✅ NORMAL HAMLE
+                    // ✅ NORMAL VEYA İHANET HAMLESİ
                     const moveData = GameCore.execute(this.selectedSquare, idx);
                     this.selectedSquare = null;
                     EventSystem.add({ type: 'moveExecuted', detail: moveData });
                 }
             } else {
-                // Geçersiz kareye tıklandı: Seçimi temizle
-                this.selectedSquare = null;
-                EventSystem.add({ 
-                    type: 'triggerRender', 
-                    detail: { selected: null, moves: [] } 
-                });
+                // Geçersiz yere tıklandıysa veya başka bir kendi taşına tıklandıysa:
+                // Eğer tıkladığın yeni yer de geçerli bir başlangıçsa (kendi taşın veya hain), orayı seç.
+                if (legalMovesForThisSquare.length > 0) {
+                    this.selectedSquare = idx;
+                    EventSystem.add({ 
+                        type: 'triggerRender', 
+                        detail: { selected: idx, moves: legalMovesForThisSquare } 
+                    });
+                } else {
+                    this.selectedSquare = null;
+                    EventSystem.add({ 
+                        type: 'triggerRender', 
+                        detail: { selected: null, moves: [] } 
+                    });
+                }
             }
         }
     }

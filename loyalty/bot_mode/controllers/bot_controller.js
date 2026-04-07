@@ -4,12 +4,10 @@ import { EventSystem } from '../core/event_system.js';
 import { AI } from '../bot/ai.js';
 
 export const BotController = {
-    isThinking: false, // 🔴 Çakışmayı önlemek için kilit
+    isThinking: false, 
 
     init() {
         window.addEventListener('moveFinished', () => {
-            console.log("BotController: Sıra kontrol ediliyor. Sıra:", GameCore.turn);
-            
             // Sıra siyahtaysa, oyun bitmediyse ve bot zaten düşünmüyorsa başla
             if (GameCore.turn === 'b' && !GameCore.checkGameOver() && !this.isThinking) {
                 this.thinkAndAct();
@@ -20,45 +18,44 @@ export const BotController = {
     thinkAndAct() {
         if (GameCore.checkGameOver() || this.isThinking) return;
 
-        this.isThinking = true; // Kilidi kapat
+        this.isProcessing = true; // Düşünme başladı kilidi
+        this.isThinking = true;
 
-        // 🟢 UI GÜNCELLEME: "Düşünüyorum..." yazısını yaktır
         window.dispatchEvent(new CustomEvent('botThinking'));
 
-        // 🕒 DÜŞÜNME SÜRESİ (1 Saniye Gecikme - Botun "insansı" tepkisi)
         setTimeout(() => {
             try {
-                // Hamle yapmadan önce oyunun bitip bitmediğine son bir kez bak
-                if (GameCore.checkGameOver()) {
-                    this.isThinking = false;
-                    return;
-                }
+                if (GameCore.checkGameOver()) return;
 
-                // AI'DAN EN İYİ HAMLEYİ AL (Minimax burada devreye girer)
+                // AI'DAN EN İYİ HAMLEYİ AL
                 const bestMove = AI.getBestMove();
                 
                 if (bestMove) {
-                    // Hamleyi Core'da işlet
                     const moveData = GameCore.execute(bestMove.from, bestMove.to);
                     
-                    // Veri bütünlüğü garantisi
                     if (moveData) {
-                        moveData.color = 'b'; 
-                        console.log("BOT: Hamle yapıldı:", moveData);
-
-                        // EventSystem üzerinden log ve render tetikle
+                        // EventSystem'e hamleyi gönder (Renderer ve Log burada tetiklenir)
                         EventSystem.add({ 
                             type: 'moveExecuted', 
                             detail: moveData 
                         });
+
+                        // --- 🚨 İHANET ZİNCİRİ KONTROLÜ ---
+                        // Eğer hamle sonrası GameCore 'isBetrayalPhase'e girdiyse 
+                        // veya sıra hala siyahtaysa (saf değişimi olduysa), bot DURMAMALI.
+                        if (GameCore.isBetrayalPhase || GameCore.turn === 'b') {
+                            console.log("💣 BOT: İhanet tetiklendi, ajanla devam ediyorum...");
+                            this.isThinking = false; // Kilidi aç
+                            this.thinkAndAct();      // Hemen bir sonraki (ajan) hamlesini yap
+                            return;
+                        }
                     }
                 }
             } catch (error) {
                 console.error("Bot Hamle Hatası:", error);
             } finally {
-                // Hamle bitti, kilidi aç
                 this.isThinking = false;
             }
-        }, 1000); 
+        }, 600); // 1000ms biraz yavaştı, 600ms botu daha "seri" hissettirir
     }
 };
