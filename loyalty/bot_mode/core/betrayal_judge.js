@@ -1,19 +1,29 @@
-// core/betrayal_judge.js
+/**
+ * BETRAYAL JUDGE (İHANET HAKİMİ)
+ * LoyaltyChess kurallarının sahadaki uygulayıcısıdır.
+ */
 export const BetrayalJudge = {
     // İhanet edebilecek rütbeli askerler (At, Fil, Kale)
     betrayableTypes: ['n', 'b', 'r'],
 
     /**
-     * Renderer için her karenin ihanet statüsünü belirler.
+     * Renderer ve AI için her karenin ihanet statüsünü belirler.
      * 0: Normal
      * 1: Tehdit Altında (Mavi) -> Rakip istiyor ama henüz hain değil veya korunuyor.
      * 2: İhanet Riski (Koyu Kırmızı) -> Sahibi tarafından terk edildi!
      */
     getSquareStatus(core, idx) {
+        // 🛡️ EMNİYET KEMERİ: Veri eksikse veya kare dışındaysak çökme, 0 dön.
+        if (!core || idx === null || idx === undefined || idx < 0 || idx > 63) {
+            return 0;
+        }
+
         const piece = core.board[idx];
         if (!piece) return 0;
 
         const [color, type] = piece.split('-');
+        
+        // Sadece rütbeli askerler ihanet edebilir
         if (!this.betrayableTypes.includes(type)) return 0;
 
         // 🛡️ KISITLAMA: Şah çekiliyorsa (Check), ihanet mekanizması durur.
@@ -30,8 +40,10 @@ export const BetrayalJudge = {
         const isProtected = core.isSquareAttacked(idx, color);
 
         // --- ⚖️ İHANET KARARI (Sabıka Kontrolü) ---
-        // GameCore'da kaydedilen hamle sayısı
-        const threatStartedAtMove = core.threatHistory[idx];
+        // GameCore'da kaydedilen hamle sayısı (Varlık kontrolü eklendi)
+        const threatStartedAtMove = (core.threatHistory && core.threatHistory[idx] !== undefined) 
+                                    ? core.threatHistory[idx] 
+                                    : null;
 
         // Kural 1: Eğer taş korunuyorsa, ne kadar zaman geçerse geçsin daima MAVİ kalır.
         if (isProtected) return 1;
@@ -39,9 +51,9 @@ export const BetrayalJudge = {
         // Kural 2: Eğer taş korunmuyorsa (isProtected === false):
         if (threatStartedAtMove !== null) {
             /**
-             * 🚨 SENİN ÇÖZÜMÜNÜN MANTIĞI:
-             * 1. Eğer tehdit başladığından beri hamle sayısı ARTTIYSA (threatStartedAtMove < core.history.length).
-             * 2. Ve şu an hamle sırası bu taşın renginde değilse (Sahibi sırayı rakibe verdiyse).
+             * 🚨 İHANET MANTIĞI:
+             * 1. Eğer tehdit başladığından beri hamle sayısı ARTTIYSA (sahibi hamlesini yaptıysa).
+             * 2. Ve şu an hamle sırası bu taşın renginde değilse (Sıra rakibe geçtiyse).
              */
             if (threatStartedAtMove < core.history.length && core.turn !== color) {
                 return 2; // 🔴 DURUM 2: KIRMIZI (İhanet vakti!)

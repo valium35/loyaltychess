@@ -277,59 +277,67 @@ export const GameCore = {
         return finalPiece;
     },
 
-    execute(from, to, promotionPiece = null) {
-        const originalPiece = this.board[from];
-        if (!originalPiece) return null;
+  execute(from, to, promotionPiece = null) {
+    const originalPiece = this.board[from];
+    if (!originalPiece) return null;
 
-        const [color, type] = originalPiece.split('-');
-        const capturedPiece = this.board[to];
-        const isBetrayal = (color !== this.turn);
-        const finalPiece = this.handleSpecialRules(from, to, color, type, promotionPiece);
+    const [color, type] = originalPiece.split('-');
+    const capturedPiece = this.board[to];
+    const isBetrayal = (color !== this.turn);
+    const finalPiece = this.handleSpecialRules(from, to, color, type, promotionPiece);
 
-        if (type === 'k') this.hasMoved[`${color}-k`] = true;
-        if (type === 'r') this.hasMoved[`${color}-r-${from}`] = true;
+    if (type === 'k') this.hasMoved[`${color}-k`] = true;
+    if (type === 'r') this.hasMoved[`${color}-r-${from}`] = true;
 
-        if (isBetrayal) {
-            this.board[to] = '';
-            this.board[from] = '';
-            console.log(`⚔️ İHANET İNFAZI: ${this.indexToCoord(from)} -> ${this.indexToCoord(to)} (İki taş da silindi)`);
-        } else {
-            this.board[to] = finalPiece;
-            this.board[from] = '';
+    if (isBetrayal) {
+        this.board[to] = '';
+        this.board[from] = '';
+        // Simülasyon değilse log bas
+        if (!this.isSimulating) {
+            console.log(`⚔️ İHANET İNFAZI: ${this.indexToCoord(from)} -> ${this.indexToCoord(to)}`);
         }
+    } else {
+        this.board[to] = finalPiece;
+        this.board[from] = '';
+    }
 
-        const moveData = {
-            from,
-            to,
-            piece: finalPiece,
-            color,
-            isBetrayal,
-            captured: capturedPiece,
-            fromSq: this.indexToCoord(from),
-            toSq: this.indexToCoord(to)
-        };
+    const moveData = {
+        from, to, piece: finalPiece, color, isBetrayal,
+        captured: capturedPiece,
+        fromSq: this.indexToCoord(from),
+        toSq: this.indexToCoord(to)
+    };
 
-        this.history.push(moveData);
-        this.updateThreatHistory();
+    this.history.push(moveData);
 
-        const threatStatus = this.threatHistory
-            .map((startAt, idx) => ({
-                square: this.indexToCoord(idx),
-                startedAtMove: startAt,
-                currentHistoryLen: this.history.length,
-                piece: this.board[idx]
-            }))
-            .filter(item => item.startedAtMove !== null);
-
-        if (threatStatus.length > 0) {
-            console.log(`--- 🏁 Hamle Sonu | Sabıka Kayıtları (Toplam: ${this.history.length}) ---`);
-            console.table(threatStatus);
-        }
-
+    // 🚨 KRİTİK BARİKAT: Simülasyon içindeysek sabıka kaydı güncelleme ve ağır loglama yapma!
+    if (this.isSimulating) {
         this.turn = (this.turn === 'w' ? 'b' : 'w');
         this.lastMove = moveData;
         return moveData;
-    },
+    }
+
+    // --- BURADAN AŞAĞISI SADECE GERÇEK OYUNDA ÇALIŞIR ---
+    this.updateThreatHistory();
+
+    const threatStatus = this.threatHistory
+        .map((startAt, idx) => ({
+            square: this.indexToCoord(idx),
+            startedAtMove: startAt,
+            currentHistoryLen: this.history.length,
+            piece: this.board[idx]
+        }))
+        .filter(item => item.startedAtMove !== null);
+
+    if (threatStatus.length > 0) {
+        console.log(`--- 🏁 Hamle Sonu | Sabıka Kayıtları (Toplam: ${this.history.length}) ---`);
+        console.table(threatStatus);
+    }
+
+    this.turn = (this.turn === 'w' ? 'b' : 'w');
+    this.lastMove = moveData;
+    return moveData;
+},
 
     indexToCoord(idx) {
         const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];

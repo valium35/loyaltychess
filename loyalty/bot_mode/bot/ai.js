@@ -6,7 +6,6 @@ export const AI = {
     mlWeights: [],
     pieceValues: { 'p': 100, 'n': 320, 'b': 330, 'r': 500, 'q': 900, 'k': 20000 },
 
-    // 📘 PROFESYONEL AÇILIŞ ROTALARI (Hamle Zincirleri)
     openingSequences: {
         "sah_gambiti": ["e2e4", "e7e5", "f2f4", "e5f4", "g1f3", "g7g5"],
         "italyan_acilisi": ["e2e4", "e7e5", "g1f3", "b8c6", "f1c4", "f8c5"],
@@ -35,45 +34,36 @@ export const AI = {
 
     getBestMove() {
         GameCore.isSimulating = true;
-
-        // --- 📡 ADIM 1: AKILLI AÇILIŞ RADARI (Hamle Zinciri Kontrolü) ---
-        // Mevcut oyunun hamle geçmişini UCI formatında (e2e4, e7e5 gibi) birleştiriyoruz
         const currentGamePath = GameCore.history.map(h => h.fromSq + h.toSq);
         const moveNumber = currentGamePath.length;
 
-        if (moveNumber < 12) { // İlk 6 tam hamle boyunca radarı açık tut
+        if (moveNumber < 12) {
             for (let name in this.openingSequences) {
                 const sequence = this.openingSequences[name];
-                
-                // Eğer yapılan hamleler bu açılışın başına tam uyuyorsa
                 const isMatching = currentGamePath.every((move, idx) => move === sequence[idx]);
-                
                 if (isMatching && sequence[moveNumber]) {
                     const nextMoveUCI = sequence[moveNumber];
-                    console.log(`📡 Rota Tespit Edildi: ${name.toUpperCase()}. Kitap hamlesi: ${nextMoveUCI}`);
+                    console.log(`📡 Rota Tespit Edildi: ${name.toUpperCase()}.`);
                     GameCore.isSimulating = false;
                     return this.uciToMove(nextMoveUCI);
                 }
             }
         }
 
-        // --- 📘 ADIM 2: STANDART FEN KİTABI SORGUSU (Yedek Plan) ---
         const currentFen = this.getSimpleFen();
         if (this.openingBook && this.openingBook[currentFen]) {
             const bookEntry = this.openingBook[currentFen];
             let bestBookMove = Array.isArray(bookEntry) ? bookEntry[0] : bookEntry;
-            console.log("📚 Standart kitap hamlesi uygulanıyor:", bestBookMove);
             GameCore.isSimulating = false; 
             return this.uciToMove(bestBookMove);
         }
 
-        // --- 🧠 ADIM 3: MİNİMAX (ZİNCİR KOPTU VEYA OYUN ORTASI) ---
-        console.log("🧩 Kitap dışı pozisyon, Minimax düşünmeye başlıyor...");
-        const depth = 3;
+        console.log("🧩 Minimax düşünmeye başlıyor...");
+        const depth = 4; 
         let candidates = [];
         let bestValue = -Infinity;
-        const moves = this.getAllLegalMoves('b');
-
+        
+        const moves = this.getAllLegalMoves('b', false);
         moves.sort((a, b) => this.movePriority(b) - this.movePriority(a));
 
         for (const move of moves) {
@@ -92,25 +82,18 @@ export const AI = {
 
         GameCore.isSimulating = false;
         if (candidates.length === 0) return null;
-        
-        const finalMove = candidates[Math.floor(Math.random() * candidates.length)];
-        console.log(`🤖 Hamle seçildi. Aday: ${candidates.length} | Skor: ${bestValue}`);
-        return finalMove;
+        return candidates[Math.floor(Math.random() * candidates.length)];
     },
 
     minimax(depth, alpha, beta, isMaximizing) {
-        if (depth === 0) return this.evaluateBoard();
-        
+        if (depth === 0) return this.quiescence(alpha, beta, 0);
         const color = isMaximizing ? 'b' : 'w';
-        const moves = this.getAllLegalMoves(color);
-        
+        const moves = this.getAllLegalMoves(color, false);
         if (moves.length === 0) {
             if (GameCore.isCheck(color)) return isMaximizing ? -100000 : 100000;
             return 0;
         }
-
         moves.sort((a, b) => this.movePriority(b) - this.movePriority(a));
-
         if (isMaximizing) {
             let maxEval = -Infinity;
             for (const move of moves) {
@@ -138,8 +121,33 @@ export const AI = {
         }
     },
 
+    quiescence(alpha, beta, qDepth) {
+        if (qDepth > 4) return this.evaluateBoard();
+
+        let standPat = this.evaluateBoard();
+        if (standPat >= beta) return beta;
+        if (alpha < standPat) alpha = standPat;
+
+        const captureMoves = this.getAllLegalMoves('b', true).filter(m => GameCore.board[m.to]);
+        captureMoves.sort((a, b) => this.movePriority(b) - this.movePriority(a));
+
+        for (const move of captureMoves) {
+            const backup = this.backupState();
+            GameCore.execute(move.from, move.to);
+            const score = -this.quiescence(-beta, -alpha, qDepth + 1);
+            this.restoreState(backup);
+
+            if (score >= beta) return beta;
+            if (score > alpha) alpha = score;
+        }
+        return alpha;
+    },
+
     evaluateBoard() {
         let score = 0;
+        const whiteCheck = GameCore.isCheck('w');
+        const blackCheck = GameCore.isCheck('b');
+
         for (let i = 0; i < 64; i++) {
             const piece = GameCore.board[i];
             if (!piece) continue;
@@ -147,58 +155,45 @@ export const AI = {
             const [color, type] = piece.split('-');
             const r = Math.floor(i / 8);
             const c = i % 8;
-
             let val = this.pieceValues[type] || 0;
             const opponentColor = (color === 'w' ? 'b' : 'w');
 
             const isAttacked = GameCore.isSquareAttacked(i, opponentColor);
             const isProtected = GameCore.isSquareAttacked(i, color);
 
-            // 🛡️ TAKAS VE GÜVENLİK ANALİZİ
             if (isAttacked) {
                 if (!isProtected) {
-                    val -= (this.pieceValues[type] * 1.6); 
+                    val -= (this.pieceValues[type] * 5.0); 
+                    val -= 2500; 
                 } else {
-                    val -= (this.pieceValues[type] * 0.4);
+                    val -= (this.pieceValues[type] * 0.6); 
                 }
             }
 
-            // 👸 VEZİR DOKUNULMAZLIĞI
-            if (type === 'q' && isAttacked && !isProtected) {
-                val -= 30000; 
-            }
+            if (type === 'q' && isAttacked && !isProtected) val -= 60000; 
 
-            // 🛡️ İHANET ANALİZİ
             if (isAttacked && BetrayalJudge.betrayableTypes.includes(type)) {
                 if (!isProtected) {
                     const escapeMoves = GameCore.getLegalMoves(i).length;
-                    if (escapeMoves === 0) {
-                        val -= (this.pieceValues[type] * 6); 
-                    } else {
-                        val -= (this.pieceValues[type] * 2);
-                    }
+                    val -= (escapeMoves === 0) ? (this.pieceValues[type] * 10) : (this.pieceValues[type] * 4);
                 }
             }
 
-            // 🎯 AGRESİFLİK DENGESİ
             if (color === 'b') {
-                const targets = GameCore.getPieceMoves(i);
-                targets.forEach(targetIdx => {
-                    const targetPiece = GameCore.board[targetIdx];
-                    if (targetPiece && targetPiece.startsWith('w')) {
-                        val += (this.pieceValues[targetPiece.split('-')[1]] * 0.05); 
+                if (whiteCheck) {
+                    if (isAttacked && !isProtected) {
+                        val -= (this.pieceValues[type] * 2.5); 
+                    } else {
+                        val += 1500; 
                     }
-                });
+                }
+            } else {
+                if (blackCheck && type === 'k') val -= 5000;
             }
 
-            // ML Sezgileri (Python'dan gelen ağırlıklar)
             if (this.mlWeights.length > 0) {
                 const weight = (color === 'b') ? this.mlWeights[r][c] : this.mlWeights[7-r][c];
                 val += weight * 65; 
-            }
-
-            if (type === 'k' && GameCore.isCheck(color)) {
-                val -= 1000;
             }
 
             score += (color === 'b' ? val : -val);
@@ -210,20 +205,23 @@ export const AI = {
         const fromPiece = GameCore.board[move.from];
         const targetPiece = GameCore.board[move.to];
         if (!fromPiece) return 0;
-
         const attackerType = fromPiece.split('-')[1];
+        const color = fromPiece.split('-')[0];
+        const opponentColor = (color === 'w' ? 'b' : 'w');
         let score = 0;
 
         if (targetPiece) {
             const victimType = targetPiece.split('-')[1];
             score = (this.pieceValues[victimType] * 10) - this.pieceValues[attackerType];
+            if (GameCore.isSquareAttacked(move.to, opponentColor)) {
+                score -= (this.pieceValues[attackerType] * 1.5);
+            }
         }
 
         if (attackerType === 'p') {
             const row = Math.floor(move.to / 8);
             if (row === 0 || row === 7) score += 900;
         }
-
         return score;
     },
 
@@ -234,9 +232,8 @@ export const AI = {
             let empty = 0;
             for (let c = 0; c < 8; c++) {
                 const piece = GameCore.board[r * 8 + c];
-                if (!piece) {
-                    empty++;
-                } else {
+                if (!piece) empty++;
+                else {
                     if (empty > 0) { rowStr += empty; empty = 0; }
                     const [color, type] = piece.split('-');
                     rowStr += (color === 'w' ? type.toUpperCase() : type);
@@ -255,19 +252,41 @@ export const AI = {
         return { from: fromIdx, to: toIdx };
     },
 
-    getAllLegalMoves(color) {
-        let moves = [];
-        for (let i = 0; i < 64; i++) {
-            const piece = GameCore.board[i];
-            if (piece && piece.startsWith(color)) {
-                const targets = GameCore.getLegalMoves(i);
-                for (const to of targets) {
-                    moves.push({ from: i, to: to });
-                }
+  getAllLegalMoves(color, isQuiescence = false) {
+    let moves = [];
+    
+    // 🚨 REKÜRSİF DÖNGÜ KIRICI: 
+    // Bot derin düşüncedeyken (Quiescence) veya çok derin dallardayken 
+    // sadece kendi taşlarına odaklansın.
+    const allowBetrayalSorgu = !isQuiescence; 
+
+    for (let i = 0; i < 64; i++) {
+        const piece = GameCore.board[i];
+        if (!piece) continue;
+
+        let isBetrayable = false;
+        
+        // 🚨 KRİTİK DEĞİŞİKLİK: 
+        // Bot simülasyondayken BetrayalJudge'ı ağır sorgularla yormuyoruz.
+        // Sadece ana hamle sırasında (ilk aşamada) ihanetleri listeye alıyoruz.
+        if (allowBetrayalSorgu && GameCore) {
+            // Sadece mevcut activeBetrayals listesinde var mı diye bakmak çok daha hızlıdır
+            // Ama senin mantığın getSquareStatus üzerinden gittiği için onu koruyalım:
+            const status = BetrayalJudge.getSquareStatus(GameCore, i);
+            isBetrayable = (color === 'b' && status === 2) || (color === 'w' && status === 1);
+        }
+
+        if (piece.startsWith(color) || isBetrayable) {
+            // getLegalMoves yerine doğrudan getPieceMoves kullanarak 
+            // GameCore'daki isCheck döngülerinden kaçınabiliriz (isteğe bağlı hız için)
+            const targets = GameCore.getLegalMoves(i);
+            for (const to of targets) {
+                moves.push({ from: i, to: to });
             }
         }
-        return moves;
-    },
+    }
+    return moves;
+},
 
     backupState() {
         return {
@@ -284,8 +303,6 @@ export const AI = {
         GameCore.turn = backup.turn;
         GameCore.enPassantSquare = backup.enPassant;
         GameCore.hasMoved = backup.hasMoved;
-        if (GameCore.history.length > backup.historyLen) {
-            GameCore.history.length = backup.historyLen;
-        }
+        if (GameCore.history.length > backup.historyLen) GameCore.history.length = backup.historyLen;
     }
 };
