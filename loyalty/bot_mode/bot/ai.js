@@ -5,42 +5,51 @@ export const AI = {
     openingBook: {}, 
     mlWeights: [],
     pieceValues: { 'p': 100, 'n': 320, 'b': 330, 'r': 500, 'q': 900, 'k': 20000 },
-async initialize() {
+    currentHainBeyazlar: [],
+
+    async initialize() {
         try {
+            // Tarayıcı önbelleğini (cache) aşmak için timestamp ekledik
             const [bookRes, weightsRes] = await Promise.all([
-                fetch('./ml_lab/opening_book.json').catch(() => ({ json: () => ({}) })),
-                fetch('./ml_lab/ml_weights.json').catch(() => ({ json: () => ([]) }))
+                fetch(`./ml_lab/opening_book.json?v=${Date.now()}`).catch(() => ({ json: () => ({}) })),
+                fetch(`./ml_lab/ml_weights.json?v=${Date.now()}`).catch(() => ({ json: () => ([]) }))
             ]);
             this.openingBook = await bookRes.json();
             this.mlWeights = await weightsRes.json();
             console.log("🧠 Botun hafızası ve sezgileri yüklendi!");
         } catch (err) {
             console.error("Bot yüklenirken hata oluştu:", err);
-            // Hata olsa bile oyunun çökmemesi için boş objelerle devam et
             this.openingBook = {};
             this.mlWeights = [];
         }
     },
-    // ... openingSequences ve initialize kısımları aynı kalıyor ...
 
     getBestMove() {
         GameCore.isSimulating = true;
-        
-        // 5. MADDE: Hamle başı ihanetleri cache'le
         this.currentHainBeyazlar = [...GameCore.activeBetrayals];
 
         const currentGamePath = GameCore.history.map(h => h.fromSq + h.toSq);
         const moveNumber = currentGamePath.length;
 
-        // 5. MADDE: Opening book (Partial Match)
-        if (moveNumber < 12) {
+        // 🎲 AÇILIŞ KİTABI RASTGELELİK GÜNCELLEMESİ
+        if (moveNumber < 12 && this.openingSequences) {
+            let compatibleMoves = []; 
+            
             for (let name in this.openingSequences) {
                 const sequence = this.openingSequences[name];
                 const isMatching = sequence.slice(0, moveNumber).every((m, idx) => m === currentGamePath[idx]);
+                
                 if (isMatching && sequence[moveNumber]) {
-                    GameCore.isSimulating = false;
-                    return this.uciToMove(sequence[moveNumber]);
+                    compatibleMoves.push(sequence[moveNumber]);
                 }
+            }
+
+            if (compatibleMoves.length > 0) {
+                // Aynı pozisyona uyan tüm açılışlar arasından rastgele birini seç
+                const randomIndex = Math.floor(Math.random() * compatibleMoves.length);
+                GameCore.isSimulating = false;
+                console.log(`📖 Açılış Kitabı: ${compatibleMoves.length} seçenek arasından seçim yapıldı.`);
+                return this.uciToMove(compatibleMoves[randomIndex]);
             }
         }
 
@@ -55,8 +64,10 @@ async initialize() {
             const backup = this.backupState();
             GameCore.execute(move.from, move.to);
             
-            // 🔴 KRİTİK 2: Standart Negamax işareti (-negamax)
-            const val = -this.negamax(depth - 1, -Infinity, Infinity, 'w');
+            // 🎲 SOFT RANDOMNESS: Hamle puanına +/- 5 puanlık minik bir gürültü ekle 
+            // Bu, birbirine çok yakın değerli hamleler arasında çeşitlilik sağlar.
+            const noise = (Math.random() * 10) - 5;
+            const val = (-this.negamax(depth - 1, -Infinity, Infinity, 'w')) + noise;
             
             this.restoreState(backup);
 
@@ -84,10 +95,7 @@ async initialize() {
         for (const move of moves) {
             const backup = this.backupState();
             GameCore.execute(move.from, move.to);
-            
-            // 🔴 KRİTİK 2: Negamax recursion işareti düzeltildi
             const evaluation = -this.negamax(depth - 1, -beta, -alpha, color === 'b' ? 'w' : 'b');
-            
             this.restoreState(backup);
             
             maxEval = Math.max(maxEval, evaluation);
@@ -109,9 +117,7 @@ async initialize() {
         for (const move of captureMoves) {
             const backup = this.backupState();
             GameCore.execute(move.from, move.to);
-            
             const score = -this.quiescence(-beta, -alpha, qDepth + 1, color === 'b' ? 'w' : 'b');
-            
             this.restoreState(backup);
 
             if (score >= beta) return beta;
@@ -124,15 +130,11 @@ async initialize() {
         return GameCore.board[move.to] !== '' || move.to === GameCore.enPassantSquare;
     },
 
-    // 🔴 KRİTİK 1: GÜVENLİ ATTACK MAP (Pseudo-moves kullanımı)
     buildAttackMap(color) {
         const map = new Set();
         for (let i = 0; i < 64; i++) {
             const piece = GameCore.board[i];
             if (piece && piece.startsWith(color)) {
-                // Pinlenmiş taşlar hala saldırıyor kabul edilmelidir (X-Ray etkisi)
-                // getPieceMoves(..., true) genelde şah güvenliğini (legality) kontrol etmez, 
-                // bu yüzden attack map için en güvenli yoldur.
                 const moves = GameCore.getPieceMoves(i, GameCore.board, true);
                 for (const target of moves) {
                     map.add(target);
@@ -142,10 +144,8 @@ async initialize() {
         return map;
     },
 
-evaluateBoard(color) {
+    evaluateBoard(color) {
         let score = 0;
-        
-        // Attack Map'leri bir kez oluşturup cache'den kullanıyoruz (Performans için şart)
         const attackMaps = {
             w: this.buildAttackMap('w'),
             b: this.buildAttackMap('b')
@@ -161,61 +161,58 @@ evaluateBoard(color) {
             let val = this.pieceValues[pType] || 0;
 
             const opponentColor = (pColor === 'w' ? 'b' : 'w');
-
             const isAttacked = attackMaps[opponentColor].has(i);
             const isProtected = attackMaps[pColor].has(i);
 
-            // 🛡️ 1. DURUM: Saldırı Altındaki Taşların Analizi
             if (isAttacked) {
+                if (pColor === 'b') val -= 50;
+
                 const isCritical = ['n', 'b', 'r', 'q', 'k'].includes(pType);
                 
-                // --- ⚔️ İHANET VE AGRESİF SALDIRI MANTIĞI ---
                 if (pColor === 'w' && ['n', 'b', 'r'].includes(pType) && !isProtected) {
                     const status = BetrayalJudge.getSquareStatus(GameCore, i);
 
                     if (status === 2) {
-                        // TAŞ ZATEN HAİN: Bot bu taşı kendi askeri gibi görüp bekletir.
-                        val += 2000; 
+                        const baseValue = this.pieceValues[pType];
+                        let betrayalBonus = baseValue * 0.6; 
 
-                        // 🚀 YENİ: İNFAZ BONUSU
-                        // Eğer bu hain taş senin (Beyaz) bir taşını alabiliyorsa ek puan ver.
-                        // Bu, botun hain taşı sadece tutmasını değil, aktif kullanmasını sağlar.
                         const hainMoves = GameCore.getPieceMoves(i);
+                        let maxCaptureValue = 0;
+
                         for (const targetIdx of hainMoves) {
                             const targetPiece = GameCore.board[targetIdx];
                             if (targetPiece && targetPiece.startsWith('w')) {
-                                // Hain taş senin bir taşını "infaz" edebiliyorsa iştahı artsın.
-                                val += 1000; 
+                                const victimType = targetPiece.split('-')[1];
+                                const currentCaptureVal = this.pieceValues[victimType] * 0.8;
+                                if (currentCaptureVal > maxCaptureValue) maxCaptureValue = currentCaptureVal;
                             }
                         }
+                        
+                        val += (betrayalBonus + maxCaptureValue);
+                        if (val < 300) val += 150;
+
                     } else if (status === 1) {
-                        // TAŞ TEHDİTTE: Hain olmasını beklemek için bekleme bonusu.
-                        val += (this.pieceValues[pType] + 500); 
+                        val += (this.pieceValues[pType] * 0.2 + 100); 
                     }
                 } 
-                // ----------------------------------------------
-                
                 else if (isCritical) {
-                    // Standart savunma/kaçış cezaları
                     val -= isProtected ? (this.pieceValues[pType] * 0.3) : (this.pieceValues[pType] * 1.5);
                 } else {
-                    val -= 30; // Piyonlar için hafif huzursuzluk
+                    val -= 30; 
                 }
             }
 
-            // 2. DURUM: ML Sezgileri (Positional Weighting) - AYNEN KORUNDU
             if (this.mlWeights.length > 0) {
                 const weight = (pColor === 'b') ? this.mlWeights[r][c] : this.mlWeights[7-r][c];
                 val += weight * 5; 
             }
 
-            // 3. DURUM: Skor toplama - AYNEN KORUNDU
             score += (pColor === 'b' ? val : -val);
         }
 
-        // Negamax uyumu için aktif renge göre döndür
         return (color === 'b') ? score : -score;
     },
+
     getAllLegalMoves(color, isSim) {
         let moves = [];
         for (let i = 0; i < 64; i++) {
@@ -223,9 +220,8 @@ evaluateBoard(color) {
             if (!piece) continue;
             
             let canMove = piece.startsWith(color);
-            // 5. MADDE: currentHainBeyazlar cache kullanımı
-            if (!canMove && color === 'b' && !isSim) {
-                if (this.currentHainBeyazlar.includes(i)) canMove = true;
+            if (!canMove && color === 'b') {
+                if (this.currentHainBeyazlar.includes(i) || GameCore.activeBetrayals.includes(i)) canMove = true;
             }
             
             if (canMove) {
@@ -250,7 +246,8 @@ evaluateBoard(color) {
             score = (this.pieceValues[victimType] * 10) - this.pieceValues[attackerType];
         }
 
-        // Gelecekte buraya Killer Moves eklenebilir.
+        if (GameCore.activeBetrayals.includes(move.from)) score += 5000;
+
         return score;
     },
 

@@ -35,19 +35,23 @@ export const GameCore = {
     getCoords(i) { return { r: Math.floor(i / 8), c: i % 8 }; },
     getIndex(r, c) { return (r < 0 || r > 7 || c < 0 || c > 7) ? null : r * 8 + c; },
 
-    isSquareAttacked(idx, attackerColor, boardState = this.board, ignoreBetrayal = false) {
-        if (idx === null || idx < 0) return false;
-        for (let i = 0; i < 64; i++) {
-            const piece = boardState[i];
-            if (piece && piece.startsWith(attackerColor)) {
-                if (!ignoreBetrayal && (boardState[idx] && boardState[idx].endsWith('-k'))) {
-                    if (BetrayalJudge.getSquareStatus(this, i) === 2) continue; 
-                }
-                if (this.getPieceMoves(i, boardState, true).includes(idx)) return true;
-            }
-        }
-        return false;
-    },
+  isSquareAttacked(idx, attackerColor, boardState = this.board, ignoreBetrayal = true) {
+    if (idx === null || idx < 0) return false;
+
+    for (let i = 0; i < 64; i++) {
+        const piece = boardState[i];
+        if (!piece) continue;
+
+        // 🚩 FİZİKSEL RENK KONTROLÜ: Sadece gerçek rengine bakıyoruz.
+        const pieceColor = piece.split('-')[0];
+        if (pieceColor !== attackerColor) continue;
+
+        // getPieceMoves(..., true) sadece saldırı menzilini hesaplar.
+        // includes(idx) ile bu karenin o taşın menzilinde olup olmadığına bakıyoruz.
+        if (this.getPieceMoves(i, boardState, true).includes(idx)) return true;
+    }
+    return false;
+},
 
     isCheck(color, boardState = this.board) {
         const kingIdx = boardState.findIndex(p => p === color + '-k');
@@ -56,69 +60,74 @@ export const GameCore = {
     },
 
     getPieceMoves(idx, boardState = this.board, onlyAttacks = false) {
-        const piece = boardState[idx];
-        if (!piece) return [];
-        
-        const [originalColor, type] = piece.split('-');
-        const friendlyColor = BetrayalJudge.getEffectiveColor(this, idx);
-        const { r, c } = this.getCoords(idx);
-        let moves = [];
+    const piece = boardState[idx];
+    if (!piece) return [];
+    
+    // 🚩 FİZİKSEL RENK: İhanet etkisinden bağımsız, taşın üzerindeki gerçek renk.
+    const [originalColor, type] = piece.split('-');
+    const friendlyColor = originalColor; 
+    const { r, c } = this.getCoords(idx);
+    let moves = [];
 
-        const sliding = (dirs) => {
-            dirs.forEach(d => {
-                for (let j = 1; j < 8; j++) {
-                    const target = this.getIndex(r + d[0] * j, c + d[1] * j);
-                    if (target === null) break;
-                    const targetPiece = boardState[target];
-                    if (!targetPiece) moves.push(target);
-                    else {
-                        if (onlyAttacks) moves.push(target);
-                        else if (targetPiece[0] !== friendlyColor) moves.push(target);
-                        break;
-                    }
+    // Sliding mantığı (Kale, Fil, Vezir) - AYNEN KORUNDU
+    const sliding = (dirs) => {
+        dirs.forEach(d => {
+            for (let j = 1; j < 8; j++) {
+                const target = this.getIndex(r + d[0] * j, c + d[1] * j);
+                if (target === null) break;
+                const targetPiece = boardState[target];
+                if (!targetPiece) moves.push(target);
+                else {
+                    if (onlyAttacks) moves.push(target);
+                    else if (targetPiece[0] !== friendlyColor) moves.push(target);
+                    break;
                 }
+            }
+        });
+    };
+
+    switch (type) {
+        case 'r': sliding([[1, 0], [-1, 0], [0, 1], [0, -1]]); break;
+        case 'b': sliding([[1, 1], [1, -1], [-1, 1], [-1, -1]]); break;
+        case 'q': sliding([[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]); break;
+        case 'n':
+            [[2, 1], [2, -1], [-2, 1], [-2, -1], [1, 2], [1, -2], [-1, 2], [-1, -2]].forEach(d => {
+                const t = this.getIndex(r + d[0], c + d[1]);
+                if (t !== null && (onlyAttacks || !boardState[t] || boardState[t][0] !== friendlyColor)) moves.push(t);
             });
-        };
-
-        switch (type) {
-            case 'r': sliding([[1, 0], [-1, 0], [0, 1], [0, -1]]); break;
-            case 'b': sliding([[1, 1], [1, -1], [-1, 1], [-1, -1]]); break;
-            case 'q': sliding([[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]); break;
-            case 'n':
-                [[2, 1], [2, -1], [-2, 1], [-2, -1], [1, 2], [1, -2], [-1, 2], [-1, -2]].forEach(d => {
-                    const t = this.getIndex(r + d[0], c + d[1]);
-                    if (t !== null && (onlyAttacks || !boardState[t] || boardState[t][0] !== friendlyColor)) moves.push(t);
-                });
-                break;
-            case 'k':
-                [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(d => {
-                    const t = this.getIndex(r + d[0], c + d[1]);
-                    if (t !== null && (onlyAttacks || !boardState[t] || boardState[t][0] !== friendlyColor)) moves.push(t);
-                });
-                if (!onlyAttacks && !this.isCheck(originalColor, boardState) && !this.activeBetrayals.includes(idx)) {
-                    if (this.canCastle(originalColor, 'short', boardState)) moves.push(originalColor === 'w' ? 62 : 6);
-                    if (this.canCastle(originalColor, 'long', boardState)) moves.push(originalColor === 'w' ? 58 : 2);
-                }
-                break;
-            case 'p':
-                const dir = originalColor === 'w' ? -1 : 1;
-                [this.getIndex(r + dir, c - 1), this.getIndex(r + dir, c + 1)].forEach(diag => {
-                    if (diag !== null && (onlyAttacks || (boardState[diag] && boardState[diag][0] !== friendlyColor) || diag === this.enPassantSquare)) moves.push(diag);
-                });
-                if (!onlyAttacks) {
-                    const f1 = this.getIndex(r + dir, c);
-                    if (f1 !== null && !boardState[f1]) {
-                        moves.push(f1);
-                        if (r === (originalColor === 'w' ? 6 : 1)) {
-                            const f2 = this.getIndex(r + 2 * dir, c);
-                            if (!boardState[f2] && !boardState[f1]) moves.push(f2);
-                        }
+            break;
+        case 'k':
+            [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(d => {
+                const t = this.getIndex(r + d[0], c + d[1]);
+                if (t !== null && (onlyAttacks || !boardState[t] || boardState[t][0] !== friendlyColor)) moves.push(t);
+            });
+            // Rok kuralı sadece hamle üretirken geçerlidir, saldırı haritasında değil.
+            if (!onlyAttacks && !this.isCheck(originalColor, boardState) && !this.activeBetrayals.includes(idx)) {
+                if (this.canCastle(originalColor, 'short', boardState)) moves.push(originalColor === 'w' ? 62 : 6);
+                if (this.canCastle(originalColor, 'long', boardState)) moves.push(originalColor === 'w' ? 58 : 2);
+            }
+            break;
+        case 'p':
+            const dir = originalColor === 'w' ? -1 : 1;
+            // Piyon saldırı çaprazları
+            [this.getIndex(r + dir, c - 1), this.getIndex(r + dir, c + 1)].forEach(diag => {
+                if (diag !== null && (onlyAttacks || (boardState[diag] && boardState[diag][0] !== friendlyColor) || diag === this.enPassantSquare)) moves.push(diag);
+            });
+            // Piyon düz gidiş (Sadece hamle üretirken)
+            if (!onlyAttacks) {
+                const f1 = this.getIndex(r + dir, c);
+                if (f1 !== null && !boardState[f1]) {
+                    moves.push(f1);
+                    if (r === (originalColor === 'w' ? 6 : 1)) {
+                        const f2 = this.getIndex(r + 2 * dir, c);
+                        if (!boardState[f2] && !boardState[f1]) moves.push(f2);
                     }
                 }
-                break;
-        }
-        return moves;
-    },
+            }
+            break;
+    }
+    return moves;
+},
 
  getLegalMoves(idx) {
         const piece = this.board[idx];
@@ -144,8 +153,9 @@ export const GameCore = {
             if (isHain) {
                 // 🚫 İHANET KURALI: Hain taş şah çekemez veya mat edemez.
                 // Hain taş infaz edilir (iki kare de boşalır)
-                testBoard[idx] = ''; 
-                testBoard[to] = ''; 
+                console.log("🧪 HAIN MOVE TEST:", this.indexToCoord(idx), "->", this.indexToCoord(to));
+                testBoard[to] = testBoard[idx];
+                testBoard[idx] = '';
                 
                 const opponentColor = (this.turn === 'w' ? 'b' : 'w');
                 const kingIdx = this.getKingIdx(opponentColor, testBoard);
