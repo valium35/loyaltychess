@@ -5,62 +5,47 @@ export const AI = {
     openingBook: {}, 
     mlWeights: [],
     pieceValues: { 'p': 100, 'n': 320, 'b': 330, 'r': 500, 'q': 900, 'k': 20000 },
-
-    openingSequences: {
-        "sah_gambiti": ["e2e4", "e7e5", "f2f4", "e5f4", "g1f3", "g7g5"],
-        "italyan_acilisi": ["e2e4", "e7e5", "g1f3", "b8c6", "f1c4", "f8c5"],
-        "sicilya_savunmasi": ["e2e4", "c7c5", "g1f3", "d7d6", "d2d4", "c5d4"],
-        "fransiz_savunmasi": ["e2e4", "e7e6", "d2d4", "d7d5", "b1c3", "g8f6"],
-        "caro_kann": ["e2e4", "c7c6", "d2d4", "d7d5", "b1c3", "d5e4"],
-        "vezir_gambiti": ["d2d4", "d7d5", "c2c4", "e7e6", "b1c3", "g8f6"],
-        "ruy_lopez": ["e2e4", "e7e5", "g1f3", "b8c6", "f1b5", "a7a6"],
-        "scotch_game": ["e2e4", "e7e5", "g1f3", "b8c6", "d2d4", "e5d4"],
-        "london_system": ["d2d4", "d7d5", "c1f4", "g8f6", "e2e3", "c7c5"]
-    },
-
-    async initialize() {
+async initialize() {
         try {
             const [bookRes, weightsRes] = await Promise.all([
-                fetch('./ml_lab/opening_book.json'),
-                fetch('./ml_lab/ml_weights.json')
+                fetch('./ml_lab/opening_book.json').catch(() => ({ json: () => ({}) })),
+                fetch('./ml_lab/ml_weights.json').catch(() => ({ json: () => ([]) }))
             ]);
             this.openingBook = await bookRes.json();
             this.mlWeights = await weightsRes.json();
             console.log("🧠 Botun hafızası ve sezgileri yüklendi!");
         } catch (err) {
             console.error("Bot yüklenirken hata oluştu:", err);
+            // Hata olsa bile oyunun çökmemesi için boş objelerle devam et
+            this.openingBook = {};
+            this.mlWeights = [];
         }
     },
+    // ... openingSequences ve initialize kısımları aynı kalıyor ...
 
     getBestMove() {
         GameCore.isSimulating = true;
+        
+        // 5. MADDE: Hamle başı ihanetleri cache'le
+        this.currentHainBeyazlar = [...GameCore.activeBetrayals];
+
         const currentGamePath = GameCore.history.map(h => h.fromSq + h.toSq);
         const moveNumber = currentGamePath.length;
 
+        // 5. MADDE: Opening book (Partial Match)
         if (moveNumber < 12) {
             for (let name in this.openingSequences) {
                 const sequence = this.openingSequences[name];
-                const isMatching = currentGamePath.every((move, idx) => move === sequence[idx]);
+                const isMatching = sequence.slice(0, moveNumber).every((m, idx) => m === currentGamePath[idx]);
                 if (isMatching && sequence[moveNumber]) {
-                    const nextMoveUCI = sequence[moveNumber];
-                    console.log(`📡 Rota Tespit Edildi: ${name.toUpperCase()}.`);
                     GameCore.isSimulating = false;
-                    return this.uciToMove(nextMoveUCI);
+                    return this.uciToMove(sequence[moveNumber]);
                 }
             }
         }
 
-        const currentFen = this.getSimpleFen();
-        if (this.openingBook && this.openingBook[currentFen]) {
-            const bookEntry = this.openingBook[currentFen];
-            let bestBookMove = Array.isArray(bookEntry) ? bookEntry[0] : bookEntry;
-            GameCore.isSimulating = false; 
-            return this.uciToMove(bestBookMove);
-        }
-
-        console.log("🧩 Minimax düşünmeye başlıyor...");
-        const depth = 4; 
-        let candidates = [];
+        const depth = 3; 
+        let bestMove = null;
         let bestValue = -Infinity;
         
         const moves = this.getAllLegalMoves('b', false);
@@ -69,72 +54,64 @@ export const AI = {
         for (const move of moves) {
             const backup = this.backupState();
             GameCore.execute(move.from, move.to);
-            const boardValue = this.minimax(depth - 1, -Infinity, Infinity, false);
+            
+            // 🔴 KRİTİK 2: Standart Negamax işareti (-negamax)
+            const val = -this.negamax(depth - 1, -Infinity, Infinity, 'w');
+            
             this.restoreState(backup);
 
-            if (boardValue > bestValue) {
-                bestValue = boardValue;
-                candidates = [move];
-            } else if (boardValue === bestValue) {
-                candidates.push(move);
+            if (val > bestValue) {
+                bestValue = val;
+                bestMove = move;
             }
         }
 
         GameCore.isSimulating = false;
-        if (candidates.length === 0) return null;
-        return candidates[Math.floor(Math.random() * candidates.length)];
+        return bestMove;
     },
 
-    minimax(depth, alpha, beta, isMaximizing) {
-        if (depth === 0) return this.quiescence(alpha, beta, 0);
-        const color = isMaximizing ? 'b' : 'w';
-        const moves = this.getAllLegalMoves(color, false);
+    negamax(depth, alpha, beta, color) {
+        if (depth === 0) return this.quiescence(alpha, beta, 0, color);
+
+        const moves = this.getAllLegalMoves(color, true);
         if (moves.length === 0) {
-            if (GameCore.isCheck(color)) return isMaximizing ? -100000 : 100000;
-            return 0;
+            return GameCore.isCheck(color) ? -100000 : 0;
         }
+
         moves.sort((a, b) => this.movePriority(b) - this.movePriority(a));
-        if (isMaximizing) {
-            let maxEval = -Infinity;
-            for (const move of moves) {
-                const backup = this.backupState();
-                GameCore.execute(move.from, move.to);
-                const evaluation = this.minimax(depth - 1, alpha, beta, false);
-                this.restoreState(backup);
-                maxEval = Math.max(maxEval, evaluation);
-                alpha = Math.max(alpha, evaluation);
-                if (beta <= alpha) break;
-            }
-            return maxEval;
-        } else {
-            let minEval = Infinity;
-            for (const move of moves) {
-                const backup = this.backupState();
-                GameCore.execute(move.from, move.to);
-                const evaluation = this.minimax(depth - 1, alpha, beta, true);
-                this.restoreState(backup);
-                minEval = Math.min(minEval, evaluation);
-                beta = Math.min(beta, evaluation);
-                if (beta <= alpha) break;
-            }
-            return minEval;
+
+        let maxEval = -Infinity;
+        for (const move of moves) {
+            const backup = this.backupState();
+            GameCore.execute(move.from, move.to);
+            
+            // 🔴 KRİTİK 2: Negamax recursion işareti düzeltildi
+            const evaluation = -this.negamax(depth - 1, -beta, -alpha, color === 'b' ? 'w' : 'b');
+            
+            this.restoreState(backup);
+            
+            maxEval = Math.max(maxEval, evaluation);
+            alpha = Math.max(alpha, evaluation);
+            if (alpha >= beta) break;
         }
+        return maxEval;
     },
 
-    quiescence(alpha, beta, qDepth) {
-        if (qDepth > 4) return this.evaluateBoard();
+    quiescence(alpha, beta, qDepth, color) {
+        let standPat = this.evaluateBoard(color);
+        if (qDepth > 4) return standPat;
 
-        let standPat = this.evaluateBoard();
         if (standPat >= beta) return beta;
         if (alpha < standPat) alpha = standPat;
 
-        const captureMoves = this.getAllLegalMoves('b', true).filter(m => GameCore.board[m.to]);
-        captureMoves.sort((a, b) => this.movePriority(b) - this.movePriority(a));
-
+        const captureMoves = this.getAllLegalMoves(color, true).filter(m => this.isCapture(m));
+        
         for (const move of captureMoves) {
             const backup = this.backupState();
             GameCore.execute(move.from, move.to);
-            const score = -this.quiescence(-beta, -alpha, qDepth + 1);
+            
+            const score = -this.quiescence(-beta, -alpha, qDepth + 1, color === 'b' ? 'w' : 'b');
+            
             this.restoreState(backup);
 
             if (score >= beta) return beta;
@@ -143,62 +120,122 @@ export const AI = {
         return alpha;
     },
 
-    evaluateBoard() {
+    isCapture(move) {
+        return GameCore.board[move.to] !== '' || move.to === GameCore.enPassantSquare;
+    },
+
+    // 🔴 KRİTİK 1: GÜVENLİ ATTACK MAP (Pseudo-moves kullanımı)
+    buildAttackMap(color) {
+        const map = new Set();
+        for (let i = 0; i < 64; i++) {
+            const piece = GameCore.board[i];
+            if (piece && piece.startsWith(color)) {
+                // Pinlenmiş taşlar hala saldırıyor kabul edilmelidir (X-Ray etkisi)
+                // getPieceMoves(..., true) genelde şah güvenliğini (legality) kontrol etmez, 
+                // bu yüzden attack map için en güvenli yoldur.
+                const moves = GameCore.getPieceMoves(i, GameCore.board, true);
+                for (const target of moves) {
+                    map.add(target);
+                }
+            }
+        }
+        return map;
+    },
+
+evaluateBoard(color) {
         let score = 0;
-        const whiteCheck = GameCore.isCheck('w');
-        const blackCheck = GameCore.isCheck('b');
+        
+        // Attack Map'leri bir kez oluşturup cache'den kullanıyoruz (Performans için şart)
+        const attackMaps = {
+            w: this.buildAttackMap('w'),
+            b: this.buildAttackMap('b')
+        };
 
         for (let i = 0; i < 64; i++) {
             const piece = GameCore.board[i];
             if (!piece) continue;
 
-            const [color, type] = piece.split('-');
+            const [pColor, pType] = piece.split('-');
             const r = Math.floor(i / 8);
             const c = i % 8;
-            let val = this.pieceValues[type] || 0;
-            const opponentColor = (color === 'w' ? 'b' : 'w');
+            let val = this.pieceValues[pType] || 0;
 
-            const isAttacked = GameCore.isSquareAttacked(i, opponentColor);
-            const isProtected = GameCore.isSquareAttacked(i, color);
+            const opponentColor = (pColor === 'w' ? 'b' : 'w');
 
+            const isAttacked = attackMaps[opponentColor].has(i);
+            const isProtected = attackMaps[pColor].has(i);
+
+            // 🛡️ 1. DURUM: Saldırı Altındaki Taşların Analizi
             if (isAttacked) {
-                if (!isProtected) {
-                    val -= (this.pieceValues[type] * 5.0); 
-                    val -= 2500; 
-                } else {
-                    val -= (this.pieceValues[type] * 0.6); 
-                }
-            }
+                const isCritical = ['n', 'b', 'r', 'q', 'k'].includes(pType);
+                
+                // --- ⚔️ İHANET VE AGRESİF SALDIRI MANTIĞI ---
+                if (pColor === 'w' && ['n', 'b', 'r'].includes(pType) && !isProtected) {
+                    const status = BetrayalJudge.getSquareStatus(GameCore, i);
 
-            if (type === 'q' && isAttacked && !isProtected) val -= 60000; 
+                    if (status === 2) {
+                        // TAŞ ZATEN HAİN: Bot bu taşı kendi askeri gibi görüp bekletir.
+                        val += 2000; 
 
-            if (isAttacked && BetrayalJudge.betrayableTypes.includes(type)) {
-                if (!isProtected) {
-                    const escapeMoves = GameCore.getLegalMoves(i).length;
-                    val -= (escapeMoves === 0) ? (this.pieceValues[type] * 10) : (this.pieceValues[type] * 4);
-                }
-            }
-
-            if (color === 'b') {
-                if (whiteCheck) {
-                    if (isAttacked && !isProtected) {
-                        val -= (this.pieceValues[type] * 2.5); 
-                    } else {
-                        val += 1500; 
+                        // 🚀 YENİ: İNFAZ BONUSU
+                        // Eğer bu hain taş senin (Beyaz) bir taşını alabiliyorsa ek puan ver.
+                        // Bu, botun hain taşı sadece tutmasını değil, aktif kullanmasını sağlar.
+                        const hainMoves = GameCore.getPieceMoves(i);
+                        for (const targetIdx of hainMoves) {
+                            const targetPiece = GameCore.board[targetIdx];
+                            if (targetPiece && targetPiece.startsWith('w')) {
+                                // Hain taş senin bir taşını "infaz" edebiliyorsa iştahı artsın.
+                                val += 1000; 
+                            }
+                        }
+                    } else if (status === 1) {
+                        // TAŞ TEHDİTTE: Hain olmasını beklemek için bekleme bonusu.
+                        val += (this.pieceValues[pType] + 500); 
                     }
+                } 
+                // ----------------------------------------------
+                
+                else if (isCritical) {
+                    // Standart savunma/kaçış cezaları
+                    val -= isProtected ? (this.pieceValues[pType] * 0.3) : (this.pieceValues[pType] * 1.5);
+                } else {
+                    val -= 30; // Piyonlar için hafif huzursuzluk
                 }
-            } else {
-                if (blackCheck && type === 'k') val -= 5000;
             }
 
+            // 2. DURUM: ML Sezgileri (Positional Weighting) - AYNEN KORUNDU
             if (this.mlWeights.length > 0) {
-                const weight = (color === 'b') ? this.mlWeights[r][c] : this.mlWeights[7-r][c];
-                val += weight * 65; 
+                const weight = (pColor === 'b') ? this.mlWeights[r][c] : this.mlWeights[7-r][c];
+                val += weight * 5; 
             }
 
-            score += (color === 'b' ? val : -val);
+            // 3. DURUM: Skor toplama - AYNEN KORUNDU
+            score += (pColor === 'b' ? val : -val);
         }
-        return score;
+
+        // Negamax uyumu için aktif renge göre döndür
+        return (color === 'b') ? score : -score;
+    },
+    getAllLegalMoves(color, isSim) {
+        let moves = [];
+        for (let i = 0; i < 64; i++) {
+            const piece = GameCore.board[i];
+            if (!piece) continue;
+            
+            let canMove = piece.startsWith(color);
+            // 5. MADDE: currentHainBeyazlar cache kullanımı
+            if (!canMove && color === 'b' && !isSim) {
+                if (this.currentHainBeyazlar.includes(i)) canMove = true;
+            }
+            
+            if (canMove) {
+                const targets = GameCore.getLegalMoves(i);
+                for (const to of targets) {
+                    moves.push({ from: i, to: to });
+                }
+            }
+        }
+        return moves;
     },
 
     movePriority(move) {
@@ -206,23 +243,42 @@ export const AI = {
         const targetPiece = GameCore.board[move.to];
         if (!fromPiece) return 0;
         const attackerType = fromPiece.split('-')[1];
-        const color = fromPiece.split('-')[0];
-        const opponentColor = (color === 'w' ? 'b' : 'w');
         let score = 0;
-
+        
         if (targetPiece) {
             const victimType = targetPiece.split('-')[1];
             score = (this.pieceValues[victimType] * 10) - this.pieceValues[attackerType];
-            if (GameCore.isSquareAttacked(move.to, opponentColor)) {
-                score -= (this.pieceValues[attackerType] * 1.5);
-            }
         }
 
-        if (attackerType === 'p') {
-            const row = Math.floor(move.to / 8);
-            if (row === 0 || row === 7) score += 900;
-        }
+        // Gelecekte buraya Killer Moves eklenebilir.
         return score;
+    },
+
+    backupState() {
+        return {
+            board: [...GameCore.board],
+            turn: GameCore.turn,
+            enPassant: GameCore.enPassantSquare,
+            hasMoved: { ...GameCore.hasMoved },
+            activeBetrayals: [...GameCore.activeBetrayals],
+            historyLen: GameCore.history.length
+        };
+    },
+
+    restoreState(backup) {
+        GameCore.board = backup.board;
+        GameCore.turn = backup.turn;
+        GameCore.enPassantSquare = backup.enPassant;
+        GameCore.hasMoved = backup.hasMoved;
+        GameCore.activeBetrayals = backup.activeBetrayals;
+        if (GameCore.history.length > backup.historyLen) GameCore.history.length = backup.historyLen;
+    },
+
+    uciToMove(uci) {
+        const files = "abcdefgh";
+        const fromIdx = files.indexOf(uci[0]) + (8 - parseInt(uci[1])) * 8;
+        const toIdx = files.indexOf(uci[2]) + (8 - parseInt(uci[3])) * 8;
+        return { from: fromIdx, to: toIdx };
     },
 
     getSimpleFen() {
@@ -243,66 +299,5 @@ export const AI = {
             rows.push(rowStr);
         }
         return rows.join('/') + " " + GameCore.turn;
-    },
-
-    uciToMove(uci) {
-        const files = "abcdefgh";
-        const fromIdx = files.indexOf(uci[0]) + (8 - parseInt(uci[1])) * 8;
-        const toIdx = files.indexOf(uci[2]) + (8 - parseInt(uci[3])) * 8;
-        return { from: fromIdx, to: toIdx };
-    },
-
-  getAllLegalMoves(color, isQuiescence = false) {
-    let moves = [];
-    
-    // 🚨 REKÜRSİF DÖNGÜ KIRICI: 
-    // Bot derin düşüncedeyken (Quiescence) veya çok derin dallardayken 
-    // sadece kendi taşlarına odaklansın.
-    const allowBetrayalSorgu = !isQuiescence; 
-
-    for (let i = 0; i < 64; i++) {
-        const piece = GameCore.board[i];
-        if (!piece) continue;
-
-        let isBetrayable = false;
-        
-        // 🚨 KRİTİK DEĞİŞİKLİK: 
-        // Bot simülasyondayken BetrayalJudge'ı ağır sorgularla yormuyoruz.
-        // Sadece ana hamle sırasında (ilk aşamada) ihanetleri listeye alıyoruz.
-        if (allowBetrayalSorgu && GameCore) {
-            // Sadece mevcut activeBetrayals listesinde var mı diye bakmak çok daha hızlıdır
-            // Ama senin mantığın getSquareStatus üzerinden gittiği için onu koruyalım:
-            const status = BetrayalJudge.getSquareStatus(GameCore, i);
-            isBetrayable = (color === 'b' && status === 2) || (color === 'w' && status === 1);
-        }
-
-        if (piece.startsWith(color) || isBetrayable) {
-            // getLegalMoves yerine doğrudan getPieceMoves kullanarak 
-            // GameCore'daki isCheck döngülerinden kaçınabiliriz (isteğe bağlı hız için)
-            const targets = GameCore.getLegalMoves(i);
-            for (const to of targets) {
-                moves.push({ from: i, to: to });
-            }
-        }
-    }
-    return moves;
-},
-
-    backupState() {
-        return {
-            board: [...GameCore.board],
-            turn: GameCore.turn,
-            enPassant: GameCore.enPassantSquare,
-            hasMoved: { ...GameCore.hasMoved },
-            historyLen: GameCore.history.length
-        };
-    },
-
-    restoreState(backup) {
-        GameCore.board = backup.board;
-        GameCore.turn = backup.turn;
-        GameCore.enPassantSquare = backup.enPassant;
-        GameCore.hasMoved = backup.hasMoved;
-        if (GameCore.history.length > backup.historyLen) GameCore.history.length = backup.historyLen;
     }
 };

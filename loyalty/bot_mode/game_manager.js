@@ -3,17 +3,20 @@ import { GameCore } from './core/game_core.js';
 import { Renderer } from './ui/renderer.js';
 import { PlayerController } from './controllers/player_controller.js';
 import { BotController } from './controllers/bot_controller.js';
-import { EventSystem } from './core/event_system.js';
-import { AI } from './bot/ai.js'; // ⬅️ 1. AI modülünü buraya ekledik
+import { AI } from './bot/ai.js'; 
 
 export const GameManager = {
-    async init() { // ⬅️ 2. 'async' kelimesini ekledik (dosya yüklenmesini beklemek için)
+    async init() {
         console.log("LoyaltyChess Başlatılıyor...");
         
-        // 🚀 3. BOTUN HAFIZASINI YÜKLE (Kritik Hamle!)
-        // Oyun başlamadan önce JSON dosyalarını (açılış kitabı ve ağırlıklar) okuyoruz.
-        await AI.initialize(); 
-        console.log("🧠 Botun hafızası ve usta verileri hazır!");
+        // 🚨 HATA BURADAYDI: AI nesnesinin içinde 'initialize' fonksiyonu 
+        // olup olmadığını kontrol ederek çağıralım.
+        if (AI && typeof AI.initialize === 'function') {
+            await AI.initialize(); 
+            console.log("🧠 Botun hafızası hazır!");
+        } else {
+            console.error("❌ HATA: AI.initialize bulunamadı! AI.js dosyasını kontrol et.");
+        }
 
         GameCore.init();
         PlayerController.init();
@@ -22,12 +25,10 @@ export const GameManager = {
         this.setupListeners();
         this.updateStatus(); 
 
-        // İlk açılışta tahtayı tertemiz çiz
         Renderer.render(null, []);
     },
 
     setupListeners() {
-        // ... (Senin mevcut listener kodların buraya gelecek, bir değişiklik yok)
         window.addEventListener('triggerRender', (e) => {
             const selected = e.detail?.selected !== undefined ? e.detail.selected : null;
             const moves = e.detail?.moves !== undefined ? e.detail.moves : [];
@@ -53,19 +54,16 @@ export const GameManager = {
 
         if (gameOver) {
             statusEl.style.color = "#ff3333";
-            statusEl.style.textShadow = "0 0 20px #ff0000";
-            statusEl.innerHTML = gameOver === "MAT" ? "🏁 CHECKMATE! (MAT)" : "🤝 STALEMATE! (PAT)";
+            statusEl.innerHTML = gameOver === "MAT" ? "🏁 CHECKMATE!" : "🤝 STALEMATE!";
             return; 
         }
 
         if (isCheck) {
             statusEl.style.color = "#ff3333";
-            statusEl.style.textShadow = "0 0 15px #ff0000";
-            statusEl.innerHTML = turn === 'w' ? "⚠️ CHECK! (ŞAH ALTINDASIN)" : "⚠️ BRAIN IN DANGER!";
+            statusEl.innerHTML = turn === 'w' ? "⚠️ ŞAH ALTINDASIN!" : "⚠️ BOT ŞAH ALTINDA!";
         } else {
             statusEl.style.color = "#f1c40f";
-            statusEl.style.textShadow = "none";
-            statusEl.innerHTML = turn === 'w' ? "⚪ SIRA SENDE" : (isThinking ? "🧠 LOYALTYBRAIN DÜŞÜNÜYOR..." : "⚫ BOTUN SIRASI");
+            statusEl.innerHTML = turn === 'w' ? "⚪ SIRA SENDE" : (isThinking ? "🧠 DÜŞÜNÜYORUM..." : "⚫ BOTUN SIRASI");
         }
     }
 };

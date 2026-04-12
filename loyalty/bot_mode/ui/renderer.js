@@ -36,6 +36,7 @@ export const Renderer = {
                 sq.classList.add('raw-threat');      // Mavi (Tehdit var ama korunuyor)
             } else if (status === 2) {
                 sq.classList.add('threatened-square'); // Koyu Kırmızı (İhanet Riski!)
+            console.log(`Kare ${i} KIRMIZI, ama listede mi?: ${GameCore.activeBetrayals.includes(i)}`);
             }
 
             // --- 4. SEÇİLİ KARE PARLAMASI ---

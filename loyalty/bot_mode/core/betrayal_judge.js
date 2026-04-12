@@ -7,16 +7,30 @@ export const BetrayalJudge = {
     betrayableTypes: ['n', 'b', 'r'],
 
     /**
+     * Bir taşın o anki "etki rengini" belirler.
+     * Eğer taş activeBetrayals içindeyse, rengi ters döner.
+     */
+    getEffectiveColor(core, idx) {
+        const piece = core.board[idx];
+        if (!piece) return null;
+        const [originalColor] = piece.split('-');
+        
+        // Eğer taş aktif ihanetler listesindeyse rengini ters dönmüş kabul et
+        if (core.activeBetrayals.includes(idx)) {
+            return originalColor === 'w' ? 'b' : 'w';
+        }
+        return originalColor;
+    },
+
+    /**
      * Renderer ve AI için her karenin ihanet statüsünü belirler.
      * 0: Normal
-     * 1: Tehdit Altında (Mavi) -> Rakip istiyor ama henüz hain değil veya korunuyor.
-     * 2: İhanet Riski (Koyu Kırmızı) -> Sahibi tarafından terk edildi!
+     * 1: Tehdit Altında (Mavi) -> Rakip istiyor, feda edildi veya korunuyor.
+     * 2: İhanet Riski (Kırmızı) -> Sahibi hamlesini yaptı ama korumadı! (Vadesi doldu)
      */
     getSquareStatus(core, idx) {
-        // 🛡️ EMNİYET KEMERİ: Veri eksikse veya kare dışındaysak çökme, 0 dön.
-        if (!core || idx === null || idx === undefined || idx < 0 || idx > 63) {
-            return 0;
-        }
+        // 🛡️ Emniyet Kontrolü
+        if (!core || idx === null || idx === undefined || idx < 0 || idx > 63) return 0;
 
         const piece = core.board[idx];
         if (!piece) return 0;
@@ -26,41 +40,39 @@ export const BetrayalJudge = {
         // Sadece rütbeli askerler ihanet edebilir
         if (!this.betrayableTypes.includes(type)) return 0;
 
-        // 🛡️ KISITLAMA: Şah çekiliyorsa (Check), ihanet mekanizması durur.
-        // Oyuncu Şah'ı kurtarmak zorunda olduğu için diğer taşlar "hain" sayılamaz.
+        // Şah altındayken ihanet mekanizması durur (Öncelik şahı kurtarmaktır)
         if (core.isCheck(color)) return 0;
 
         const opponent = (color === 'w' ? 'b' : 'w');
 
-        // 1. ADIM: Şu an bir tehdit var mı? (Rakip bu taşı istiyor mu?)
-        const isAttacked = core.isSquareAttacked(idx, opponent);
-        if (!isAttacked) return 0; // Tehdit yoksa tertemiz (Durum 0)
+        // 1. ADIM: Şu an bir tehdit var mı?
+        const isAttacked = core.isSquareAttacked(idx, opponent, core.board, true);
+        if (!isAttacked) return 0;
 
         // 2. ADIM: Dost koruması var mı?
-        const isProtected = core.isSquareAttacked(idx, color);
-
-        // --- ⚖️ İHANET KARARI (Sabıka Kontrolü) ---
-        // GameCore'da kaydedilen hamle sayısı (Varlık kontrolü eklendi)
+        const isProtected = core.isSquareAttacked(idx, color, core.board, true);
+        
+        // 3. ADIM: Zamanlama (Sabıka) Kontrolü
         const threatStartedAtMove = (core.threatHistory && core.threatHistory[idx] !== undefined) 
-                                    ? core.threatHistory[idx] 
-                                    : null;
+                                    ? core.threatHistory[idx] : null;
 
-        // Kural 1: Eğer taş korunuyorsa, ne kadar zaman geçerse geçsin daima MAVİ kalır.
+        // Kural 1: Eğer taş korunuyorsa, daima MAVİ (1) kalır.
         if (isProtected) return 1;
 
-        // Kural 2: Eğer taş korunmuyorsa (isProtected === false):
+        // Kural 2: Korunmayan taşlar için zamanlama kontrolü
         if (threatStartedAtMove !== null) {
             /**
-             * 🚨 İHANET MANTIĞI:
-             * 1. Eğer tehdit başladığından beri hamle sayısı ARTTIYSA (sahibi hamlesini yaptıysa).
-             * 2. Ve şu an hamle sırası bu taşın renginde değilse (Sıra rakibe geçtiyse).
+             * ⚖️ SIRASI GEÇEN KURALI:
+             * 1. Tehdit başladığından beri en az bir tam hamle yapılmış olmalı (threatStartedAtMove < history.length).
+             * 2. VE şu an hamle sırası bu taşın sahibinde olmamalı (core.turn !== color).
+             * Bu iki şart sağlandığında, taş "sahibi tarafından terk edilmiş" sayılır.
              */
             if (threatStartedAtMove < core.history.length && core.turn !== color) {
-                return 2; // 🔴 DURUM 2: KIRMIZI (İhanet vakti!)
+                return 2; // 🔴 DURUM 2: KIRMIZI (İhanet gerçekleşti!)
             }
         }
 
-        // Eğer henüz aynı hamle içindeysek veya sıra hala sahibindeyse -> Sadece MAVİ
+        // Henüz aynı hamle içindeysek (Feda) veya sıra hala sahibindeyse sadece MAVİ
         return 1; // 🔵 DURUM 1: MAVİ
     }
 };
