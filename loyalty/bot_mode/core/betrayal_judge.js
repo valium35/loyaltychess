@@ -45,18 +45,23 @@ export const BetrayalJudge = {
         if (isProtected) return 1;
 
         // 🔴 gecikmeli ihanet kuralı
-        if (threatStartedAtMove !== null) {
+        // 🔴 YENİ: STAGE TABANLI GECİKMELİ İHANET
+const t = core.threatHistory[idx];
 
-            const hasOwnerMissedHisChance =
-                threatStartedAtMove < core.history.length;
+if (t && t.stage === "threat") {
 
-            const isNotOwnersTurn =
-                core.turn !== color;
+    const hasOneMovePassed = core.history.length > t.start;
 
-            if (hasOwnerMissedHisChance && isNotOwnersTurn) {
-                return 2;
-            }
-        }
+    const isStillExposed =
+        core.isSquareAttacked(idx, opponent, core.board, true) &&
+        !core.isSquareAttacked(idx, color, core.board, true);
+
+    const isNotOwnersTurn = core.turn !== color;
+
+    if (hasOneMovePassed && isStillExposed && isNotOwnersTurn) {
+        return 2; // 🔴 İHANET
+    }
+}
 
         // default: mavi (risk var ama henüz ihanet yok)
         return 1;
