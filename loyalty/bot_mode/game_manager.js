@@ -9,13 +9,9 @@ export const GameManager = {
     async init() {
         console.log("LoyaltyChess Başlatılıyor...");
         
-        // 🚨 HATA BURADAYDI: AI nesnesinin içinde 'initialize' fonksiyonu 
-        // olup olmadığını kontrol ederek çağıralım.
         if (AI && typeof AI.initialize === 'function') {
             await AI.initialize(); 
             console.log("🧠 Botun hafızası hazır!");
-        } else {
-            console.error("❌ HATA: AI.initialize bulunamadı! AI.js dosyasını kontrol et.");
         }
 
         GameCore.init();
@@ -25,22 +21,34 @@ export const GameManager = {
         this.setupListeners();
         this.updateStatus(); 
 
+        // İlk render: Her şeyin ekranda doğru göründüğünden emin olalım
         Renderer.render(null, []);
     },
 
     setupListeners() {
+        // 1. Manuel Render Tetikleyici
         window.addEventListener('triggerRender', (e) => {
             const selected = e.detail?.selected !== undefined ? e.detail.selected : null;
             const moves = e.detail?.moves !== undefined ? e.detail.moves : [];
             Renderer.render(selected, moves);
         });
 
+        // 2. Hamle Bittiğinde (Burada her şeyi tazelemeliyiz!)
         window.addEventListener('moveFinished', (e) => {
+            // 🚩 KRİTİK: Hamle bitince tehditleri ve ihanet listesini 
+            // GameCore zaten güncelliyor ama Renderer'ı zorla çağırmalıyız.
             this.updateStatus(false); 
+            Renderer.render(null, []); // Hamle sonrası tahtayı (ve kırmızıları) tazele
+            
+            // Eğer sıra bota geçtiyse botu uyandır
+            if (GameCore.turn === 'b') {
+                BotController.makeMove(); 
+            }
         });
 
         window.addEventListener('botThinking', () => {
             this.updateStatus(true); 
+            Renderer.render(null, []); // Düşünürken de tahtayı güncel tut
         });
     },
 
@@ -49,7 +57,6 @@ export const GameManager = {
         if (!statusEl) return;
 
         const turn = GameCore.turn;
-        const isCheck = GameCore.isCheck(turn);
         const gameOver = GameCore.checkGameOver();
 
         if (gameOver) {
@@ -58,7 +65,8 @@ export const GameManager = {
             return; 
         }
 
-        if (isCheck) {
+        // Şah kontrolü
+        if (GameCore.isCheck(turn)) {
             statusEl.style.color = "#ff3333";
             statusEl.innerHTML = turn === 'w' ? "⚠️ ŞAH ALTINDASIN!" : "⚠️ BOT ŞAH ALTINDA!";
         } else {

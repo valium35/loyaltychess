@@ -7,46 +7,39 @@ export const BotController = {
     isThinking: false, 
 
     init() {
-        window.addEventListener('moveFinished', () => {
-            // Sıra siyahtaysa, oyun bitmediyse ve bot zaten düşünmüyorsa başla
-            if (GameCore.turn === 'b' && !GameCore.checkGameOver() && !this.isThinking) {
-                this.thinkAndAct();
-            }
-        });
+        // Kendi içindeki listener'ı sildik. 
+        // Artık sadece GameManager emrettiğinde çalışacak.
+        console.log("⚫ Bot Kumandası Aktif.");
     },
 
-    thinkAndAct() {
+    // İsmini makeMove yaptık, GameManager artık burayı bulabilir
+    makeMove() {
         if (GameCore.checkGameOver() || this.isThinking) return;
+        if (GameCore.turn !== 'b') return; // Sıra botta değilse çalışma
 
-        this.isProcessing = true; // Düşünme başladı kilidi
         this.isThinking = true;
-
         window.dispatchEvent(new CustomEvent('botThinking'));
 
         setTimeout(() => {
             try {
                 if (GameCore.checkGameOver()) return;
 
-                // AI'DAN EN İYİ HAMLEYİ AL
                 const bestMove = AI.getBestMove();
                 
                 if (bestMove) {
                     const moveData = GameCore.execute(bestMove.from, bestMove.to);
                     
                     if (moveData) {
-                        // EventSystem'e hamleyi gönder (Renderer ve Log burada tetiklenir)
                         EventSystem.add({ 
                             type: 'moveExecuted', 
                             detail: moveData 
                         });
 
-                        // --- 🚨 İHANET ZİNCİRİ KONTROLÜ ---
-                        // Eğer hamle sonrası GameCore 'isBetrayalPhase'e girdiyse 
-                        // veya sıra hala siyahtaysa (saf değişimi olduysa), bot DURMAMALI.
-                        if (GameCore.isBetrayalPhase || GameCore.turn === 'b') {
-                            console.log("💣 BOT: İhanet tetiklendi, ajanla devam ediyorum...");
-                            this.isThinking = false; // Kilidi aç
-                            this.thinkAndAct();      // Hemen bir sonraki (ajan) hamlesini yap
+                        // İhanet hamlesinden sonra sıra hala bottaysa (zincir hamle)
+                        if (GameCore.turn === 'b') {
+                            console.log("💣 BOT: İhanet gerçekleşti, devam ediyorum...");
+                            this.isThinking = false;
+                            this.makeMove(); 
                             return;
                         }
                     }
@@ -56,6 +49,6 @@ export const BotController = {
             } finally {
                 this.isThinking = false;
             }
-        }, 600); // 1000ms biraz yavaştı, 600ms botu daha "seri" hissettirir
+        }, 600);
     }
 };
