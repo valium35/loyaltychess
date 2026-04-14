@@ -263,50 +263,59 @@ getBestMove() {
     },
 
     getAllLegalMoves(color, isSim) {
-        let moves = [];
-        for (let i = 0; i < 64; i++) {
-            const piece = GameCore.board[i];
-            if (!piece) continue;
-            let canMove = piece.startsWith(color);
-            if (!canMove && color === 'b') {
-                if (GameCore.activeBetrayals.includes(i)) canMove = true;
-            }
-            if (canMove) {
-                const targets = GameCore.getLegalMoves(i);
-                for (const to of targets) {
-                    moves.push({ from: i, to: to });
-                }
+    let moves = [];
+
+    for (let i = 0; i < 64; i++) {
+        const piece = GameCore.board[i];
+        if (!piece) continue;
+
+        let canMove = piece.startsWith(color);
+
+        // 🚩 KİLİT FIX: ihanetli taş kontrolü doğru hale getirildi
+        if (!canMove) {
+            const betrayal = GameCore.activeBetrayals.find(b => b.sq === i);
+            if (betrayal && betrayal.target === color) {
+                canMove = true;
             }
         }
-        return moves;
-    },
+
+        if (canMove) {
+            const targets = GameCore.getLegalMoves(i);
+            for (const to of targets) {
+                moves.push({ from: i, to: to });
+            }
+        }
+    }
+
+    return moves;
+},
 
     movePriority(move, depth) {
-        const fromPiece = GameCore.board[move.from];
-        const targetPiece = GameCore.board[move.to];
-        if (!fromPiece) return 0;
-        
-        const attackerType = fromPiece.split('-')[1];
-        let score = 0;
-        
-        if (targetPiece) {
-            const victimType = targetPiece.split('-')[1];
-            score = this.pieceValues[victimType] - (this.pieceValues[attackerType] / 10);
-        }
+    const fromPiece = GameCore.board[move.from];
+    const targetPiece = GameCore.board[move.to];
+    if (!fromPiece) return 0;
 
-        if (this.killerMoves[depth] && 
-            this.killerMoves[depth].from === move.from && 
-            this.killerMoves[depth].to === move.to) {
-            score += 2000;
-        }
+    const attackerType = fromPiece.split('-')[1];
+    let score = 0;
 
-        // 🚩 İHANET ÖNCELİĞİ: 500'den 2500'e çıkarıldı. Botun önceliği artık hainler!
-        if (GameCore.activeBetrayals.includes(move.from)) {
-            score += 2500; 
-        }
+    if (targetPiece) {
+        const victimType = targetPiece.split('-')[1];
+        score = this.pieceValues[victimType] - (this.pieceValues[attackerType] / 10);
+    }
 
-        return score;
-    },
+    // 🚩 KİLİT FIX: ihanet kontrolü (DOĞRU FORMAT)
+    if (GameCore.activeBetrayals.some(b => b.sq === move.from)) {
+        score += 2500; // ihanetli taşı oynamaya zorlar
+    }
+
+    if (this.killerMoves[depth] &&
+        this.killerMoves[depth].from === move.from &&
+        this.killerMoves[depth].to === move.to) {
+        score += 2000;
+    }
+
+    return score;
+},
 
     backupState() {
         return {

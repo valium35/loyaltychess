@@ -37,6 +37,16 @@ export const GameCore = {
     getCoords(i) { return { r: Math.floor(i / 8), c: i % 8 }; },
     getIndex(r, c) { return (r < 0 || r > 7 || c < 0 || c > 7) ? null : r * 8 + c; },
 
+    getController(idx, boardState = this.board) {
+    const piece = boardState[idx];
+    if (!piece) return null;
+
+    const [originalColor] = piece.split('-');
+
+    const betrayal = this.activeBetrayals.find(b => b.sq === idx);
+
+    return betrayal ? betrayal.target : originalColor;
+},
     // ⚖️ ANAYASA MADDESİ: Taşın kimlik ve kontrol vizesi
    // GameCore.js
 canControl(idx, turn) {
@@ -61,7 +71,7 @@ canControl(idx, turn) {
         if (idx === null || idx < 0) return false;
         for (let i = 0; i < 64; i++) {
             const piece = boardState[i];
-            if (!piece || piece.split('-')[0] !== attackerColor) continue;
+            if (!piece || this.getController(i, boardState) !== attackerColor) continue;
             if (this.getPieceMoves(i, boardState, true).includes(idx)) return true;
         }
         return false;
@@ -142,19 +152,16 @@ canControl(idx, turn) {
         if (!piece) return [];
         if (!this.canControl(idx, this.turn)) return [];
 
-        const pieceColor = piece.split('-')[0];
-        const isHainHamlesi = pieceColor !== this.turn;
+        
 
         return this.getPieceMoves(idx).filter(to => {
-            const testBoard = [...this.board];
-            testBoard[to] = testBoard[idx];
-            testBoard[idx] = '';
+           const testBoard = [...this.board];
 
-            if (isHainHamlesi) {
-                const opponentColor = (this.turn === 'w' ? 'b' : 'w');
-                const kingIdx = this.getKingIdx(opponentColor, testBoard);
-                if (kingIdx !== -1 && this.isSquareAttacked(kingIdx, this.turn, testBoard, true)) return false;
-            }
+// Taşı normal şekilde taşı (RENK DEĞİŞMİYOR)
+testBoard[to] = testBoard[idx];
+testBoard[idx] = '';
+
+           
             return !this.isCheck(this.turn, testBoard);
         });
     },
@@ -163,44 +170,70 @@ canControl(idx, turn) {
         return boardState.findIndex(p => p === color + '-k');
     },
 
-    updateThreatHistory() {
-        if (this.isSimulating) return;
+updateThreatHistory() {
+    if (this.isSimulating) return;
 
-        for (let i = 0; i < 64; i++) {
+    for (let i = 0; i < 64; i++) {
+        const piece = this.board[i];
+
+        if (!piece) {
+            this.threatHistory[i] = null;
+            continue;
+        }
+
+        const [color, type] = piece.split('-');
+
+        if (!BetrayalJudge.betrayableTypes.includes(type)) {
+            this.threatHistory[i] = null;
+            continue;
+        }
+
+        const opponentColor = (color === 'w' ? 'b' : 'w');
+
+        if (this.isSquareAttacked(i, opponentColor, this.board, true)) {
+            if (this.threatHistory[i] === null) {
+                this.threatHistory[i] = {
+    start: this.history.length,
+    stage: "threat"
+};
+            }
+        } else {
+            this.threatHistory[i] = null;
+        }
+    }
+
+    // 🔍 DEBUG (SAFE)
+    console.log("THREAT SNAPSHOT:", this.threatHistory);
+
+    // 🔄 İHANET LİSTESİ
+    let newBetrayals = [];
+
+    for (let i = 0; i < 64; i++) {
+        const status = BetrayalJudge.getSquareStatus(this, i);
+
+        if (status === 2) {
             const piece = this.board[i];
-            if (!piece) { this.threatHistory[i] = null; continue; }
-            
-            const [color, type] = piece.split('-');
-            if (!BetrayalJudge.betrayableTypes.includes(type)) { 
-                this.threatHistory[i] = null; 
-                continue; 
-            }
-            
-            const opponentColor = (color === 'w' ? 'b' : 'w');
-            if (this.isSquareAttacked(i, opponentColor, this.board, true)) {
-                if (this.threatHistory[i] === null) this.threatHistory[i] = this.history.length;
-            } else { 
-                this.threatHistory[i] = null; 
-            }
-        }
+            if (!piece) continue;
 
-        // 🔄 YENİ: Target-Based İhanet Listesi Oluşturma
-        let newBetrayals = [];
-        for (let i = 0; i < 64; i++) {
-            if (BetrayalJudge.getSquareStatus(this, i) === 2) {
-                const piece = this.board[i];
-                const pieceColor = piece.split('-')[0];
-                // Kural: İhanet vizesi (target) her zaman rakibe çıkar.
-                newBetrayals.push({ sq: i, target: pieceColor === 'w' ? 'b' : 'w' });
-            }
-        }
-        this.activeBetrayals = [...newBetrayals];
-        
-        if (this.activeBetrayals.length > 0) {
-            console.log("🔥 Hain Listesi (Target-Based):", this.activeBetrayals.map(b => `${this.indexToCoord(b.sq)} -> ${b.target}`));
-        }
-    },
+            const [pieceColor] = piece.split('-');
 
+            newBetrayals.push({
+                sq: i,
+                target: pieceColor === 'w' ? 'b' : 'w'
+            });
+        }
+    }
+
+    this.activeBetrayals = newBetrayals;
+
+    // 🔥 SAFE LOG
+    if (this.activeBetrayals.length > 0) {
+        console.log(
+            "🔥 Hain Listesi (Target-Based):",
+            this.activeBetrayals.map(b => `${this.indexToCoord(b.sq)} -> ${b.target}`)
+        );
+    }
+},
     execute(from, to, promotionPiece = null) {
         const originalPiece = this.board[from];
         if (!originalPiece) return null;
@@ -233,10 +266,10 @@ canControl(idx, turn) {
         };
         
         this.history.push(moveData);
-        if (!this.isSimulating) this.updateThreatHistory();
         
         this.turn = this.turn === 'w' ? 'b' : 'w';
         this.lastMove = moveData;
+        if (!this.isSimulating) this.updateThreatHistory();
         return moveData;
     },
 
