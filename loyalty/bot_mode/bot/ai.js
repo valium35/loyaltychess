@@ -302,7 +302,9 @@ getBestMove() {
         const victimType = targetPiece.split('-')[1];
         score = this.pieceValues[victimType] - (this.pieceValues[attackerType] / 10);
     }
-
+if (GameCore.activeBetrayals.some(b => b.sq === move.from)) {
+    score += 5000; 
+}
     // 🚩 KİLİT FIX: ihanet kontrolü (DOĞRU FORMAT)
     if (GameCore.activeBetrayals.some(b => b.sq === move.from)) {
         score += 2500; // ihanetli taşı oynamaya zorlar

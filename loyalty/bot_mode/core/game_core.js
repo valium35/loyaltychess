@@ -173,6 +173,7 @@ testBoard[idx] = '';
 updateThreatHistory() {
     if (this.isSimulating) return;
 
+    // 1. ADIM: Tehdit Kronometrelerini Güncelle
     for (let i = 0; i < 64; i++) {
         const piece = this.board[i];
 
@@ -183,6 +184,7 @@ updateThreatHistory() {
 
         const [color, type] = piece.split('-');
 
+        // Sadece At, Fil ve Kale ihanet edebilir
         if (!BetrayalJudge.betrayableTypes.includes(type)) {
             this.threatHistory[i] = null;
             continue;
@@ -190,25 +192,29 @@ updateThreatHistory() {
 
         const opponentColor = (color === 'w' ? 'b' : 'w');
 
+        // Eğer şu an rakip tarafından isteniyorsa
         if (this.isSquareAttacked(i, opponentColor, this.board, true)) {
+            // Eğer daha önceden başlayan bir tehdit yoksa, şimdi başlat
             if (this.threatHistory[i] === null) {
                 this.threatHistory[i] = {
-    start: this.history.length,
-    stage: "threat"
-};
+                    start: this.history.length, // Hamle sayısını "start" olarak kaydet
+                    stage: "threat"
+                };
             }
         } else {
+            // Tehdit ortadan kalktıysa (kaçtıysa veya koruma geldiyse Judge bunu silecek)
             this.threatHistory[i] = null;
         }
     }
 
-    // 🔍 DEBUG (SAFE)
-    console.log("THREAT SNAPSHOT:", this.threatHistory);
+    // 🔍 DEBUG: Tehdit altındaki karelerin durumunu gör
+    // console.log("THREAT SNAPSHOT:", this.threatHistory);
 
-    // 🔄 İHANET LİSTESİ
+    // 2. ADIM: İhanetleri Kesinleştir ve Listeyi Doldur
     let newBetrayals = [];
 
     for (let i = 0; i < 64; i++) {
+        // Judge'a sor: Bu karedeki taşın durumu ne? (0: Yok, 1: Mavi, 2: Kırmızı)
         const status = BetrayalJudge.getSquareStatus(this, i);
 
         if (status === 2) {
@@ -217,6 +223,7 @@ updateThreatHistory() {
 
             const [pieceColor] = piece.split('-');
 
+            // Taşın rengine göre hedefi belirle (Beyaz taş ihanet ederse hedef Siyahtır)
             newBetrayals.push({
                 sq: i,
                 target: pieceColor === 'w' ? 'b' : 'w'
@@ -224,10 +231,11 @@ updateThreatHistory() {
         }
     }
 
+    // Global listeyi güncelle
     this.activeBetrayals = newBetrayals;
 
-    // 🔥 SAFE LOG
-    if (this.activeBetrayals.length > 0) {
+    // 🔥 LOG: Eğer ihanet varsa konsolda bağır
+    if (this.activeBetrayals.length > 0 && !this.isSimulating) {
         console.log(
             "🔥 Hain Listesi (Target-Based):",
             this.activeBetrayals.map(b => `${this.indexToCoord(b.sq)} -> ${b.target}`)

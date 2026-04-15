@@ -1,3 +1,5 @@
+// core/betrayal_judge.js
+
 export const BetrayalJudge = {
 
     betrayableTypes: ['n', 'b', 'r'],
@@ -13,7 +15,7 @@ export const BetrayalJudge = {
     },
 
     getSquareStatus(core, idx) {
-        // 🛡️ safety
+        // 🛡️ Güvenlik Kontrolleri
         if (!core || idx === null || idx === undefined || idx < 0 || idx > 63) return 0;
 
         const piece = core.board[idx];
@@ -21,49 +23,47 @@ export const BetrayalJudge = {
 
         const [color, type] = piece.split('-');
 
-        // sadece ihanet edebilir taşlar
+        // Sadece belirli taş tipleri ihanet edebilir
         if (!this.betrayableTypes.includes(type)) return 0;
 
-        // şah altındaysa ihanet yok
+        // Şah çekilmişse, taşlar korkudan ihanet edemez (Önce şahı kurtarmalı)
         if (core.isCheck(color)) return 0;
 
         const opponent = (color === 'w' ? 'b' : 'w');
 
-        // saldırı yoksa
+        // 1. KONTROL: Saldırı var mı?
         const isAttacked = core.isSquareAttacked(idx, opponent, core.board, true);
         if (!isAttacked) return 0;
 
-        // koruma varsa sadece uyarı (mavi)
+        // 2. KONTROL: Koruma var mı?
         const isProtected = core.isSquareAttacked(idx, color, core.board, true);
 
-        const threatStartedAtMove =
-            (core.threatHistory && core.threatHistory[idx] !== null)
-                ? core.threatHistory[idx]
-                : null;
-
-        // 🟦 her zaman korunuyorsa ihanet yok
+        // 🔵 DURUM 1: Eğer taş korunuyorsa sadece MAVİ (tehdit var ama sadık)
         if (isProtected) return 1;
 
-        // 🔴 gecikmeli ihanet kuralı
-        // 🔴 YENİ: STAGE TABANLI GECİKMELİ İHANET
-const t = core.threatHistory[idx];
+        // 🔴 DURUM 2: İHANET SORGULAMA (Korumasız ve Beklemiş mi?)
+        const t = core.threatHistory[idx];
 
-if (t && t.stage === "threat") {
+        // Tehdit geçmişi objesi mevcut mu?
+        if (t && t.start !== undefined) {
+            
+            // ŞART A: Tehdit başladığından beri en az 1 hamle sırası geçti mi?
+            const hasOneMovePassed = core.history.length > t.start;
 
-    const hasOneMovePassed = core.history.length > t.start;
+            // ŞART B: Şu an hala korunmasız mı ve hala rakip istiyor mu?
+            const isStillExposed = 
+                core.isSquareAttacked(idx, opponent, core.board, true) && 
+                !core.isSquareAttacked(idx, color, core.board, true);
 
-    const isStillExposed =
-        core.isSquareAttacked(idx, opponent, core.board, true) &&
-        !core.isSquareAttacked(idx, color, core.board, true);
+            // ŞART C: Sıra bu taşın asıl sahibinde DEĞİLSE (İhanet hamlesi için vize)
+            const isNotOwnersTurn = core.turn !== color;
 
-    const isNotOwnersTurn = core.turn !== color;
+            if (hasOneMovePassed && isStillExposed && isNotOwnersTurn) {
+                return 2; // 🔴 İHANET KESİNLEŞTİ (Kırmızı)
+            }
+        }
 
-    if (hasOneMovePassed && isStillExposed && isNotOwnersTurn) {
-        return 2; // 🔴 İHANET
-    }
-}
-
-        // default: mavi (risk var ama henüz ihanet yok)
+        // Default: Hiçbir şart uymuyorsa ama saldırı varsa MAVİ
         return 1;
     }
 };
