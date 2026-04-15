@@ -155,6 +155,10 @@ canControl(idx, turn) {
         
 
         return this.getPieceMoves(idx).filter(to => {
+// 🚩 TEST KİLİDİ: Hedef karede herhangi bir taş varsa o hamleyi yasakla
+        // Bu sayede bot feda ettiğin taşı yiyemez, taş tahtada kalır ve ihanet tetiklenir.
+        if (this.board[to] !== '') return false;
+
            const testBoard = [...this.board];
 
 // Taşı normal şekilde taşı (RENK DEĞİŞMİYOR)
@@ -243,44 +247,64 @@ updateThreatHistory() {
     }
 },
     execute(from, to, promotionPiece = null) {
-        const originalPiece = this.board[from];
-        if (!originalPiece) return null;
-        const [color, type] = originalPiece.split('-');
-        
-        // ⚔️ İHANET KONTROLÜ: Hamleyi yapan kişi o taşın hedefi mi?
-        const betrayal = this.activeBetrayals.find(b => b.sq === from && b.target === this.turn);
+    const originalPiece = this.board[from];
+    if (!originalPiece) return null;
+    const [color, type] = originalPiece.split('-');
+    
+    // ⚔️ İHANET KONTROLÜ
+    const betrayal = this.activeBetrayals.find(b => b.sq === from && b.target === this.turn);
 
-        this.threatHistory[to] = null; 
+    this.threatHistory[to] = null; 
 
-        if (betrayal) {
-            // İHANET İNFAZI: İki kareyi de boşalt, taşı sil.
-            this.board[to] = ''; 
-            this.board[from] = ''; 
-            this.activeBetrayals = this.activeBetrayals.filter(b => b.sq !== from);
-            if (!this.isSimulating) console.log(`⚔️ İHANET GERÇEKLEŞTİ: ${this.indexToCoord(from)} (Hedef: ${this.turn})`);
-        } else {
-            const final = this.handleSpecialRules(from, to, color, type, promotionPiece);
-            this.board[to] = final; 
-            this.board[from] = '';
-            if (type === 'k') this.hasMoved[`${color}-k`] = true;
-            if (type === 'r') this.hasMoved[`${color}-r-${from}`] = true;
+    if (betrayal) {
+        // İHANET İNFAZI
+        this.board[to] = ''; 
+        this.board[from] = ''; 
+        this.activeBetrayals = this.activeBetrayals.filter(b => b.sq !== from);
+        if (!this.isSimulating) console.log(`⚔️ İHANET GERÇEKLEŞTİ: ${this.indexToCoord(from)} (Hedef: ${this.turn})`);
+    } else {
+        const final = this.handleSpecialRules(from, to, color, type, promotionPiece);
+        this.board[to] = final; 
+        this.board[from] = '';
+        if (type === 'k') this.hasMoved[`${color}-k`] = true;
+        if (type === 'r') this.hasMoved[`${color}-r-${from}`] = true;
+    }
+
+    const moveData = { 
+        from, to, piece: originalPiece, color, 
+        isBetrayal: !!betrayal, 
+        fromSq: this.indexToCoord(from), 
+        toSq: this.indexToCoord(to) 
+    };
+    
+    this.history.push(moveData);
+    
+    // Hamle yapıldıktan sonra sırayı değiştiriyoruz
+    this.turn = this.turn === 'w' ? 'b' : 'w';
+    this.lastMove = moveData;
+
+    // 🚩 İHANET ZAMAN AŞIMI VE GÜNCELLEME
+    if (!this.isSimulating) {
+        this.clearExpiredThreats(); // Önce eskimiş/kullanılmamış tehditleri temizle
+        this.updateThreatHistory(); // Sonra güncel tabloyu hesapla
+    }
+
+    return moveData;
+},
+
+// 🛡️ YENİ: Zamanı geçen ihanetleri affeden fonksiyon
+clearExpiredThreats() {
+    for (let i = 0; i < 64; i++) {
+        const t = this.threatHistory[i];
+        if (t && t.stage === "threat") {
+            // Eğer taş ihanet aşamasındaysa ama bu tur hamle yapılmadıysa (Zaman Aşımı)
+            if (this.history.length > t.start + 1) {
+                this.threatHistory[i] = null; 
+                console.log(`🛡️ SADAKAT: ${this.indexToCoord(i)} üzerindeki ihanet riski zaman aşımına uğradı.`);
+            }
         }
-
-        const moveData = { 
-            from, to, piece: originalPiece, color, 
-            isBetrayal: !!betrayal, 
-            fromSq: this.indexToCoord(from), 
-            toSq: this.indexToCoord(to) 
-        };
-        
-        this.history.push(moveData);
-        
-        this.turn = this.turn === 'w' ? 'b' : 'w';
-        this.lastMove = moveData;
-        if (!this.isSimulating) this.updateThreatHistory();
-        return moveData;
-    },
-
+    }
+},
     handleSpecialRules(from, to, color, type, promotionPiece) {
         let final = `${color}-${type}`;
         if (type === 'p' && from % 8 !== to % 8 && this.board[to] === '') this.board[color === 'w' ? to + 8 : to - 8] = '';

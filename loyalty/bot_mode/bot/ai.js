@@ -29,7 +29,7 @@ export const AI = {
         }
     },
 
-getBestMove() {
+    getBestMove() {
         GameCore.isSimulating = true;
         this.killerMoves = {}; 
         
@@ -67,7 +67,6 @@ getBestMove() {
             const backup = this.backupState();
             GameCore.execute(move.from, move.to);
             
-            // 🚩 NOISE (Gürültü) SİLİNDİ: Botun daha istikrarlı olması için saf puanı alıyoruz
             const val = -this.negamax(depth - 1, -Infinity, Infinity);
             
             this.restoreState(backup);
@@ -78,34 +77,27 @@ getBestMove() {
             }
         }
 
-        // 🕵️‍♂️ DEDEKTİF LOGLARI: Botun niyetini burada ifşa ediyoruz
-       // 🕵️‍♂️ İHANET DEDEKTİFİ: Kim kime ihanet ediyor?
         if (bestMove) {
             const piece = GameCore.board[bestMove.from];
             const fromCoord = GameCore.indexToCoord(bestMove.from);
             const toCoord = GameCore.indexToCoord(bestMove.to);
             const [pieceColor, pieceType] = piece.split('-');
             
-            // 🚩 İHANET KONTROLÜ: Taş, sırası olan oyuncunun RENGİNDEN FARKLI MI?
-            const isBetrayalMove = GameCore.activeBetrayals.includes(bestMove.from) && pieceColor !== GameCore.turn;
+            const isBetrayalMove = GameCore.activeBetrayals.some(b => b.sq === bestMove.from);
 
             if (isBetrayalMove) {
-                // Siyahın (Bot) beyaz taşı kullanması durumu
                 if (GameCore.turn === 'b') {
                     console.log(
                         `%c ⚔️ SİYAH İHANETİ: ${fromCoord} (${piece}) -> ${toCoord} `, 
                         "background: #ff0000; color: #ffffff; font-weight: bold; font-size: 13px; border-radius: 4px; padding: 2px 5px;"
                     );
-                } 
-                // Beyazın (Senin) siyah taşı kullanman durumu (veya AI simülasyonu)
-                else {
+                } else {
                     console.log(
                         `%c ⚔️ BEYAZ İHANETİ: ${fromCoord} (${piece}) -> ${toCoord} `, 
                         "background: #ffcc00; color: #000000; font-weight: bold; font-size: 13px; border-radius: 4px; padding: 2px 5px;"
                     );
                 }
             } else {
-                // Normal hamleler
                 console.log(
                     `%c ♟️ Normal Hamle: %c${fromCoord} -> ${toCoord} %c| %cSkor: ${bestValue.toFixed(2)}`,
                     "color: #888;", "color: #007acc; font-weight: bold;", "color: #888;", "color: #28a745;"
@@ -156,9 +148,8 @@ getBestMove() {
         if (standPat >= beta) return beta;
         if (alpha < standPat) alpha = standPat;
 
-        // 🚩 AGRESİF QUIESCENCE: Sadece capture değil, Hain infazlarını da asla atlama!
         let moves = this.getAllLegalMoves(color, true).filter(m => 
-            this.isCapture(m) || GameCore.activeBetrayals.includes(m.from)
+            this.isCapture(m) || GameCore.activeBetrayals.some(b => b.sq === m.from)
         );
         
         for (const move of moves) {
@@ -198,7 +189,6 @@ getBestMove() {
             b: this.buildAttackMap('b')
         };
 
-        // Mobility puanını azalttık ki taşları sabit tutmaya çalışmasın
         const myMovesCount = this.getAllLegalMoves(color, true).length;
         score += myMovesCount * 1; 
 
@@ -223,25 +213,28 @@ getBestMove() {
                 if (pColor === 'b') val -= 50;
                 const isCritical = ['n', 'b', 'r', 'q', 'k'].includes(pType);
                 
+                // İhanet Analizi
                 if (pColor === 'w' && ['n', 'b', 'r'].includes(pType) && !isProtected) {
                     const status = BetrayalJudge.getSquareStatus(GameCore, i);
                     if (status === 2) {
                         const baseValue = this.pieceValues[pType];
-                        // 🚩 İHANET ÖDÜLÜ ARTIRILDI: %120 bonus
-                        let betrayalBonus = baseValue * 1.2; 
+                        // 🚩 İHANET ÖDÜLÜ: Bot bu taşı artık bir mermi gibi görüyor
+                        let betrayalBonus = baseValue * 2.0; 
+                        
                         const hainMoves = GameCore.getPieceMoves(i);
                         let maxCaptureValue = 0;
                         for (const targetIdx of hainMoves) {
                             const targetPiece = GameCore.board[targetIdx];
                             if (targetPiece && targetPiece.startsWith('w')) {
                                 const victimType = targetPiece.split('-')[1];
-                                const currentCaptureVal = this.pieceValues[victimType] * 0.8;
-                                if (currentCaptureVal > maxCaptureValue) maxCaptureValue = currentCaptureVal;
+                                maxCaptureValue += this.pieceValues[victimType] * 3; // Suikast bonusunu artırdık
                             }
                         }
                         val += (betrayalBonus + maxCaptureValue);
                     } else if (status === 1) {
-                        val += (this.pieceValues[pType] * 0.4 + 150); // Mavi durumunda da daha hevesli olsun
+                        // 🚩 STRATEJİK BEKLEME: Eğer taş Mavi ise, bot onu "yememeyi" tercih etsin.
+                        // Çünkü beklerse kırmızı olacak ve daha çok puan verecek.
+                        val += 5000; 
                     }
                 } 
                 else if (isCritical) {
@@ -263,61 +256,60 @@ getBestMove() {
     },
 
     getAllLegalMoves(color, isSim) {
-    let moves = [];
+        let moves = [];
+        for (let i = 0; i < 64; i++) {
+            const piece = GameCore.board[i];
+            if (!piece) continue;
 
-    for (let i = 0; i < 64; i++) {
-        const piece = GameCore.board[i];
-        if (!piece) continue;
+            let canMove = piece.startsWith(color);
+            if (!canMove) {
+                const betrayal = GameCore.activeBetrayals.find(b => b.sq === i);
+                if (betrayal && betrayal.target === color) {
+                    canMove = true;
+                }
+            }
 
-        let canMove = piece.startsWith(color);
-
-        // 🚩 KİLİT FIX: ihanetli taş kontrolü doğru hale getirildi
-        if (!canMove) {
-            const betrayal = GameCore.activeBetrayals.find(b => b.sq === i);
-            if (betrayal && betrayal.target === color) {
-                canMove = true;
+            if (canMove) {
+                const targets = GameCore.getLegalMoves(i);
+                for (const to of targets) {
+                    moves.push({ from: i, to: to });
+                }
             }
         }
-
-        if (canMove) {
-            const targets = GameCore.getLegalMoves(i);
-            for (const to of targets) {
-                moves.push({ from: i, to: to });
-            }
-        }
-    }
-
-    return moves;
-},
+        return moves;
+    },
 
     movePriority(move, depth) {
-    const fromPiece = GameCore.board[move.from];
-    const targetPiece = GameCore.board[move.to];
-    if (!fromPiece) return 0;
+        const fromPiece = GameCore.board[move.from];
+        const targetPiece = GameCore.board[move.to];
+        if (!fromPiece) return 0;
 
-    const attackerType = fromPiece.split('-')[1];
-    let score = 0;
+        const attackerType = fromPiece.split('-')[1];
+        let score = 0;
 
-    if (targetPiece) {
-        const victimType = targetPiece.split('-')[1];
-        score = this.pieceValues[victimType] - (this.pieceValues[attackerType] / 10);
-    }
-if (GameCore.activeBetrayals.some(b => b.sq === move.from)) {
-    score += 5000; 
-}
-    // 🚩 KİLİT FIX: ihanet kontrolü (DOĞRU FORMAT)
-    if (GameCore.activeBetrayals.some(b => b.sq === move.from)) {
-        score += 2500; // ihanetli taşı oynamaya zorlar
-    }
+        // 🚩 VEJETARYEN MODU: Normal taş alma puanını düşürdük
+        if (targetPiece) {
+            const victimType = targetPiece.split('-')[1];
+            // Eskiden 10 ile çarpıyorduk, şimdi 1 yaparak botu "tok" hale getirdik
+            score = (this.pieceValues[victimType] * 5) - (this.pieceValues[attackerType] / 5); 
+        }
 
-    if (this.killerMoves[depth] &&
-        this.killerMoves[depth].from === move.from &&
-        this.killerMoves[depth].to === move.to) {
-        score += 2000;
-    }
+        // 2. ⚡ İHANET SUİKASTÇISI ÖNCELİĞİ
+        if (GameCore.activeBetrayals.some(b => b.sq === move.from)) {
+            score += 20000; 
+            if (targetPiece) {
+                score += 40000; // İhanetle suikast yapmak her şeyden önemli!
+            }
+        }
 
-    return score;
-},
+        if (this.killerMoves[depth] &&
+            this.killerMoves[depth].from === move.from &&
+            this.killerMoves[depth].to === move.to) {
+            score += 2000;
+        }
+
+        return score;
+    },
 
     backupState() {
         return {
@@ -325,7 +317,7 @@ if (GameCore.activeBetrayals.some(b => b.sq === move.from)) {
             turn: GameCore.turn,
             enPassant: GameCore.enPassantSquare,
             hasMoved: { ...GameCore.hasMoved },
-            activeBetrayals: [...GameCore.activeBetrayals],
+            activeBetrayals: GameCore.activeBetrayals.map(b => ({...b})),
             historyLen: GameCore.history.length
         };
     },
@@ -335,7 +327,7 @@ if (GameCore.activeBetrayals.some(b => b.sq === move.from)) {
         GameCore.turn = backup.turn;
         GameCore.enPassantSquare = backup.enPassant;
         GameCore.hasMoved = { ...backup.hasMoved };
-        GameCore.activeBetrayals = [...backup.activeBetrayals]; 
+        GameCore.activeBetrayals = backup.activeBetrayals.map(b => ({...b})); 
         if (GameCore.history.length > backup.historyLen) {
             GameCore.history.length = backup.historyLen;
         }

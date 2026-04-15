@@ -56,8 +56,8 @@ export const BetrayalJudge = {
                 !core.isSquareAttacked(idx, color, core.board, true);
 
             // ŞART C: Sıra bu taşın asıl sahibinde DEĞİLSE (İhanet hamlesi için vize)
-            const isNotOwnersTurn = core.turn !== color;
-
+           // const isNotOwnersTurn = core.turn !== color;
+const isNotOwnersTurn = true; // Test bittikten sonra ESKİ HALİNE GETİR!
             if (hasOneMovePassed && isStillExposed && isNotOwnersTurn) {
                 return 2; // 🔴 İHANET KESİNLEŞTİ (Kırmızı)
             }
