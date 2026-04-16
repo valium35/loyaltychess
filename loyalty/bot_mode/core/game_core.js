@@ -157,7 +157,7 @@ canControl(idx, turn) {
         return this.getPieceMoves(idx).filter(to => {
 // 🚩 TEST KİLİDİ: Hedef karede herhangi bir taş varsa o hamleyi yasakla
         // Bu sayede bot feda ettiğin taşı yiyemez, taş tahtada kalır ve ihanet tetiklenir.
-        if (this.board[to] !== '') return false;
+       // if (this.board[to] !== '') return false;
 
            const testBoard = [...this.board];
 
