@@ -1,69 +1,71 @@
-// core/betrayal_judge.js
+// core/betrayal_judge.js - SAF KURAL MOTORU
 
 export const BetrayalJudge = {
+    betrayableTypes: ['n', 'b', 'r'], // At, Fil ve Kale
 
-    betrayableTypes: ['n', 'b', 'r'],
+    /**
+     * SADECE VERİ ALIR, KARAR DÖNER.
+     * Bu fonksiyon artık 'core' objesine bağımlı değildir.
+     * @param {Object} params - Gerekli tüm durum verileri
+     */
+    evaluateStatus(params) {
+        const {
+            piece,          // 'w-b' vb.
+            isAttacked,     // true/false
+            isProtected,    // true/false
+            threatEntry,    // threatHistory[i]
+            historyLength,  // history.length
+            currentTurn,    // 'w' veya 'b'
+            isCheck         // Şah altında olma durumu
+        } = params;
 
-    getServantColor(core, idx) {
-        const piece = core.board[idx];
-        if (!piece) return null;
-
-        const [originalColor] = piece.split('-');
-        const betrayal = core.activeBetrayals.find(b => b.sq === idx);
-
-        return betrayal ? betrayal.target : originalColor;
-    },
-
-    getSquareStatus(core, idx) {
         // 🛡️ Güvenlik Kontrolleri
-        if (!core || idx === null || idx === undefined || idx < 0 || idx > 63) return 0;
-
-        const piece = core.board[idx];
         if (!piece) return 0;
-
         const [color, type] = piece.split('-');
 
-        // Sadece belirli taş tipleri ihanet edebilir
+        // 1. KURAL: Tip kontrolü
         if (!this.betrayableTypes.includes(type)) return 0;
 
-        // Şah çekilmişse, taşlar korkudan ihanet edemez (Önce şahı kurtarmalı)
-        if (core.isCheck(color)) return 0;
+        // 2. KURAL: Şah çekilmişse ihanet olmaz
+        if (isCheck) return 0;
 
-        const opponent = (color === 'w' ? 'b' : 'w');
-
-        // 1. KONTROL: Saldırı var mı?
-        const isAttacked = core.isSquareAttacked(idx, opponent, core.board, true);
+        // 3. KURAL: Aktif saldırı yoksa tehdit yoktur
         if (!isAttacked) return 0;
 
-        // 2. KONTROL: Koruma var mı?
-        const isProtected = core.isSquareAttacked(idx, color, core.board, true);
-
-        // 🔵 DURUM 1: Eğer taş korunuyorsa sadece MAVİ (tehdit var ama sadık)
+        // 4. KURAL: Korunuyorsa sadece MAVİ (1)
         if (isProtected) return 1;
 
-        // 🔴 DURUM 2: İHANET SORGULAMA (Korumasız ve Beklemiş mi?)
-        const t = core.threatHistory[idx];
-
-        // Tehdit geçmişi objesi mevcut mu?
-        if (t && t.start !== undefined) {
+        // 🔴 DURUM 2: İHANET SORGULAMA (Kırmızı vizesi)
+        if (threatEntry && threatEntry.start !== undefined) {
+            // ŞART A: Zaman Aşımı
+            const hasOneMovePassed = historyLength > threatEntry.start;
             
-            // ŞART A: Tehdit başladığından beri en az 1 hamle sırası geçti mi?
-            const hasOneMovePassed = core.history.length > t.start;
+            // ŞART B: Korunmasızlık (Zaten yukarıda if(isProtected) ile elendi ama netlik için kalsın)
+            const isStillExposed = isAttacked && !isProtected;
 
-            // ŞART B: Şu an hala korunmasız mı ve hala rakip istiyor mu?
-            const isStillExposed = 
-                core.isSquareAttacked(idx, opponent, core.board, true) && 
-                !core.isSquareAttacked(idx, color, core.board, true);
+            // ŞART C: Sıra bu taşın asıl sahibinde değilse (Hamle hakkını kullanıp terk ettiyse)
+            const isNotOwnersTurn = currentTurn !== color;
 
-            // ŞART C: Sıra bu taşın asıl sahibinde DEĞİLSE (İhanet hamlesi için vize)
-           // const isNotOwnersTurn = core.turn !== color;
-const isNotOwnersTurn = true; // Test bittikten sonra ESKİ HALİNE GETİR!
             if (hasOneMovePassed && isStillExposed && isNotOwnersTurn) {
-                return 2; // 🔴 İHANET KESİNLEŞTİ (Kırmızı)
+                return 2; // 🔴 KIRMIZI
             }
         }
 
-        // Default: Hiçbir şart uymuyorsa ama saldırı varsa MAVİ
-        return 1;
+        return 1; // Şartlar olgunlaşmadıysa MAVİ
+    },
+
+    /**
+     * Taşın fiili sahibini döner. 
+     * Simülasyonlar için 'customBetrayals' desteği eklendi.
+     */
+    getServantColor(core, idx, customBetrayals = null) {
+        const piece = core.board[idx];
+        if (!piece) return null;
+        const [originalColor] = piece.split('-');
+        
+        const activeList = customBetrayals || core.activeBetrayals;
+        const betrayal = activeList.find(b => b.sq === idx);
+        
+        return betrayal ? betrayal.target : originalColor;
     }
 };

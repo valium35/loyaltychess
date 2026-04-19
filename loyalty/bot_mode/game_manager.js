@@ -1,54 +1,83 @@
-// game_manager.js - ORKESTRA ŞEFİ
+// game_manager.js - KOORDİNASYON MERKEZİ (PATRON)
 import { GameCore } from './core/game_core.js';
 import { Renderer } from './ui/renderer.js';
 import { PlayerController } from './controllers/player_controller.js';
 import { BotController } from './controllers/bot_controller.js';
+import { EventSystem } from './core/event_system.js'; 
 import { AI } from './bot/ai.js'; 
 
 export const GameManager = {
     async init() {
-        console.log("LoyaltyChess Başlatılıyor...");
+        console.log("🧩 LoyaltyChess v2.0 Başlatılıyor...");
         
-        if (AI && typeof AI.initialize === 'function') {
-            await AI.initialize(); 
-            console.log("🧠 Botun hafızası hazır!");
-        }
-
-        GameCore.init();
+        if (AI && typeof AI.initialize === 'function') await AI.initialize(); 
+        
+        GameCore.reset(); 
         PlayerController.init();
         BotController.init();
         
         this.setupListeners();
         this.updateStatus(); 
+        
+        // İlk çizim
+        this.refreshUI();
+    },
 
-        // İlk render: Her şeyin ekranda doğru göründüğünden emin olalım
-        Renderer.render(null, []);
+    /**
+     * ANA HAMLE MOTORU
+     */
+    async processMove(from, to, promotionPiece = null) {
+        // ADIM 1: Core içinde atomik commit
+        const moveData = GameCore.commitMove(from, to, promotionPiece);
+
+        if (moveData) {
+            // ADIM 2: Görseli güncelle (Noktaları temizleyerek)
+            this.refreshUI(null, []);
+
+            // ADIM 3: Olayı duyur (Loglama vb.)
+            EventSystem.emit('moveExecuted', moveData);
+
+            // ADIM 4: Akışı sonlandır (Bot uyarısı vb.)
+            this.finalizeMove();
+        }
+    },
+
+    finalizeMove() {
+        this.updateStatus(false);
+        if (GameCore.turn === 'b' && !GameCore.checkGameOver()) {
+            setTimeout(() => {
+                BotController.makeMove(); 
+            }, 100);
+        }
+    },
+
+    /**
+     * 🟢 REHBER NOKTALARIN ANAHTARI:
+     * Renderer'a 'moves' parametresini buradan paslıyoruz.
+     */
+    refreshUI(selected = null, moves = []) {
+        Renderer.render({
+            board: GameCore.board,
+            selected: selected,
+            moves: moves, // valid-move-dot'lar buradan gidiyor
+            threats: GameCore.threatHistory,
+            betrayals: GameCore.activeBetrayals
+        });
     },
 
     setupListeners() {
-        // 1. Manuel Render Tetikleyici
+        // 🚩 NOKTALARI GETİREN DİNLEYİCİ:
         window.addEventListener('triggerRender', (e) => {
-            const selected = e.detail?.selected !== undefined ? e.detail.selected : null;
-            const moves = e.detail?.moves !== undefined ? e.detail.moves : [];
-            Renderer.render(selected, moves);
-        });
-
-        // 2. Hamle Bittiğinde (Burada her şeyi tazelemeliyiz!)
-        window.addEventListener('moveFinished', (e) => {
-            // 🚩 KRİTİK: Hamle bitince tehditleri ve ihanet listesini 
-            // GameCore zaten güncelliyor ama Renderer'ı zorla çağırmalıyız.
-            this.updateStatus(false); 
-            Renderer.render(null, []); // Hamle sonrası tahtayı (ve kırmızıları) tazele
-            
-            // Eğer sıra bota geçtiyse botu uyandır
-            if (GameCore.turn === 'b') {
-                BotController.makeMove(); 
-            }
+            // PlayerController'dan gelen detayları (selected ve legal moves) Renderer'a ilet
+            this.refreshUI(
+                e.detail?.selected || null, 
+                e.detail?.moves || []
+            );
         });
 
         window.addEventListener('botThinking', () => {
             this.updateStatus(true); 
-            Renderer.render(null, []); // Düşünürken de tahtayı güncel tut
+            this.refreshUI(null, []); // Bot düşünürken noktaları temizle
         });
     },
 
@@ -65,7 +94,6 @@ export const GameManager = {
             return; 
         }
 
-        // Şah kontrolü
         if (GameCore.isCheck(turn)) {
             statusEl.style.color = "#ff3333";
             statusEl.innerHTML = turn === 'w' ? "⚠️ ŞAH ALTINDASIN!" : "⚠️ BOT ŞAH ALTINDA!";
@@ -76,6 +104,4 @@ export const GameManager = {
     }
 };
 
-window.onload = () => {
-    GameManager.init();
-};
+window.onload = () => GameManager.init();

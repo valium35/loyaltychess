@@ -1,81 +1,50 @@
-// core/event_system.js - TEK YETKİLİ SİNİR SİSTEMİ
+// core/event_system.js - HABERLEŞME VE KAYIT SEKRETERLİĞİ
+
 export const EventSystem = {
-    queue: [],
-    isProcessing: false,
     moveCounter: 1,
 
-    // 1. Olay Ekleme
-    add(event) {
-        this.queue.push(event);
-        this.processNext();
-    },
+    /**
+     * 🚩 ARTIK KUYRUK (QUEUE) YOK. 
+     * Manager bir olay fırlattığında anında ilgili birimlere dağıtılır.
+     */
+    emit(type, detail) {
+        // 1. Olayı pencere düzeyinde fırlat (Renderer ve Controller'lar için)
+        const event = new CustomEvent(type, { detail });
+        window.dispatchEvent(event);
 
-    // 2. İşleme Kuyruğu
-    async processNext() {
-        if (this.isProcessing || this.queue.length === 0) return;
-        this.isProcessing = true;
-        const event = this.queue.shift();
-        await this.handleEvent(event);
-        this.isProcessing = false;
-        this.processNext();
-    },
-
-    // 3. Olay Yönetimi
-    async handleEvent(event) {
-        switch (event.type) {
-            case 'triggerRender':
-                window.dispatchEvent(new CustomEvent('triggerRender', { detail: event.detail }));
-                break;
-
-            case 'moveExecuted':
-                // 1. Logu (Notasyonu) yaz
-                this.updateLog(event.detail);
-                
-                // 2. Tahtayı çiz ve Tehdit Renklerini (Judge) tetikle
-                window.dispatchEvent(new CustomEvent('triggerRender', { 
-                    detail: { selected: null, moves: [] } 
-                }));
-                
-                // 3. Botu ve Oyun Sonu Kontrolünü Uyandır
-                window.dispatchEvent(new CustomEvent('moveFinished', { detail: event.detail }));
-                
-                await new Promise(resolve => setTimeout(resolve, 50));
-                break;
+        // 2. Eğer bir hamle yapıldıysa log defterine anında işle
+        if (type === 'moveExecuted') {
+            this.updateLog(detail);
         }
     },
 
-    // 🟢 NOTASYON ÜRETİCİ (Hata Korumalı)
+    // 🟢 NOTASYON ÜRETİCİ (Mantık korundu, kod temizlendi)
     generateNotation(moveData) {
-        // SAVUNMA HATTI: Eğer veri eksik gelirse oyun çökmesin
         if (!moveData || !moveData.piece) return "??";
         const fromSq = moveData.fromSq || "";
         const toSq = moveData.toSq || "";
 
         const pieceMap = { 'p': '', 'n': 'N', 'b': 'B', 'r': 'R', 'q': 'Q', 'k': 'K' };
-        const pieceParts = moveData.piece.split('-');
-        const pieceType = pieceParts[1] || pieceParts[0];
+        const [color, pieceType] = moveData.piece.split('-');
         let pChar = pieceMap[pieceType] || '';
 
-        // Rok Notasyonu
+        // Rok Kontrolü
         if (pieceType === 'k' && Math.abs(moveData.from - moveData.to) === 2) {
             return moveData.to > moveData.from ? "O-O" : "O-O-O";
         }
 
-        // Taş Alma Notasyonu
-        if (moveData.captured) {
-            // Piyon ile taş alma: 'exd5' gibi
+        // Alım veya İhanet İnfazı
+        if (moveData.captured || moveData.isBetrayal) {
             if (pieceType === 'p' && fromSq) {
                 return fromSq[0] + 'x' + toSq; 
             }
-            // Diğer taşlarla alma: 'Bxf3' gibi
             return pChar + 'x' + toSq;
         }
 
-        // Standart hamle: 'e4', 'Nf3' gibi
         return pChar + toSq;
     },
 
-    // 🟢 MATRİKS LOG (Senkronize ve Tekil)
+    // 🟢 MATRİKS LOG (Görsel yapı korundu, asenkronluk kaldırıldı)
     updateLog(moveData) {
         const historyEl = document.getElementById('move-history');
         if (!historyEl || !moveData) return;
@@ -90,12 +59,7 @@ export const EventSystem = {
             rowEl = document.createElement('div');
             rowEl.id = rowId;
             rowEl.className = 'log-entry';
-            rowEl.style.display = "grid";
-            rowEl.style.gridTemplateColumns = "35px 1fr 1fr";
-            rowEl.style.gap = "5px";
-            rowEl.style.padding = "4px 8px";
-            rowEl.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
-            rowEl.style.fontSize = "0.9rem";
+            rowEl.style.cssText = "display: grid; grid-template-columns: 35px 1fr 1fr; gap: 5px; padding: 4px 8px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem;";
 
             rowEl.innerHTML = `
                 <span style="color:#f1c40f; opacity:0.5;">${this.moveCounter}.</span>

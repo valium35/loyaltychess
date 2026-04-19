@@ -1,33 +1,26 @@
-// ui/renderer.js - GÖRSEL MOTOR
+// ui/renderer.js - GÖRSEL MOTOR (Logic'ten Arındırılmış)
 import { GameCore } from '../core/game_core.js';
-import { BetrayalJudge } from '../core/betrayal_judge.js';
 
 export const Renderer = {
-    render(selectedSquare = null, validMoves = []) {
+    /**
+     * Manager artık tek bir obje gönderiyor: { selected, moves }
+     * Biz bu objeyi parçalayarak (destructuring) içeri alıyoruz.
+     */
+    render(renderData = {}) {
         const boardEl = document.getElementById('chess-board');
         if (!boardEl) return;
 
-        // 🚩 LOGLAR (Mevcut haliyle korundu)
-        if (GameCore.activeBetrayals.length > 0 && !GameCore.isSimulating) {
-            console.log("🕵️‍♂️ RENDERER KONTROL: Şu anki Aktif Hainler:", GameCore.activeBetrayals);
-        }
-        if (GameCore.activeBetrayals.length > 0 && !GameCore.isSimulating) {
-            console.group("🕵️‍♂️ SADAKAT RAPORU (Tüm Hainler)");
-            GameCore.activeBetrayals.forEach(b => {
-                let coord, target;
-                if (typeof b === 'string') {
-                    [coord, target] = b.split(' -> ');
-                } else {
-                    coord = GameCore.indexToCoord(b.sq);
-                    target = b.target;
-                }
-                const colorName = target === 'w' ? "BEYAZIN Emrinde" : "SİYAHIN Emrinde";
-                console.log(`📍 Taş: %c${coord}%c -> %c${colorName}`, "color: yellow; font-weight: bold", "color: inherit", "color: orange; font-weight: bold");
-            });
-            console.groupEnd();
-        }
+        // 🚩 PARAMETRE DÜZELTMESİ: Objeden verileri çekiyoruz
+        const selectedSquare = renderData.selected !== undefined ? renderData.selected : null;
+        const validMoves = renderData.moves || [];
 
         boardEl.innerHTML = ''; 
+
+        // Core'an taze verileri alıyoruz
+        const board = GameCore.board;
+        const activeBetrayals = GameCore.activeBetrayals;
+        const threatHistory = GameCore.threatHistory;
+        const lastMove = GameCore.lastMove;
 
         for (let i = 0; i < 64; i++) {
             const sq = document.createElement('div');
@@ -35,44 +28,29 @@ export const Renderer = {
             const col = i % 8;
             
             sq.className = `square ${(row + col) % 2 === 0 ? 'white' : 'black'}`;
-            
-            const lastMove = GameCore.lastMove; 
+            sq.dataset.idx = i;
+
+            // 1. Son Hamle İşareti (Fiziksel iz)
             if (lastMove && (lastMove.from === i || lastMove.to === i)) {
                 sq.classList.add('last-move');
             }
 
-            const status = BetrayalJudge.getSquareStatus(GameCore, i);
-            const piece = GameCore.board[i];
+            // 2. İhanet ve Tehdit Renkleri
+            const piece = board[i];
+            const betrayalEntry = activeBetrayals.find(b => b.sq === i);
+            const hasRawThreat = threatHistory[i] !== null;
 
-            if (piece && status > 0) {
-                const betrayalEntry = GameCore.activeBetrayals.find(b => {
-                    if (typeof b === 'string') {
-                        const coord = b.split(' -> ')[0];
-                        const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-                        const file = files.indexOf(coord[0]);
-                        const rank = 8 - parseInt(coord[1]);
-                        return (rank * 8 + file) === i;
-                    }
-                    return b.sq === i;
-                });
-
-                // 🔄 ÖNCELİK DEĞİŞTİRİLDİ: Artık önce Status 2 (Kırmızı) kontrol ediliyor!
-                if (status === 2 && betrayalEntry) {
-                    // 🔴 İHANET: Kırmızı her zaman önceliklidir
+            if (piece) {
+                if (betrayalEntry) {
                     sq.classList.add('betrayal-active'); 
-                    
-                    const target = typeof betrayalEntry === 'string' 
-                                   ? betrayalEntry.split(' -> ')[1] 
-                                   : betrayalEntry.target;
-                                   
-                    sq.classList.add(`target-${target}`);
+                    sq.classList.add(`target-${betrayalEntry.target}`);
                 } 
-                else if (status === 1) {
-                    // 🔵 TEHDİT: Sadece ihanet kesinleşmemişse mavi göster
+                else if (hasRawThreat) {
                     sq.classList.add('raw-threat'); 
                 }
             }
 
+            // 3. 🚩 SEÇİLİ VE NOKTALAR (BURASI DÜZELDİ)
             if (selectedSquare === i) sq.classList.add('active');
 
             if (validMoves && validMoves.includes(i)) {
@@ -81,13 +59,15 @@ export const Renderer = {
                 sq.appendChild(dot);
             }
 
+            // 4. Taş Çizimi
             if (piece) {
                 const pEl = document.createElement('div');
                 pEl.className = `piece ${piece}`;
-                if (status === 2) pEl.classList.add('hain-piece');
+                if (betrayalEntry) pEl.classList.add('hain-piece');
                 sq.appendChild(pEl);
             }
 
+            // 5. Tıklama Olayı
             sq.onclick = () => {
                 window.dispatchEvent(new CustomEvent('squareClicked', { detail: i }));
             };
@@ -102,10 +82,11 @@ export const Renderer = {
         const pieces = ['q', 'r', 'b', 'n']; 
         pieces.forEach(type => {
             const btn = document.createElement('div');
-            btn.className = `piece ${color}-${type} promo-option`; 
+            const pieceClass = `${color}-${type}`;
+            btn.className = `piece ${pieceClass} promo-option`; 
             btn.onclick = () => {
                 modal.remove(); 
-                callback(`${color}-${type}`); 
+                callback(pieceClass); 
             };
             modal.appendChild(btn);
         });
