@@ -1,88 +1,86 @@
-// controllers/player_controller.js - OYUNCU KUMANDASI
+// controllers/player_controller.js - CLEAN INPUT LAYER
+
 import { GameCore } from '../core/game_core.js';
-import { GameManager } from '../game_manager.js';
+import { EventBus } from '../core/event_bus.js'; // 🚩 EventBus'ı import etmeyi unutma!
 
 export const PlayerController = {
     selectedSquare: null,
 
     init() {
-        // Doğrudan DOM yerine Renderer'ın ürettiği event'i dinliyoruz
+        // Renderer'dan gelen saf tıklamayı dinliyoruz
         window.addEventListener('squareClicked', (e) => {
             this.handleInput(e.detail);
         });
-        console.log("⚪ Oyuncu Kumandası Aktif.");
+
+        console.log("⚪ Oyuncu Kumandası Aktif (EventBus Modu).");
     },
 
     handleInput(idx) {
-        // 1. GÜVENLİK FİLTRESİ
-        // Sıra bizde değilse ('w'), bot düşünüyorsa veya oyun bittiyse dokunma.
         if (GameCore.turn !== 'w' || GameCore.checkGameOver()) return;
 
-        const legalMovesForThisSquare = GameCore.getLegalMoves(idx);
+        const legalMovesForSquare = GameCore.getLegalMoves(idx);
 
-        // --- SEÇİM MODU ---
+        // SELECTION MODE
         if (this.selectedSquare === null) {
-            if (legalMovesForThisSquare.length > 0) {
-                this.select(idx, legalMovesForThisSquare);
+            if (legalMovesForSquare.length > 0) {
+                this.select(idx, legalMovesForSquare);
             }
             return;
         }
 
-        // --- HAMLE MODU ---
+        // MOVE MODE
         const legalMoves = GameCore.getLegalMoves(this.selectedSquare);
 
         if (legalMoves.includes(idx)) {
-            this.handleMoveExecution(this.selectedSquare, idx);
+            this.executeMove(this.selectedSquare, idx);
         } else {
-            // Seçimi değiştirme veya iptal (Başka bir kendi taşımıza tıkladıysak seç, boşluğa tıkladıysak bırak)
-            if (legalMovesForThisSquare.length > 0) {
-                this.select(idx, legalMovesForThisSquare);
+            if (legalMovesForSquare.length > 0) {
+                this.select(idx, legalMovesForSquare);
             } else {
                 this.deselect();
             }
         }
     },
 
-    // 🚩 YARDIMCI: Seçim İşlemi
     select(idx, moves) {
         this.selectedSquare = idx;
-        window.dispatchEvent(new CustomEvent('triggerRender', { 
-            detail: { selected: idx, moves: moves } 
-        }));
+
+        // 🔥 Güzelleştirme: window.dispatchEvent yerine EventBus
+        EventBus.emit('triggerRender', {
+            selected: idx,
+            moves: moves
+        }, "PlayerController");
     },
 
-    // 🚩 YARDIMCI: Seçimi Bırakma
     deselect() {
         this.selectedSquare = null;
-        window.dispatchEvent(new CustomEvent('triggerRender', { 
-            detail: { selected: null, moves: [] } 
-        }));
+
+        EventBus.emit('triggerRender', {
+            selected: null,
+            moves: []
+        }, "PlayerController");
     },
 
-    // 🚩 HAMLE İNFAZI VE TERFİ KONTROLÜ
-    handleMoveExecution(from, to) {
-        const movingPiece = GameCore.board[from];
+    executeMove(from, to) {
+        const piece = GameCore.board[from];
 
-        // Piyon terfisi kontrolü (Beyaz piyon 0. satıra ulaştı mı?)
-        if (movingPiece === 'w-p' && Math.floor(to / 8) === 0) {
-            // Renderer'ı globalden değil, import ettiğimiz yerden de çağırabiliriz 
-            // ama Manager üzerinden bir UI tetikleyicisi daha temiz olur. 
-            // Şimdilik senin yapına sadık kalarak Renderer'ı kullanıyoruz.
-            import('../ui/renderer.js').then(({ Renderer }) => {
-                Renderer.showPromotionModal('w', (promotedPiece) => {
-                    this.completeMove(from, to, promotedPiece);
-                });
-            });
-        } else {
-            this.completeMove(from, to);
+        // promotion check
+        if (piece === 'w-p' && Math.floor(to / 8) === 0) {
+            EventBus.emit('requestPromotion', { from, to }, "PlayerController");
+            return;
         }
+
+        this.finalizeMove(from, to);
     },
 
-    completeMove(from, to, promotion = null) {
-        this.selectedSquare = null; 
-        
-        // ⚔️ ASIL YETKİLİYE (MANAGER) EMRİ VER:
-        // Manager; commitMove'u çağıracak, Judge'ı işletecek, turn'ü çevirecek.
-        GameManager.processMove(from, to, promotion);
+    finalizeMove(from, to, promotion = null) {
+        this.selectedSquare = null;
+
+        // 🔥 En kritik nokta: Hamle talebini otobüse bindiriyoruz
+        EventBus.emit('requestPlayerMove', { 
+            from, 
+            to, 
+            promotion 
+        }, "PlayerController");
     }
 };

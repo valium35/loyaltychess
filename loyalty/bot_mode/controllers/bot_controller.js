@@ -1,10 +1,11 @@
-// controllers/bot_controller.js - BOT KUMANDASI
+// controllers/bot_controller.js - BOT KUMANDASI (CLEAN)
+
 import { GameCore } from '../core/game_core.js';
-import { GameManager } from '../game_manager.js';
 import { AI } from '../bot/ai.js';
+import { EventBus } from '../core/event_bus.js'; // 🚩 Artık otobüsümüz var
 
 export const BotController = {
-    isThinking: false, 
+    isThinking: false,
 
     init() {
         console.log("⚫ Bot Kumandası Aktif.");
@@ -12,51 +13,44 @@ export const BotController = {
 
     async makeMove() {
         // 1. GÜVENLİK KONTROLLERİ
-        if (GameCore.checkGameOver() || this.isThinking) return;
-        
-        // Sıra botta mı? (Siyah: 'b')
-        if (GameCore.turn !== 'b') return; 
+        if (this.isThinking) return;
+        if (GameCore.checkGameOver()) return;
+        if (GameCore.turn !== 'b') return;
 
         this.isThinking = true;
-        
-        // UI'ya botun düşündüğünü bildir (Manager bunu dinleyip Renderer'ı günceller)
-        window.dispatchEvent(new CustomEvent('botThinking'));
 
-        // Görsel bir bekleme (Botun anında oynaması insanı ürkütür)
-        setTimeout(async () => {
-            try {
-                // Hamle öncesi son kontrol
-                if (GameCore.checkGameOver()) return;
+        // UI bildirimi (Otobüs üzerinden haber verelim)
+        EventBus.emit('botThinking', {}, "BotController");
 
-                // 2. AI'DAN KARAR AL
-                const bestMove = AI.getBestMove();
-                
-                if (bestMove) {
-                    console.log(`🤖 BOT: ${GameCore.indexToCoord(bestMove.from)} -> ${GameCore.indexToCoord(bestMove.to)} hamlesini yapıyor.`);
-                    
-                    // 3. MANAGER'A EMİR VER
-                    // Manager artık commitMove kullanarak atomik bir işlem yapacak.
-                    await GameManager.processMove(bestMove.from, bestMove.to);
+        try {
+            // 2. AI KARAR AŞAMASI
+            // AI'ya hamle hesaplatırken GameCore'un son halini referans alıyoruz
+            const bestMove = AI.getBestMove();
 
-                    // 4. İHANET EK HAMLESİ (DOUBLE MOVE) KONTROLÜ
-                    // LoyaltyChess kuralı: Eğer yapılan hamle bir ihanet infazı ise turn değişmez, hala 'b' kalır.
-                    if (GameCore.turn === 'b' && !GameCore.checkGameOver()) {
-                        console.log("💣 BOT: İhanet infaz edildi, sıra hâlâ bende. Ek hamle yapılıyor...");
-                        
-                        // Kilidi açıp tekrar çağırıyoruz
-                        this.isThinking = false;
-                        this.makeMove(); 
-                        return;
-                    }
-                } else {
-                    console.warn("🤖 BOT: Yapacak yasal hamle bulamadım!");
-                }
-            } catch (error) {
-                console.error("❌ Bot Hamle Hatası:", error);
-            } finally {
-                // İşlem bittiğinde düşünme kilidini kaldır
-                this.isThinking = false;
+            if (!bestMove) {
+                console.warn("🤖 BOT: Yasal hamle bulunamadı");
+                return;
             }
-        }, 600);
+
+            // Konsola şık bir log bırakalım
+            const fromCoord = GameCore.indexToCoord(bestMove.from);
+            const toCoord = GameCore.indexToCoord(bestMove.to);
+            console.log(`🤖 BOT KARARI: ${fromCoord} → ${toCoord}`);
+
+            // 3. EXECUTION REQUEST (Hamle Talebi)
+            // 🚩 ÖNEMLİ: Artık 'requestBotMove' demiyoruz. 
+            // GameManager için hamlenin 'bot' veya 'oyuncu'dan gelmesi fark etmez.
+            // Sadece "bir hamle talebi var" diyoruz.
+            EventBus.emit('requestPlayerMove', { 
+                from: bestMove.from, 
+                to: bestMove.to, 
+                promotion: 'q' // Bot piyon çıkarırsa hep vezir yapsın
+            }, "BotController");
+
+        } catch (err) {
+            console.error("❌ Bot hatası:", err);
+        } finally {
+            this.isThinking = false;
+        }
     }
 };

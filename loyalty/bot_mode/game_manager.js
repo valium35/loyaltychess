@@ -1,83 +1,88 @@
-// game_manager.js - KOORDİNASYON MERKEZİ (PATRON)
+// game_manager.js - KOORDİNASYON MERKEZİ (CLEAN)
+
 import { GameCore } from './core/game_core.js';
-import { Renderer } from './ui/renderer.js';
 import { PlayerController } from './controllers/player_controller.js';
 import { BotController } from './controllers/bot_controller.js';
-import { EventSystem } from './core/event_system.js'; 
-import { AI } from './bot/ai.js'; 
+import { LoyalLab } from './loyal_lab.js';
+import { LogSystem } from './ui/log_system.js';
 
 export const GameManager = {
+
     async init() {
-        console.log("🧩 LoyaltyChess v2.0 Başlatılıyor...");
+        console.log("🧩 Manager Başlatılıyor...");
+
+        // 1. Core reset
+        GameCore.reset();
         
-        if (AI && typeof AI.initialize === 'function') await AI.initialize(); 
-        
-        GameCore.reset(); 
+        // Log sistemini başlat (move-history div'ini bağla)
+        LogSystem.init('move-history');
+
+        // 2. Controllers
         PlayerController.init();
         BotController.init();
-        
+
+        // 3. LAB (Sıra ve kuralları yöneten motor)
+        LoyalLab.init(GameCore);
+
+        // 4. Dinleyicileri kur
         this.setupListeners();
-        this.updateStatus(); 
-        
-        // İlk çizim
-        this.refreshUI();
+
+        // 5. İlk Görünümü Hazırla
+        this.updateStatus();
+        LoyalLab.syncView();
     },
 
     /**
-     * ANA HAMLE MOTORU
+     * TEK HAMLE GİRİŞ NOKTASI
      */
     async processMove(from, to, promotionPiece = null) {
-        // ADIM 1: Core içinde atomik commit
-        const moveData = GameCore.commitMove(from, to, promotionPiece);
-
-        if (moveData) {
-            // ADIM 2: Görseli güncelle (Noktaları temizleyerek)
-            this.refreshUI(null, []);
-
-            // ADIM 3: Olayı duyur (Loglama vb.)
-            EventSystem.emit('moveExecuted', moveData);
-
-            // ADIM 4: Akışı sonlandır (Bot uyarısı vb.)
-            this.finalizeMove();
-        }
+        await LoyalLab.runCycle(
+            Number(from),
+            Number(to),
+            promotionPiece
+        );
     },
 
-    finalizeMove() {
-        this.updateStatus(false);
-        if (GameCore.turn === 'b' && !GameCore.checkGameOver()) {
-            setTimeout(() => {
-                BotController.makeMove(); 
-            }, 100);
-        }
-    },
-
-    /**
-     * 🟢 REHBER NOKTALARIN ANAHTARI:
-     * Renderer'a 'moves' parametresini buradan paslıyoruz.
-     */
     refreshUI(selected = null, moves = []) {
-        Renderer.render({
-            board: GameCore.board,
-            selected: selected,
-            moves: moves, // valid-move-dot'lar buradan gidiyor
-            threats: GameCore.threatHistory,
-            betrayals: GameCore.activeBetrayals
-        });
+        LoyalLab.syncView(selected, moves);
     },
 
     setupListeners() {
-        // 🚩 NOKTALARI GETİREN DİNLEYİCİ:
+        // --- 🚩 KRİTİK EKSİK BURASIYDI: HAMLE TALEPLERİNİ YAKALA ---
+        window.addEventListener('requestPlayerMove', async (e) => {
+            const { from, to, promotion } = e.detail;
+            console.log(`📡 [${e.detail.__source || 'Bilinmiyor'}] Hamle Talebi İşleniyor...`);
+            await this.processMove(from, to, promotion);
+        });
+
+        // Görsel güncelleme talebi
         window.addEventListener('triggerRender', (e) => {
-            // PlayerController'dan gelen detayları (selected ve legal moves) Renderer'a ilet
             this.refreshUI(
-                e.detail?.selected || null, 
-                e.detail?.moves || []
+                e.detail?.selected ?? null,
+                e.detail?.moves ?? []
             );
         });
 
+        // Durum güncelleme talebi
+        window.addEventListener('updateStatus', () => {
+            this.updateStatus();
+        });
+
+        // Bot düşünme bildirimi
         window.addEventListener('botThinking', () => {
-            this.updateStatus(true); 
-            this.refreshUI(null, []); // Bot düşünürken noktaları temizle
+            this.updateStatus(true);
+            this.refreshUI(null, []);
+        });
+
+        // Hamle icra edildiğinde (Lab'dan gelir)
+        window.addEventListener('moveExecuted', (e) => {
+            // LogSystem Lab içinde de çağrılabilir ama buradan yönetmek daha merkezi
+            // LogSystem.update(e.detail); // Eğer Lab içinde yapmıyorsan burayı aç
+
+            // Sıra bota geçtiyse bota emir ver
+            if (GameCore.turn === 'b' && !GameCore.checkGameOver()) {
+                setTimeout(() => BotController.makeMove(), 250); 
+            }
         });
     },
 
@@ -85,21 +90,33 @@ export const GameManager = {
         const statusEl = document.getElementById('status');
         if (!statusEl) return;
 
+        // Core üzerinden taze bilgileri al
         const turn = GameCore.turn;
         const gameOver = GameCore.checkGameOver();
 
         if (gameOver) {
             statusEl.style.color = "#ff3333";
-            statusEl.innerHTML = gameOver === "MAT" ? "🏁 CHECKMATE!" : "🤝 STALEMATE!";
-            return; 
+            statusEl.innerHTML =
+                gameOver === "MAT"
+                    ? "🏁 CHECKMATE!"
+                    : "🤝 STALEMATE!";
+            return;
         }
 
         if (GameCore.isCheck(turn)) {
             statusEl.style.color = "#ff3333";
-            statusEl.innerHTML = turn === 'w' ? "⚠️ ŞAH ALTINDASIN!" : "⚠️ BOT ŞAH ALTINDA!";
+            statusEl.innerHTML =
+                turn === 'w'
+                    ? "⚠️ ŞAH ALTINDASIN!"
+                    : "⚠️ BOT ŞAH ALTINDA!";
         } else {
             statusEl.style.color = "#f1c40f";
-            statusEl.innerHTML = turn === 'w' ? "⚪ SIRA SENDE" : (isThinking ? "🧠 DÜŞÜNÜYORUM..." : "⚫ BOTUN SIRASI");
+            statusEl.innerHTML =
+                turn === 'w'
+                    ? "⚪ SIRA SENDE"
+                    : (isThinking
+                        ? "🧠 DÜŞÜNÜYORUM..."
+                        : "⚫ BOTUN SIRASI");
         }
     }
 };
