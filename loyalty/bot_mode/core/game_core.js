@@ -165,20 +165,44 @@ export const GameCore = {
                         }
                     }
                 });
+
+                // --- ROK (CASTLING) KONTROLÜ ---
+                if (!onlyAttacks && !this.isCheck(color, boardState)) {
+                    // Kısa Rok
+                    const shortRookIdx = color === 'w' ? 63 : 7;
+                    if (!this.hasMoved[`${color}-k`] && !this.hasMoved[`${color}-r-${shortRookIdx}`]) {
+                        if (!boardState[idx + 1] && !boardState[idx + 2]) {
+                            // Kralın geçeceği kare tehdit altında mı?
+                            if (!this.isSquareAttacked(idx + 1, color === 'w' ? 'b' : 'w', boardState)) {
+                                moves.push(idx + 2);
+                            }
+                        }
+                    }
+                    // Uzun Rok
+                    const longRookIdx = color === 'w' ? 56 : 0;
+                    if (!this.hasMoved[`${color}-k`] && !this.hasMoved[`${color}-r-${longRookIdx}`]) {
+                        if (!boardState[idx - 1] && !boardState[idx - 2] && !boardState[idx - 3]) {
+                            if (!this.isSquareAttacked(idx - 1, color === 'w' ? 'b' : 'w', boardState)) {
+                                moves.push(idx - 2);
+                            }
+                        }
+                    }
+                }
                 break;
 
             case 'p':
                 const dir = color === 'w' ? -1 : 1;
 
-                // capture
+                // capture & en passant
                 [this.getIndex(r + dir, c - 1), this.getIndex(r + dir, c + 1)]
                     .forEach(t => {
-                        if (
-                            t !== null &&
-                            (boardState[t] && !boardState[t].startsWith(color) ||
-                             t === this.enPassantSquare)
-                        ) {
-                            moves.push(t);
+                        if (t !== null) {
+                            if (boardState[t] && !boardState[t].startsWith(color)) {
+                                moves.push(t);
+                            } else if (t === this.enPassantSquare) {
+                                // EN PASSANT ADAYI
+                                moves.push(t);
+                            }
                         }
                     });
 
@@ -261,13 +285,13 @@ export const GameCore = {
     handleSpecialRules(from, to, color, type, promotionPiece) {
         let final = `${color}-${type}`;
 
-        // en passant capture
+        // en passant capture logic
         if (type === 'p' && from % 8 !== to % 8 && !this.board[to]) {
-            const cap = color === 'w' ? to + 8 : to - 8;
-            this.board[cap] = '';
+            const capIdx = color === 'w' ? to + 8 : to - 8;
+            this.board[capIdx] = '';
         }
 
-        // castling rook move
+        // castling rook move logic
         if (type === 'k' && Math.abs(from - to) === 2) {
             const short = to > from;
             const rFrom = short
@@ -282,7 +306,7 @@ export const GameCore = {
             this.board[rFrom] = '';
         }
 
-        // promotion
+        // promotion logic
         if (type === 'p' && Math.floor(to / 8) === (color === 'w' ? 0 : 7)) {
             final = promotionPiece || `${color}-q`;
         }

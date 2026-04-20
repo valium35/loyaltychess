@@ -2,9 +2,9 @@
 
 export const Renderer = {
     /**
-     * renderData: { board, turn, lastMove, selected, moves }
+     * renderData: { board, turn, lastMove, selected, moves, loyaltyMap }
      */
-    render(renderData = {}) {
+ render(renderData = {}) {
         const boardEl = document.getElementById('chess-board');
         if (!boardEl) return;
 
@@ -12,7 +12,8 @@ export const Renderer = {
             board = [],
             lastMove = null,
             selected = null,
-            moves = []
+            moves = [],
+            loyaltyMap = {}
         } = renderData;
 
         boardEl.innerHTML = '';
@@ -24,6 +25,25 @@ export const Renderer = {
 
             sq.className = `square ${(row + col) % 2 === 0 ? 'white' : 'black'}`;
             sq.dataset.idx = i;
+
+            // --- 🚩 YENİ SADAKAT ZİNCİRİ (Mor -> Mavi -> Kırmızı) ---
+            const state = loyaltyMap[i]; 
+
+            if (state === 'PURPLE') {
+                sq.classList.add('feda-purple'); // Aktif Feda
+            } 
+            else if (state === 'BLUE') {
+                sq.classList.add('threat-blue'); // Tehdit/Terk
+            } 
+            else if (state === 'RED') {
+                sq.classList.add('betrayal-red'); // İHANET SINIRI
+
+                // ⚠️ Kritik uyarı ikonu (Sadece Kırmızıda)
+                const alertIcon = document.createElement('div');
+                alertIcon.className = 'loyalty-alert-icon';
+                alertIcon.innerHTML = '⚠️'; 
+                sq.appendChild(alertIcon);
+            }
 
             // 1. Son hamle highlight
             if (lastMove && (lastMove.from === i || lastMove.to === i)) {
@@ -48,12 +68,17 @@ export const Renderer = {
             if (piece) {
                 const pEl = document.createElement('div');
                 pEl.className = `piece ${piece}`;
+                
+                // Kırmızı aşamada taş titremeye başlar
+                if (state === 'RED') {
+                    pEl.classList.add('traitor-piece');
+                }
+                
                 sq.appendChild(pEl);
             }
 
             // 5. Click event
             sq.onclick = () => {
-                console.log("Kareye tıklandı:", i); // Test için bunu ekle
                 window.dispatchEvent(
                     new CustomEvent('squareClicked', { detail: i })
                 );

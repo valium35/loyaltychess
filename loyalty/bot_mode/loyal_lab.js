@@ -1,5 +1,5 @@
-// loyal_lab.js - SAF AKIŞ MOTORU
-
+// loyal_lab.js - SAF AKIŞ MOTORU (Düzeltilmiş Sıralama)
+import { BetrayalJudge } from './core/betrayal_judge.js';
 import { Renderer } from './ui/renderer.js';
 import { BotController } from './controllers/bot_controller.js';
 import { EventBus } from './core/event_bus.js';
@@ -29,21 +29,48 @@ export const LoyalLab = {
             return;
         }
 
-        // 2. MOVE PAKETİ OLUŞTUR
+        // --- 🚩 KRİTİK DÜZELTME BAŞLANGICI ---
+        
+        // ÖNCE: Move paketini oluştur ve CORE'a işle
         const moveData = {
             ...moveResult,
             fromSq: this.core.indexToCoord(from),
-            toSq: this.core.indexToCoord(to)
+            toSq: this.core.indexToCoord(to),
+            hadBetrayals: false // Şimdilik false, birazdan güncellenecek
         };
-        this.core.history.push(moveData); // Deftere kaydet
-        this.core.lastMove = moveData;    // Son hamle olarak işaretle
+        
+        this.core.history.push(moveData); 
+        this.core.lastMove = moveData; // Hakem artık 'to' karesini görebilir!
+
+        // SONRA: İhanet sorgusunu yap (Hakem artık güncel lastMove'u biliyor)
+        const betrayalList = BetrayalJudge.evaluate(
+            this.core.board, 
+            this.core.turn, 
+            this.core
+        );
+
+        if (betrayalList.length > 0) {
+            moveData.hadBetrayals = true; // Veriyi güncelle
+            
+            EventBus.emit('betrayalDetected', { 
+                betrayals: betrayalList,
+                atTurn: this.core.turn 
+            }, "LoyalLab");
+
+            betrayalList.forEach(b => {
+                // this.core.board[b.index] = ''; // Kural gereği silme aktif edilebilir
+                console.warn(`💀 İHANET: ${b.piece} tahtadan ayrıldı.`);
+            });
+        }
+
+        // --- 🚩 KRİTİK DÜZELTME BİTİŞİ ---
 
         // 3. EVENT + LOG (YAN ETKİLER)
         EventBus.emit('moveExecuted', moveData, "LoyalLab");
         EventBus.emit('moveExecuted', moveData);
         LogSystem.update(moveData);
 
-        // 4. STATE GÜNCELLE (EN DOĞRU NOKTA)
+        // 4. STATE GÜNCELLE (Sıra değişimi)
         this.core.turn = (this.core.turn === 'w') ? 'b' : 'w';
         console.log(`✅ Sıra: ${this.core.turn}`);
 
@@ -56,24 +83,15 @@ export const LoyalLab = {
         console.groupEnd();
     },
 
-    /**
-     * BOT + GAME STATE SONRASI
-     */
     finalizeCycle() {
         const gameOver = this.core.checkGameOver();
-
-        // UI status event
         window.dispatchEvent(new CustomEvent('updateStatus'));
 
-        // Bot hamlesi
         if (!gameOver && this.core.turn === 'b') {
-            setTimeout(() => BotController.makeMove(), 150);
+            setTimeout(() => BotController.makeMove(), 1200);
         }
     },
 
-    /**
-     * RENDER PAKETİ (SADE VE TUTARLI)
-     */
     syncView(selected = null, moves = []) {
         if (!this.core) return;
 
@@ -82,7 +100,7 @@ export const LoyalLab = {
             turn: this.core.turn,
             lastMove: this.core.lastMove,
             history: this.core.history,
-
+            loyaltyMap: BetrayalJudge.neglectRegistry || {},
             selected,
             moves
         });

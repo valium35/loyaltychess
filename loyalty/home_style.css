@@ -251,10 +251,21 @@ body {
     z-index: 2;
 }
 
-/* Nabız animasyonunu da sertleştirelim */
+/* Tehdit Altında (Sayaç: 1) */
+.threat-blue {
+    box-shadow: inset 0 0 12px #2b0ead !important;
+}
+
+/* İhanet Sınırı (Sayaç: 2) */
+.betrayal-red {
+    box-shadow: inset 0 0 20px #9d2113 !important;
+    animation: betrayal-pulse 1.5s infinite;
+}
+
 @keyframes betrayal-pulse {
-    from { filter: brightness(1); }
-    to { filter: brightness(1.8); }
+    0% { background-color: rgba(231, 76, 60, 0.2); }
+    50% { background-color: rgba(231, 76, 60, 0.5); }
+    100% { background-color: rgba(231, 76, 60, 0.2); }
 }
 
 /* ============================================================
@@ -275,6 +286,105 @@ body {
     0% { transform: scale(1); opacity: 1; }
     50% { transform: scale(1.2); filter: brightness(3); }
     100% { transform: scale(0); opacity: 0; }
+}/* 🔴 KRİTİK İHANET ALARMI (Hızı Azaltılmış) */
+.square.betrayal-red {
+    background-color: #7a0000 !important; /* Çok koyu kan kırmızısı */
+    box-shadow: 
+        inset 0 0 40px rgba(0, 0, 0, 0.9), 
+        0 0 20px rgba(255, 0, 0, 0.8) !important;
+    border: 4px solid #ffcc00 !important; 
+    z-index: 5 !important;
+    
+    /* Hız: 0.8s'den 1.5s'e çıkarıldı (Yavaşlatıldı) */
+    animation: alert-strobe 1.5s infinite ease-in-out !important; 
+    box-sizing: border-box;
+}
+
+/* Acil Durum Alert Animasyonu */
+@keyframes alert-strobe {
+    0% { 
+        filter: brightness(0.7); 
+        box-shadow: inset 0 0 20px #ff0000, 0 0 5px #ff0000;
+    }
+    50% { 
+        filter: brightness(1.8) contrast(1.5); /* Aniden parlayarak alert verir */
+        box-shadow: inset 0 0 50px #ff0000, 0 0 30px #ff0000;
+        background-color: #ff0000 !important; /* Parlama anında renk açılır */
+    }
+    100% { 
+        filter: brightness(0.7); 
+        box-shadow: inset 0 0 20px #ff0000, 0 0 5px #ff0000;
+    }
+}
+
+/* Taşın üzerindeki "hain" efektini de yavaşlatıp belirginleştirelim */
+.piece.traitor-piece {
+    filter: drop-shadow(0 0 20px #ff0000) saturate(400%);
+    /* Taşın sallanma hızı da yavaşladı */
+    animation: piece-alert-shake 2s infinite ease-in-out !important;
+}
+
+@keyframes piece-alert-shake {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1) rotate(3deg); } /* Daha belirgin büyüme */
+}.loyalty-alert-icon {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 16px;
+    z-index: 20;
+    pointer-events: none;
+    animation: icon-bounce 0.5s infinite alternate;
+}
+
+@keyframes icon-bounce {
+    from { transform: scale(1); }
+    to { transform: scale(1.3); }
+}/* 🟣 MOR: Aktif Feda (Gizemli ve Stratejik) */
+.square.feda-purple {
+    background-color: #260d38 !important; /* Royal Purple */
+    box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.3) !important;
+    border: 2px solid #212124 !important;
+    box-sizing: border-box;
+    transition: all 0.5s ease;
+}
+
+/* 🔵 MAVİ: Tehdit/Terk (Soğuk ve Ciddi) */
+.square.threat-blue {
+    background-color: #d0e9ab !important;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5) !important;
+    border: 2px solid #74b9ff !important;
+    box-sizing: border-box;
+}
+
+/* 🔴 KIRMIZI: İhanet Alarmı (Sert ve Parlayan) */
+.square.betrayal-red {
+    background-color: #d63031 !important;
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8), 0 0 20px #ff7675 !important;
+    border: 3px solid #fdcb6e !important; /* Sarı çerçeve alarmı pekiştirir */
+    animation: alert-strobe 1s infinite alternate ease-in-out !important;
+    z-index: 5;
+}
+
+/* ⚠️ İkon Animasyonu */
+.loyalty-alert-icon {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 14px;
+    z-index: 10;
+    animation: bounce-small 0.5s infinite alternate;
+}
+
+@keyframes bounce-small {
+    from { transform: translateY(0); }
+    to { transform: translateY(-3px); }
+}
+
+/* Alarm Çakarı */
+@keyframes alert-strobe {
+    0% { filter: brightness(1); }
+    100% { filter: brightness(1.4) contrast(1.2); }
 }
 
 /* ============================================================
