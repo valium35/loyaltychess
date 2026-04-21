@@ -287,18 +287,7 @@ body {
     50% { transform: scale(1.2); filter: brightness(3); }
     100% { transform: scale(0); opacity: 0; }
 }/* 🔴 KRİTİK İHANET ALARMI (Hızı Azaltılmış) */
-.square.betrayal-red {
-    background-color: #7a0000 !important; /* Çok koyu kan kırmızısı */
-    box-shadow: 
-        inset 0 0 40px rgba(0, 0, 0, 0.9), 
-        0 0 20px rgba(255, 0, 0, 0.8) !important;
-    border: 4px solid #ffcc00 !important; 
-    z-index: 5 !important;
-    
-    /* Hız: 0.8s'den 1.5s'e çıkarıldı (Yavaşlatıldı) */
-    animation: alert-strobe 1.5s infinite ease-in-out !important; 
-    box-sizing: border-box;
-}
+
 
 /* Acil Durum Alert Animasyonu */
 @keyframes alert-strobe {
@@ -359,7 +348,7 @@ body {
 
 /* 🔴 KIRMIZI: İhanet Alarmı (Sert ve Parlayan) */
 .square.betrayal-red {
-    background-color: #d63031 !important;
+    background-color: #560606 !important;
     box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8), 0 0 20px #ff7675 !important;
     border: 3px solid #fdcb6e !important; /* Sarı çerçeve alarmı pekiştirir */
     animation: alert-strobe 1s infinite alternate ease-in-out !important;

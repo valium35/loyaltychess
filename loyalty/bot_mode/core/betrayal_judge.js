@@ -12,79 +12,71 @@ export const BetrayalJudge = {
      * @param {string} currentTurn - GameCore.turn
      * @param {Object} core - GameCore referansı
      */
-    evaluate(board, currentTurn, core) {
+evaluate(board, currentTurn, core) {
         const betrayals = [];
         const enemyColor = (currentTurn === 'w') ? 'b' : 'w';
         const lastMove = core.lastMove;
 
-        for (let i = 0; i < 64; i++) {
+        // --- 1. ADIM: GENEL TEMİZLİK ---
+        for (const idx in this.neglectRegistry) {
+            const i = parseInt(idx);
             const piece = board[i];
-            
-            // 1. KONTROL: Kare boş mu veya sıra bu taşın sahibinde mi?
-            if (!piece || !piece.startsWith(currentTurn)) {
-                delete this.neglectRegistry[i];
-                continue;
-            }
+            if (!piece) { delete this.neglectRegistry[i]; continue; }
 
-            const [color, type] = piece.split('-');
+            const pieceColor = piece.startsWith('w') ? 'w' : 'b';
+            const oppColor = pieceColor === 'w' ? 'b' : 'w';
 
-            // 2. KONTROL: Taş ihanet edebilecek bir tür mü? (r, n, b)
-            if (!this.allowedTypes.includes(type)) {
-                delete this.neglectRegistry[i];
-                continue;
-            }
-
-            // KONTROL 3: Mevcut Tehdit Durumu
-            const isUnderAttack = core.isSquareAttacked(i, enemyColor, board);
-            const isProtected = core.isSquareAttacked(i, currentTurn, board);
-
-            if (isUnderAttack && !isProtected) {
-                const currentState = this.neglectRegistry[i];
-
-                // --- YENİ TEHDİT BAŞLANGICI ---
-                if (!currentState) {
-                    // KAPI A: Taş yeni taşındıysa MOR (Feda)
-                    if (lastMove && Number(lastMove.to) === i) {
-                        this.neglectRegistry[i] = 'PURPLE';
-                        console.log(`🟣 [${core.indexToCoord(i)}] FEDA - Mor yandı.`);
-                    } 
-                    // KAPI B: Taş yerindeydi ama saldırı geldiyse MAVİ (Saldırı)
-                    else {
-                        this.neglectRegistry[i] = 'BLUE';
-                        console.log(`🔵 [${core.indexToCoord(i)}] SALDIRI - Mavi yandı.`);
-                    }
-                    // İlk renk atamasını yaptık, bu turu bitiriyoruz
-                    continue; 
-                }
-
-                // --- MEVCUT DURUM GEÇİŞLERİ ---
-                if (currentState === 'PURPLE') {
-                    this.neglectRegistry[i] = 'BLUE';
-                    console.log(`🔵 [${core.indexToCoord(i)}] TERK - Maviye döndü.`);
-                } 
-                else if (currentState === 'BLUE') {
-                    this.neglectRegistry[i] = 'RED';
-                    console.log(`🔴 [${core.indexToCoord(i)}] TEHLİKE - Kırmızı yandı.`);
-                } 
-                else if (currentState === 'RED') {
-                    betrayals.push({
-                        index: i,
-                        piece: piece,
-                        type: type,
-                        coord: core.indexToCoord(i)
-                    });
-                    delete this.neglectRegistry[i];
-                }
-            } else {
-                // Tehdit kalktıysa veya koruma geldiyse sicili temizle
+            if (!core.isSquareAttacked(i, oppColor, board) || core.isSquareAttacked(i, pieceColor, board)) {
                 delete this.neglectRegistry[i];
             }
         }
 
+        // --- 2. ADIM: ÇİFT YÖNLÜ RADAR TARAMASI ---
+        for (let i = 0; i < 64; i++) {
+            const piece = board[i];
+            if (!piece) continue;
+
+            const [pColor, pType] = piece.split('-');
+            if (!this.allowedTypes.includes(pType)) continue;
+
+            const pOpponent = pColor === 'w' ? 'b' : 'w';
+            const isUnderAttack = core.isSquareAttacked(i, pOpponent, board);
+            const isProtected = core.isSquareAttacked(i, pColor, board);
+
+            if (isUnderAttack && !isProtected) {
+                const currentState = this.neglectRegistry[i];
+
+                // A) AKTİF OYUNCU (Hamlesini yeni bitiren)
+                if (pColor === currentTurn) {
+                    if (!currentState) {
+                        // Yeni geldiyse MOR, zaten oradaysa (ve pas geçildiyse) MAVİ
+                        if (lastMove && lastMove.to == i) {
+                            this.neglectRegistry[i] = 'PURPLE';
+                        } else {
+                            this.neglectRegistry[i] = 'BLUE';
+                        }
+                    } else {
+                        // Mevcut durumu yükselt (Purple -> Blue -> Red)
+                        if (currentState === 'PURPLE') this.neglectRegistry[i] = 'BLUE';
+                        else if (currentState === 'BLUE') this.neglectRegistry[i] = 'RED';
+                        else if (currentState === 'RED') {
+                            betrayals.push({ index: i, piece, type: pType, coord: core.indexToCoord(i) });
+                            delete this.neglectRegistry[i];
+                        }
+                    }
+                } 
+                // B) PASİF OYUNCU (Sıra kendisine geçen - 0.5 Hamle Mantığı)
+                else {
+                    // Eğer bu taş henüz radara girmediyse, ANINDA Mavi yap
+                    if (!currentState) {
+                        this.neglectRegistry[i] = 'BLUE';
+                        console.log(`📡 Radar: [${core.indexToCoord(i)}] anlık tehdit algıladı!`);
+                    }
+                }
+            }
+        }
         return betrayals;
     },
 
-    reset() {
-        this.neglectRegistry = {};
-    }
+    reset() { this.neglectRegistry = {}; }
 };
