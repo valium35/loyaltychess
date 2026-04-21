@@ -193,18 +193,26 @@ export const GameCore = {
             case 'p':
                 const dir = color === 'w' ? -1 : 1;
 
-                // capture & en passant
-                [this.getIndex(r + dir, c - 1), this.getIndex(r + dir, c + 1)]
-                    .forEach(t => {
-                        if (t !== null) {
-                            if (boardState[t] && !boardState[t].startsWith(color)) {
-                                moves.push(t);
-                            } else if (t === this.enPassantSquare) {
-                                // EN PASSANT ADAYI
-                                moves.push(t);
-                            }
-                        }
-                    });
+               // --- 🚩 DÜZELTME BAŞLANGICI ---
+    // Piyonun çapraz tehdit/koruma kareleri
+    [this.getIndex(r + dir, c - 1), this.getIndex(r + dir, c + 1)]
+        .forEach(t => {
+            if (t !== null) {
+                // EĞER 'onlyAttacks' true ise (yani isSquareAttacked içinden çağrıldıysa)
+                // Karede taş olsun olmasın piyon orayı kontrol ediyor/koruyordur!
+                if (onlyAttacks) {
+                    moves.push(t);
+                } else {
+                    // Normal hamle modunda ise: Sadece rakip taş veya en passant varsa alabilir
+                    if (boardState[t] && !boardState[t].startsWith(color)) {
+                        moves.push(t);
+                    } else if (t === this.enPassantSquare) {
+                        moves.push(t);
+                    }
+                }
+            }
+        });
+    // --- 🚩 DÜZELTME BİTİŞİ ---
 
                 // forward
                 if (!onlyAttacks) {

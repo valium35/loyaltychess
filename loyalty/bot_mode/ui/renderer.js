@@ -13,7 +13,7 @@ export const Renderer = {
             lastMove = null,
             selected = null,
             moves = [],
-            loyaltyMap = {}
+            loyaltyMap = {} // BetrayalJudge'dan gelen durum listesi
         } = renderData;
 
         boardEl.innerHTML = '';
@@ -23,29 +23,30 @@ export const Renderer = {
             const row = Math.floor(i / 8);
             const col = i % 8;
 
+            // Temel kare sınıfı
             sq.className = `square ${(row + col) % 2 === 0 ? 'white' : 'black'}`;
             sq.dataset.idx = i;
 
-            // --- 🚩 YENİ SADAKAT ZİNCİRİ (Mor -> Mavi -> Kırmızı) ---
-            const state = loyaltyMap[i]; 
+            // --- 🚩 SADAKAT GÖRSELLERİ (Senin CSS Sınıflarınla Eşleşme) ---
+            const state = loyaltyMap[i]; // 'PURPLE', 'BLUE' veya 'RED'
 
             if (state === 'PURPLE') {
-                sq.classList.add('feda-purple'); // Aktif Feda
+                sq.classList.add('feda-purple'); // Mor: Feda
             } 
             else if (state === 'BLUE') {
-                sq.classList.add('threat-blue'); // Tehdit/Terk
+                sq.classList.add('threat-blue'); // Mavi: Tehdit
             } 
             else if (state === 'RED') {
-                sq.classList.add('betrayal-red'); // İHANET SINIRI
+                sq.classList.add('betrayal-red'); // Kırmızı: İhanet Alarmı
 
-                // ⚠️ Kritik uyarı ikonu (Sadece Kırmızıda)
+                // ⚠️ CSS'indeki zıplayan ünlem ikonu
                 const alertIcon = document.createElement('div');
                 alertIcon.className = 'loyalty-alert-icon';
                 alertIcon.innerHTML = '⚠️'; 
                 sq.appendChild(alertIcon);
             }
 
-            // 1. Son hamle highlight
+            // 1. Son hamle highlight (Eğer kare feda/ihanet değilse daha belirgin olur)
             if (lastMove && (lastMove.from === i || lastMove.to === i)) {
                 sq.classList.add('last-move');
             }
@@ -57,19 +58,19 @@ export const Renderer = {
                 sq.classList.add('active');
             }
 
-            // 3. Valid move noktaları
+            // 3. Geçerli hamle noktaları
             if (moves.includes(i)) {
                 const dot = document.createElement('div');
                 dot.className = 'valid-move-dot';
                 sq.appendChild(dot);
             }
 
-            // 4. Taş çizimi
+            // 4. Taş çizimi ve Hain Efektleri
             if (piece) {
                 const pEl = document.createElement('div');
                 pEl.className = `piece ${piece}`;
                 
-                // Kırmızı aşamada taş titremeye başlar
+                // Eğer taş KIRMIZI (İhanet) aşamasındaysa senin 'traitor-piece' efektini ekle
                 if (state === 'RED') {
                     pEl.classList.add('traitor-piece');
                 }
@@ -77,7 +78,7 @@ export const Renderer = {
                 sq.appendChild(pEl);
             }
 
-            // 5. Click event
+            // 5. Tıklama Olayı
             sq.onclick = () => {
                 window.dispatchEvent(
                     new CustomEvent('squareClicked', { detail: i })
