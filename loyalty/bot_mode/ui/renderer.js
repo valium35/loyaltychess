@@ -4,7 +4,7 @@ export const Renderer = {
     /**
      * renderData: { board, turn, lastMove, selected, moves, loyaltyMap }
      */
- render(renderData = {}) {
+    render(renderData = {}) {
         const boardEl = document.getElementById('chess-board');
         if (!boardEl) return;
 
@@ -13,7 +13,7 @@ export const Renderer = {
             lastMove = null,
             selected = null,
             moves = [],
-            loyaltyMap = {} // BetrayalJudge'dan gelen durum listesi
+            loyaltyMap = {} // BetrayalJudge'dan gelen durum listesi (PURPLE, BLUE, RED, LOCKED)
         } = renderData;
 
         boardEl.innerHTML = '';
@@ -27,8 +27,8 @@ export const Renderer = {
             sq.className = `square ${(row + col) % 2 === 0 ? 'white' : 'black'}`;
             sq.dataset.idx = i;
 
-            // --- 🚩 SADAKAT GÖRSELLERİ (Senin CSS Sınıflarınla Eşleşme) ---
-            const state = loyaltyMap[i]; // 'PURPLE', 'BLUE' veya 'RED'
+            // --- 🚩 SADAKAT GÖRSELLERİ ---
+            const state = loyaltyMap[i]; 
 
             if (state === 'PURPLE') {
                 sq.classList.add('feda-purple'); // Mor: Feda
@@ -39,14 +39,24 @@ export const Renderer = {
             else if (state === 'RED') {
                 sq.classList.add('betrayal-red'); // Kırmızı: İhanet Alarmı
 
-                // ⚠️ CSS'indeki zıplayan ünlem ikonu
+                // CSS'indeki zıplayan ünlem ikonu
                 const alertIcon = document.createElement('div');
                 alertIcon.className = 'loyalty-alert-icon';
                 alertIcon.innerHTML = '⚠️'; 
                 sq.appendChild(alertIcon);
             }
+            // --- 🚩 YENİ: SARAY MUHAFIZI (LOCKED) GÖRSELİ ---
+            else if (state === 'LOCKED') {
+                sq.classList.add('locked'); // CSS'de özel efekt vermek istersen
+                
+                const lockIcon = document.createElement('div');
+                lockIcon.className = 'loyalty-lock-icon';
+                lockIcon.style.cssText = "position:absolute; font-size:1.5rem; z-index:10; pointer-events:none;";
+                lockIcon.innerHTML = '🚫'; 
+                sq.appendChild(lockIcon);
+            }
 
-            // 1. Son hamle highlight (Eğer kare feda/ihanet değilse daha belirgin olur)
+            // 1. Son hamle highlight
             if (lastMove && (lastMove.from === i || lastMove.to === i)) {
                 sq.classList.add('last-move');
             }
@@ -70,9 +80,15 @@ export const Renderer = {
                 const pEl = document.createElement('div');
                 pEl.className = `piece ${piece}`;
                 
-                // Eğer taş KIRMIZI (İhanet) aşamasındaysa senin 'traitor-piece' efektini ekle
+                // Eğer taş KIRMIZI aşamasındaysa traitor efektini ekle
                 if (state === 'RED') {
                     pEl.classList.add('traitor-piece');
+                }
+                
+                // Eğer kilitliyse taşı biraz şeffaf yapabiliriz (opsiyonel)
+                if (state === 'LOCKED') {
+                    pEl.style.opacity = "0.7";
+                    pEl.style.filter = "grayscale(80%)";
                 }
                 
                 sq.appendChild(pEl);

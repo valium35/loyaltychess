@@ -78,7 +78,28 @@ export const GameCore = {
             captured: !!captured
         };
     },
+getBetrayerMoves(idx) {
+    // 1. Önce taşın normalde nasıl gittiğini alalım (Botun kullandığı standart liste)
+    // Ama piyon/kale/at fark etmeksizin sadece "hareket kapasitesini" alıyoruz.
+    const rawMoves = this.getPieceMoves(idx, this.board, true); 
 
+    // 2. Şimdi bu hareketleri senin kuralına göre filtreleyelim:
+    // Hain taş sadece: 
+    // - Boş karelere gidebilir.
+    // - SADECE eski renginden (Siyah 'b-') olan taşları yiyebilir.
+    return rawMoves.filter(targetIdx => {
+        const targetPiece = this.board[targetIdx];
+        
+        // Eğer hedef boşsa: GİDEBİLİR
+        if (!targetPiece) return true;
+        
+        // Eğer hedefte SİYAH taş varsa: YİYEBİLİR
+        if (targetPiece.startsWith('b')) return true;
+
+        // Kendi yeni efendisini (Beyazı) yiyemez!
+        return false; 
+    });
+},
     // -----------------------------
     // MOVE GENERATION
     // -----------------------------

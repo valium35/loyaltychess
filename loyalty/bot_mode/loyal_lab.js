@@ -1,4 +1,4 @@
-// loyal_lab.js - SAF AKIŞ MOTORU (Düzeltilmiş Sıralama)
+// loyal_lab.js - SAF AKIŞ MOTORU (Zaman Aşımı & İhanet İnfazı)
 import { BetrayalJudge } from './core/betrayal_judge.js';
 import { Renderer } from './ui/renderer.js';
 import { BotController } from './controllers/bot_controller.js';
@@ -11,7 +11,7 @@ export const LoyalLab = {
     init(liveCore) {
         this.core = liveCore;
         window.LabCore = liveCore;
-        console.log("🚀 Loyalty Lab: Saf akış moduna geçildi.");
+        console.log("🚀 Loyalty Lab: İhanet fırsatları artık tek hamlelik!");
     },
 
     /**
@@ -19,6 +19,10 @@ export const LoyalLab = {
      */
     async runCycle(from, to, promotion = null) {
         console.group(`🕹️ AKIŞ SEANSI: [${from} -> ${to}]`);
+
+        // --- 🚩 HAİN İNFAZ KONTROLÜ ---
+        // Hamle icra edilmeden önce taşın "siciline" bakıyoruz
+        const isBetrayalMove = (BetrayalJudge.neglectRegistry[from] === 'RED');
 
         // 1. HAMLE UYGULA (CORE)
         const moveResult = this.core.applyMove(from, to, promotion);
@@ -29,6 +33,29 @@ export const LoyalLab = {
             return;
         }
 
+        // --- 🚩 İNFAZ VE ZAMAN AŞIMI MANTIĞI ---
+        if (isBetrayalMove) {
+            console.warn("💀 İHANET BEDELİ: Taş görevini yaptı ve infaz ediliyor.");
+            
+            // Taş hedefe ulaştı, şimdi oradan siliyoruz
+            this.core.board[to] = ''; 
+            
+            // Registry temizliği
+            delete BetrayalJudge.neglectRegistry[from];
+            delete BetrayalJudge.neglectRegistry[to];
+        } 
+        else {
+            // 🚩 EĞER NORMAL BİR HAMLE YAPILDIYSA:
+            // Piyasadaki tüm RED ve LOCKED durumlarını temizle (Fırsat Kaçtı!)
+            for (const idx in BetrayalJudge.neglectRegistry) {
+                const status = BetrayalJudge.neglectRegistry[idx];
+                if (status === 'RED' || status === 'LOCKED') {
+                    console.log(`⏳ [ZAMAN AŞIMI]: ${this.core.indexToCoord(idx)} için ihanet fırsatı sona erdi.`);
+                    delete BetrayalJudge.neglectRegistry[idx];
+                }
+            }
+        }
+
         // --- 🚩 KRİTİK DÜZELTME BAŞLANGICI ---
         
         // ÖNCE: Move paketini oluştur ve CORE'a işle
@@ -36,13 +63,14 @@ export const LoyalLab = {
             ...moveResult,
             fromSq: this.core.indexToCoord(from),
             toSq: this.core.indexToCoord(to),
-            hadBetrayals: false // Şimdilik false, birazdan güncellenecek
+            hadBetrayals: false,
+            isBetrayal: isBetrayalMove 
         };
         
         this.core.history.push(moveData); 
-        this.core.lastMove = moveData; // Hakem artık 'to' karesini görebilir!
+        this.core.lastMove = moveData; 
 
-        // SONRA: İhanet sorgusunu yap (Hakem artık güncel lastMove'u biliyor)
+        // SONRA: İhanet sorgusunu yap (Yeni tur için radar taraması)
         const betrayalList = BetrayalJudge.evaluate(
             this.core.board, 
             this.core.turn, 
@@ -50,7 +78,7 @@ export const LoyalLab = {
         );
 
         if (betrayalList.length > 0) {
-            moveData.hadBetrayals = true; // Veriyi güncelle
+            moveData.hadBetrayals = true; 
             
             EventBus.emit('betrayalDetected', { 
                 betrayals: betrayalList,
@@ -58,8 +86,7 @@ export const LoyalLab = {
             }, "LoyalLab");
 
             betrayalList.forEach(b => {
-                // this.core.board[b.index] = ''; // Kural gereği silme aktif edilebilir
-                console.warn(`💀 İHANET: ${b.piece} tahtadan ayrıldı.`);
+                console.warn(`💀 RADAR: ${b.piece} ihanet sınırına ulaştı!`);
             });
         }
 
